@@ -27,12 +27,12 @@ export function registerIPCHandlers(): void {
     throw new Error('Not implemented — FT-03')
   })
   ipcMain.handle(IPC_CHANNELS.ADO_TEST_CONNECTION, () => {
-    throw new Error('Not implemented — FT-03')
+    return { success: false, message: 'ADO connection test not yet implemented (FT-03)' }
   })
   ipcMain.handle(IPC_CHANNELS.LLM_CATEGORIZE, () => {
     throw new Error('Not implemented — FT-04')
   })
   ipcMain.handle(IPC_CHANNELS.LLM_TEST_CONNECTION, () => {
-    throw new Error('Not implemented — FT-04')
+    return { success: false, message: 'LLM connection test not yet implemented (FT-04)' }
   })
 }

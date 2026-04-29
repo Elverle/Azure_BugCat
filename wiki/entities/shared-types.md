@@ -4,7 +4,7 @@ type: entity
 subtype: model
 created: 2026-04-29
 updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]']
+sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-02-settings]]']
 tags: [typescript, types, shared, domain-model]
 lang: en
 ---
@@ -53,6 +53,14 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | --------------------- | -------------------------------- |
 | `LLMCategorizeResult` | Single bug categorization result |
 | `LLMResponse`         | Array of categorization results  |
+
+### Connection Testing
+
+| Type                   | Purpose                                                          |
+| ---------------------- | ---------------------------------------------------------------- |
+| `TestConnectionResult` | Structured response from test connection IPC: `{ success, message }` |
+
+*Added in FT-02.* Used by test connection stubs in [[wiki/entities/ipc-handlers]] and consumed by [[wiki/entities/use-settings-hook]].
 
 ## See also
 

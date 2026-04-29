@@ -4,7 +4,7 @@ type: entity
 subtype: service
 created: 2026-04-29
 updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]']
+sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-02-settings]]']
 tags: [electron, ipc, main-process]
 lang: en
 ---
@@ -27,9 +27,9 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 | `session:get`         | ✅ Implemented | Returns `store.get('session')`         |
 | `session:clear`       | ✅ Implemented | Sets `session` to `null`               |
 | `ado:fetch-bugs`      | ⏳ Placeholder | Throws `Not implemented — FT-03`       |
-| `ado:test-connection` | ⏳ Placeholder | Throws `Not implemented — FT-03`       |
+| `ado:test-connection` | ⏳ Stub        | Returns `{ success: false, message: '...not yet implemented (FT-03)' }` |
 | `llm:categorize`      | ⏳ Placeholder | Throws `Not implemented — FT-04`       |
-| `llm:test-connection` | ⏳ Placeholder | Throws `Not implemented — FT-04`       |
+| `llm:test-connection` | ⏳ Stub        | Returns `{ success: false, message: '...not yet implemented (FT-04)' }` |
 
 ## Security Notes
 

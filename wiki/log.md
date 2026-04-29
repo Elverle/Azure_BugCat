@@ -4,6 +4,7 @@
 | ---------- | -------------------------- | -------------- | --------------------------------------------------------------------------- |
 | 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                              |
 | 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics. |
+| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic. |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -29,4 +30,31 @@ Pages created:
 
 Pages updated:
 
+- [[wiki/index.md]]
+
+## [2026-04-29] scan | FT-02 — Settings Page & Configuration Persistence
+
+Full scan of FT-02 feature: Settings page with form validation, IPC persistence, test connections, UI primitives (Input, Label, Select, Textarea), section components (ADO, LLM, Categories), useSettings hook, and validation utilities.
+
+Pages created:
+
+- [[wiki/sources/ft-02-settings]]
+- [[wiki/entities/settings-page]]
+- [[wiki/entities/use-settings-hook]]
+- [[wiki/entities/validation-utils]]
+- [[wiki/entities/ado-connection-section]]
+- [[wiki/entities/llm-provider-section]]
+- [[wiki/entities/categories-section]]
+- [[wiki/entities/input-component]]
+- [[wiki/entities/label-component]]
+- [[wiki/entities/select-component]]
+- [[wiki/entities/textarea-component]]
+- [[wiki/concepts/form-validation-pattern]]
+- [[wiki/concepts/settings-persistence-flow]]
+
+Pages updated:
+
+- [[wiki/entities/ipc-handlers]] — test connection stubs now return structured responses
+- [[wiki/entities/shared-types]] — added TestConnectionResult
+- [[wiki/topics/renderer-ui]] — SettingsPage implemented, new components listed
 - [[wiki/index.md]]
