@@ -34,29 +34,31 @@ interface LlmProviderSectionProps {
 ## Conditional Rendering
 
 When `llmProvider !== 'github-copilot'`:
+
 - Shows API key input with show/hide toggle
 - Label dynamically changes: "OpenAI API Key", "Anthropic API Key", "Gemini API Key"
 
 When `llmProvider === 'github-copilot'`:
+
 - Shows authentication status badge (green/red/gray pill)
 - Informational text: "GitHub Copilot uses your GitHub session. No API key needed."
 
 ## Provider Options
 
-| Value | Label |
-|---|---|
-| `openai` | OpenAI |
-| `anthropic` | Anthropic Claude |
-| `github-copilot` | GitHub Copilot |
-| `gemini` | Gemini |
+| Value            | Label            |
+| ---------------- | ---------------- |
+| `openai`         | OpenAI           |
+| `anthropic`      | Anthropic Claude |
+| `github-copilot` | GitHub Copilot   |
+| `gemini`         | Gemini           |
 
 ## Copilot Auth Status Badges
 
-| Status | Badge |
-|---|---|
-| `authenticated` | Green: "Authenticated" |
+| Status            | Badge                    |
+| ----------------- | ------------------------ |
+| `authenticated`   | Green: "Authenticated"   |
 | `unauthenticated` | Red: "Not Authenticated" |
-| `unknown` | Gray: "Unknown" |
+| `unknown`         | Gray: "Unknown"          |
 
 ## Dependencies
 

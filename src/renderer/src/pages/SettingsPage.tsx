@@ -9,11 +9,26 @@ import { cn } from '@renderer/lib/utils'
 
 export function SettingsPage() {
   const {
-    settings, errors, touched, loading, saving, saveResult,
-    isDirty, canSave, updateField, save, clearSaveResult,
-    testAdoConnection, testAdoResult, testAdoLoading,
-    testLlmConnection, testLlmResult, testLlmLoading,
-    resetCategories, categoriesToText, textToCategories
+    settings,
+    errors,
+    touched,
+    loading,
+    saving,
+    saveResult,
+    isDirty,
+    canSave,
+    updateField,
+    save,
+    clearSaveResult,
+    testAdoConnection,
+    testAdoResult,
+    testAdoLoading,
+    testLlmConnection,
+    testLlmResult,
+    testLlmLoading,
+    resetCategories,
+    categoriesToText,
+    textToCategories
   } = useSettings()
 
   // Auto-dismiss success saveResult after 3 seconds
@@ -51,16 +66,19 @@ export function SettingsPage() {
 
       {/* Save result feedback banner */}
       {saveResult && (
-        <div className={cn(
-          "rounded-lg p-3 text-sm flex items-center gap-2",
-          saveResult.type === 'success'
-            ? "bg-green-50 border border-green-200 text-green-800"
-            : "bg-red-50 border border-red-200 text-red-800"
-        )}>
-          {saveResult.type === 'success'
-            ? <CheckCircle2 className="w-4 h-4 shrink-0" />
-            : <XCircle className="w-4 h-4 shrink-0" />
-          }
+        <div
+          className={cn(
+            'rounded-lg p-3 text-sm flex items-center gap-2',
+            saveResult.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+          )}
+        >
+          {saveResult.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          ) : (
+            <XCircle className="w-4 h-4 shrink-0" />
+          )}
           <span className="flex-1">{saveResult.message}</span>
           {saveResult.type === 'error' && (
             <button onClick={clearSaveResult} className="text-red-600 hover:text-red-800">
@@ -101,10 +119,7 @@ export function SettingsPage() {
 
       {/* Action bar */}
       <div className="flex justify-end gap-3 pt-2 pb-4">
-        <Button
-          disabled={!canSave}
-          onClick={save}
-        >
+        <Button disabled={!canSave} onClick={save}>
           {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
           Save Settings
         </Button>

@@ -178,21 +178,21 @@
 
 ### Edge Cases
 
-| Scenario | Expected Behavior | Related Requirement |
-|----------|-------------------|---------------------|
-| User switches from OpenAI → Copilot → OpenAI | API key value is preserved in form state across provider switches; field hides/shows accordingly | FR-FORM-005, FR-FORM-006 |
-| User enters ADO org URL without trailing slash | Accept both `https://dev.azure.com/org` and `https://dev.azure.com/org/` | FR-FORM-001 |
-| User enters ADO org URL with project path appended | Validation error — only the base org URL is accepted | FR-FORM-001 |
-| User pastes UUID with surrounding whitespace | Trim whitespace before validation | FR-FORM-003 |
-| User enters topN = 0 | Validation error: minimum is 1 | FR-FORM-004 |
-| User enters topN = 200.5 | Validation error: must be integer | FR-FORM-004 |
-| Categories textarea has duplicate lines | Deduplicate on save (case-sensitive) | FR-CAT-001 |
-| Categories textarea has blank lines between entries | Ignore blank lines on save | FR-CAT-001 |
-| IPC getSettings fails on mount | Show error banner, form fields populated with defaults | FR-PERSIST-001 |
-| IPC setSettings fails | Show persistent error banner with details | FR-PERSIST-002 |
-| Test Connection called with empty/invalid fields | Button is always clickable (tests current saved config); error comes from the IPC response | FR-TEST-001, FR-TEST-002 |
-| User navigates away with unsaved changes | No unsaved-changes guard in FT-02 (out of scope — no router blocker) | — |
-| Settings page loads for the very first time (fresh install) | All fields populated with defaults from electron-store defaults (orgUrl='', topN=20, etc.) | FR-PERSIST-001 |
+| Scenario                                                    | Expected Behavior                                                                                | Related Requirement      |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------ |
+| User switches from OpenAI → Copilot → OpenAI                | API key value is preserved in form state across provider switches; field hides/shows accordingly | FR-FORM-005, FR-FORM-006 |
+| User enters ADO org URL without trailing slash              | Accept both `https://dev.azure.com/org` and `https://dev.azure.com/org/`                         | FR-FORM-001              |
+| User enters ADO org URL with project path appended          | Validation error — only the base org URL is accepted                                             | FR-FORM-001              |
+| User pastes UUID with surrounding whitespace                | Trim whitespace before validation                                                                | FR-FORM-003              |
+| User enters topN = 0                                        | Validation error: minimum is 1                                                                   | FR-FORM-004              |
+| User enters topN = 200.5                                    | Validation error: must be integer                                                                | FR-FORM-004              |
+| Categories textarea has duplicate lines                     | Deduplicate on save (case-sensitive)                                                             | FR-CAT-001               |
+| Categories textarea has blank lines between entries         | Ignore blank lines on save                                                                       | FR-CAT-001               |
+| IPC getSettings fails on mount                              | Show error banner, form fields populated with defaults                                           | FR-PERSIST-001           |
+| IPC setSettings fails                                       | Show persistent error banner with details                                                        | FR-PERSIST-002           |
+| Test Connection called with empty/invalid fields            | Button is always clickable (tests current saved config); error comes from the IPC response       | FR-TEST-001, FR-TEST-002 |
+| User navigates away with unsaved changes                    | No unsaved-changes guard in FT-02 (out of scope — no router blocker)                             | —                        |
+| Settings page loads for the very first time (fresh install) | All fields populated with defaults from electron-store defaults (orgUrl='', topN=20, etc.)       | FR-PERSIST-001           |
 
 ---
 
@@ -207,36 +207,40 @@
 ### Execution Waves
 
 #### Wave 1 — UI Primitives & Backend Stubs
+
 **Execution:** PARALLEL
 
-| Task ID | Type | Title | Description | Files | Depends On | Complexity |
-|---------|------|-------|-------------|-------|------------|------------|
-| T-001 | IMPLEMENT | Form UI components | Create shadcn-style Input, Label, Select, Textarea components | 4 new files | None | M |
-| T-002 | IMPLEMENT | Validation utilities | Pure validation functions for all settings fields | 1 new file | None | S |
-| T-003 | IMPLEMENT | TestConnectionResult type + IPC stub update | Add shared type; update IPC handlers to return structured response | 2 modified files | None | S |
+| Task ID | Type      | Title                                       | Description                                                        | Files            | Depends On | Complexity |
+| ------- | --------- | ------------------------------------------- | ------------------------------------------------------------------ | ---------------- | ---------- | ---------- |
+| T-001   | IMPLEMENT | Form UI components                          | Create shadcn-style Input, Label, Select, Textarea components      | 4 new files      | None       | M          |
+| T-002   | IMPLEMENT | Validation utilities                        | Pure validation functions for all settings fields                  | 1 new file       | None       | S          |
+| T-003   | IMPLEMENT | TestConnectionResult type + IPC stub update | Add shared type; update IPC handlers to return structured response | 2 modified files | None       | S          |
 
 #### Wave 2 — State Management Hook
+
 **Execution:** SEQUENTIAL (depends on Wave 1)
 
-| Task ID | Type | Title | Description | Files | Depends On | Complexity |
-|---------|------|-------|-------------|-------|------------|------------|
-| T-004 | IMPLEMENT | useSettings hook | Custom hook: load settings via IPC, form state, dirty tracking, validation integration, save via IPC, test connection calls | 1 new file | T-001, T-002, T-003 | M |
+| Task ID | Type      | Title            | Description                                                                                                                 | Files      | Depends On          | Complexity |
+| ------- | --------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------- | ---------- |
+| T-004   | IMPLEMENT | useSettings hook | Custom hook: load settings via IPC, form state, dirty tracking, validation integration, save via IPC, test connection calls | 1 new file | T-001, T-002, T-003 | M          |
 
 #### Wave 3 — Section Components
+
 **Execution:** PARALLEL (depends on T-004)
 
-| Task ID | Type | Title | Description | Files | Depends On | Complexity |
-|---------|------|-------|-------------|-------|------------|------------|
-| T-005 | IMPLEMENT | AdoConnectionSection | Card with org URL, project, query ID, PAT fields + Test Connection button | 1 new file | T-001, T-004 | M |
-| T-006 | IMPLEMENT | LlmProviderSection | Card with provider select, API key / Copilot status, chunk size + Test Connection button | 1 new file | T-001, T-004 | M |
-| T-007 | IMPLEMENT | CategoriesSection | Card with categories textarea, reset button, info note | 1 new file | T-001, T-004 | S |
+| Task ID | Type      | Title                | Description                                                                              | Files      | Depends On   | Complexity |
+| ------- | --------- | -------------------- | ---------------------------------------------------------------------------------------- | ---------- | ------------ | ---------- |
+| T-005   | IMPLEMENT | AdoConnectionSection | Card with org URL, project, query ID, PAT fields + Test Connection button                | 1 new file | T-001, T-004 | M          |
+| T-006   | IMPLEMENT | LlmProviderSection   | Card with provider select, API key / Copilot status, chunk size + Test Connection button | 1 new file | T-001, T-004 | M          |
+| T-007   | IMPLEMENT | CategoriesSection    | Card with categories textarea, reset button, info note                                   | 1 new file | T-001, T-004 | S          |
 
 #### Wave 4 — Page Assembly
+
 **Execution:** SEQUENTIAL (depends on Wave 3)
 
-| Task ID | Type | Title | Description | Files | Depends On | Complexity |
-|---------|------|-------|-------------|-------|------------|------------|
-| T-008 | INTEGRATE | SettingsPage assembly | Compose all sections in SettingsPage, wire save button, success/error feedback banners, security note | 1 modified file | T-004, T-005, T-006, T-007 | M |
+| Task ID | Type      | Title                 | Description                                                                                           | Files           | Depends On                 | Complexity |
+| ------- | --------- | --------------------- | ----------------------------------------------------------------------------------------------------- | --------------- | -------------------------- | ---------- |
+| T-008   | INTEGRATE | SettingsPage assembly | Compose all sections in SettingsPage, wire save button, success/error feedback banners, security note | 1 modified file | T-004, T-005, T-006, T-007 | M          |
 
 ### Critical Path
 
@@ -247,6 +251,7 @@ T-001 → T-004 → T-005 → T-008 (4 tasks)
 ---
 
 #### T-001: Form UI Components
+
 - **Type:** IMPLEMENT
 - **Wave:** 1 — PARALLEL
 - **Files:**
@@ -271,6 +276,7 @@ T-001 → T-004 → T-005 → T-008 (4 tasks)
 ---
 
 #### T-002: Validation Utilities
+
 - **Type:** IMPLEMENT
 - **Wave:** 1 — PARALLEL
 - **Files:**
@@ -304,6 +310,7 @@ T-001 → T-004 → T-005 → T-008 (4 tasks)
 ---
 
 #### T-003: TestConnectionResult Type + IPC Stub Update
+
 - **Type:** IMPLEMENT
 - **Wave:** 1 — PARALLEL
 - **Files:**
@@ -339,6 +346,7 @@ T-001 → T-004 → T-005 → T-008 (4 tasks)
 ---
 
 #### T-004: useSettings Hook
+
 - **Type:** IMPLEMENT
 - **Wave:** 2 — SEQUENTIAL
 - **Files:**
@@ -379,6 +387,7 @@ T-001 → T-004 → T-005 → T-008 (4 tasks)
 - **Output:** 1 hook file.
 
 **Exported interface for downstream tasks (T-005, T-006, T-007, T-008):**
+
 ```ts
 interface UseSettingsReturn {
   settings: AppSettings
@@ -407,6 +416,7 @@ interface UseSettingsReturn {
 ---
 
 #### T-005: AdoConnectionSection Component
+
 - **Type:** IMPLEMENT
 - **Wave:** 3 — PARALLEL
 - **Files:**
@@ -447,6 +457,7 @@ interface UseSettingsReturn {
 ---
 
 #### T-006: LlmProviderSection Component
+
 - **Type:** IMPLEMENT
 - **Wave:** 3 — PARALLEL
 - **Files:**
@@ -486,6 +497,7 @@ interface UseSettingsReturn {
 ---
 
 #### T-007: CategoriesSection Component
+
 - **Type:** IMPLEMENT
 - **Wave:** 3 — PARALLEL
 - **Files:**
@@ -518,6 +530,7 @@ interface UseSettingsReturn {
 ---
 
 #### T-008: SettingsPage Assembly
+
 - **Type:** INTEGRATE
 - **Wave:** 4 — SEQUENTIAL
 - **Files:**
@@ -527,6 +540,7 @@ interface UseSettingsReturn {
   2. Import and call `useSettings()` hook.
   3. **Loading state:** While `loading` is true, show a centered spinner or skeleton.
   4. **Page layout:**
+
      ```
      <div className="p-6 max-w-4xl mx-auto space-y-6">
        <!-- Page header -->
@@ -554,11 +568,13 @@ interface UseSettingsReturn {
        </div>
      </div>
      ```
+
   5. **Security note:** Inline info box at the top: `bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800` with `Shield` icon: "Credentials are stored locally in encrypted form using machine-specific keys."
   6. **Save feedback:** Conditional banner below the heading. `saveResult?.type === 'success'` → green banner, auto-dismiss after 3 seconds via `setTimeout` + `clearSaveResult()`. `saveResult?.type === 'error'` → red banner with dismiss X button.
   7. **Wire props:** Pass `settings`, `errors`, `touched`, `updateField` to each section. Pass test connection handlers and results to their respective sections. Pass categories helpers to CategoriesSection.
   8. The categories `onCategoriesChange` calls `updateField('categories', newCategories)`.
   9. Save button uses `Loader2` spinner from lucide-react when `saving` is true.
+
 - **Acceptance Criteria:**
   - Page loads settings from IPC and populates all sections.
   - All validation errors display inline.
@@ -574,34 +590,34 @@ interface UseSettingsReturn {
 
 ### Risk Register
 
-| Risk | Impact | Likelihood | Mitigation |
-|------|--------|------------|------------|
-| Form state complexity leads to stale/inconsistent state | Medium | Low | Single `useSettings` hook as single source of truth; no duplicated state in section components |
-| Validation regex for ADO URL too strict (rejects valid org URLs) | Low | Medium | Accept both known formats; document that unusual URLs may need adjustment |
-| Provider switch loses API key value | Medium | Low | Preserve API key in state regardless of provider; only hide the field |
-| IPC error during save not surfaced to user | High | Low | Wrap all IPC calls in try/catch; show error banner with details |
-| Test Connection timeout not handled | Medium | Low | 5-second `Promise.race` timeout in hook; show timeout-specific error message |
-| electron-store default values differ from form defaults | Low | Low | FT-01 already set defaults in store schema; hook falls back to defaults on load error |
-| Categories textarea performance with very large lists | Low | Very Low | Textarea is fine for hundreds of lines; no virtualization needed |
+| Risk                                                             | Impact | Likelihood | Mitigation                                                                                     |
+| ---------------------------------------------------------------- | ------ | ---------- | ---------------------------------------------------------------------------------------------- |
+| Form state complexity leads to stale/inconsistent state          | Medium | Low        | Single `useSettings` hook as single source of truth; no duplicated state in section components |
+| Validation regex for ADO URL too strict (rejects valid org URLs) | Low    | Medium     | Accept both known formats; document that unusual URLs may need adjustment                      |
+| Provider switch loses API key value                              | Medium | Low        | Preserve API key in state regardless of provider; only hide the field                          |
+| IPC error during save not surfaced to user                       | High   | Low        | Wrap all IPC calls in try/catch; show error banner with details                                |
+| Test Connection timeout not handled                              | Medium | Low        | 5-second `Promise.race` timeout in hook; show timeout-specific error message                   |
+| electron-store default values differ from form defaults          | Low    | Low        | FT-01 already set defaults in store schema; hook falls back to defaults on load error          |
+| Categories textarea performance with very large lists            | Low    | Very Low   | Textarea is fine for hundreds of lines; no virtualization needed                               |
 
 ---
 
 ### File Inventory
 
-| File | Action | Task |
-|------|--------|------|
-| `src/renderer/src/components/ui/input.tsx` | Create | T-001 |
-| `src/renderer/src/components/ui/label.tsx` | Create | T-001 |
-| `src/renderer/src/components/ui/select.tsx` | Create | T-001 |
-| `src/renderer/src/components/ui/textarea.tsx` | Create | T-001 |
-| `src/renderer/src/lib/validation.ts` | Create | T-002 |
-| `src/shared/types.ts` | Modify | T-003 |
-| `src/main/ipc-handlers.ts` | Modify | T-003 |
-| `src/renderer/src/hooks/useSettings.ts` | Create | T-004 |
+| File                                                            | Action | Task  |
+| --------------------------------------------------------------- | ------ | ----- |
+| `src/renderer/src/components/ui/input.tsx`                      | Create | T-001 |
+| `src/renderer/src/components/ui/label.tsx`                      | Create | T-001 |
+| `src/renderer/src/components/ui/select.tsx`                     | Create | T-001 |
+| `src/renderer/src/components/ui/textarea.tsx`                   | Create | T-001 |
+| `src/renderer/src/lib/validation.ts`                            | Create | T-002 |
+| `src/shared/types.ts`                                           | Modify | T-003 |
+| `src/main/ipc-handlers.ts`                                      | Modify | T-003 |
+| `src/renderer/src/hooks/useSettings.ts`                         | Create | T-004 |
 | `src/renderer/src/components/settings/AdoConnectionSection.tsx` | Create | T-005 |
-| `src/renderer/src/components/settings/LlmProviderSection.tsx` | Create | T-006 |
-| `src/renderer/src/components/settings/CategoriesSection.tsx` | Create | T-007 |
-| `src/renderer/src/pages/SettingsPage.tsx` | Modify | T-008 |
+| `src/renderer/src/components/settings/LlmProviderSection.tsx`   | Create | T-006 |
+| `src/renderer/src/components/settings/CategoriesSection.tsx`    | Create | T-007 |
+| `src/renderer/src/pages/SettingsPage.tsx`                       | Modify | T-008 |
 
 **Total: 10 new files, 2 modified files**
 
@@ -613,13 +629,13 @@ interface UseSettingsReturn {
 - **Non-functional coverage:** High — Security (NFR-SEC), performance (NFR-PERF), maintainability (NFR-MAINT) addressed.
 - **Task-to-requirement mapping:** Complete — every FR is covered by at least one task.
 
-| Requirement | Task(s) |
-|-------------|---------|
-| FR-FORM-001..009 | T-001, T-005, T-006 |
-| FR-CAT-001..003 | T-007 |
-| FR-PERSIST-001..003 | T-004, T-008 |
-| FR-TEST-001..003 | T-003, T-004, T-005, T-006 |
-| FR-UX-001..004 | T-001, T-002, T-004, T-005, T-006, T-007, T-008 |
+| Requirement         | Task(s)                                         |
+| ------------------- | ----------------------------------------------- |
+| FR-FORM-001..009    | T-001, T-005, T-006                             |
+| FR-CAT-001..003     | T-007                                           |
+| FR-PERSIST-001..003 | T-004, T-008                                    |
+| FR-TEST-001..003    | T-003, T-004, T-005, T-006                      |
+| FR-UX-001..004      | T-001, T-002, T-004, T-005, T-006, T-007, T-008 |
 
 ### Status
 

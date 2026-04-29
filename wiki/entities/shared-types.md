@@ -21,10 +21,10 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Core types
 
-| Type              | Purpose                                                           |
-| ----------------- | ----------------------------------------------------------------- |
-| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'github-copilot' \| 'gemini'`  |
-| `ErrorCode`       | Union of known error codes (ADO*\*, LLM*_, STORE\__, UNKNOWN\_\*) |
+| Type              | Purpose                                                             |
+| ----------------- | ------------------------------------------------------------------- |
+| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'github-copilot' \| 'gemini'`    |
+| `ErrorCode`       | Union of known error codes (ADO*\*, LLM*\_, STORE\_\_, UNKNOWN\_\*) |
 
 ### Bug types
 
@@ -56,11 +56,11 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Connection Testing
 
-| Type                   | Purpose                                                          |
-| ---------------------- | ---------------------------------------------------------------- |
+| Type                   | Purpose                                                              |
+| ---------------------- | -------------------------------------------------------------------- |
 | `TestConnectionResult` | Structured response from test connection IPC: `{ success, message }` |
 
-*Added in FT-02.* Used by test connection stubs in [[wiki/entities/ipc-handlers]] and consumed by [[wiki/entities/use-settings-hook]].
+_Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]] and consumed by [[wiki/entities/use-settings-hook]].
 
 ## See also
 

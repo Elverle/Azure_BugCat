@@ -98,7 +98,9 @@ export function LlmProviderSection({
           <div className="space-y-2">
             <Label>Authentication Status</Label>
             <div>
-              <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${badge.className}`}>
+              <span
+                className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${badge.className}`}
+              >
                 {badge.label}
               </span>
             </div>

@@ -21,24 +21,24 @@ Full implementation of the Settings page for the Bug Categorizer Electron app. I
 
 ## Files Created
 
-| File | Purpose |
-|---|---|
-| `src/renderer/src/pages/SettingsPage.tsx` | Full settings page (replaced placeholder) |
-| `src/renderer/src/hooks/useSettings.ts` | Central state management hook |
-| `src/renderer/src/lib/validation.ts` | Pure validation functions |
-| `src/renderer/src/components/settings/AdoConnectionSection.tsx` | ADO settings card |
-| `src/renderer/src/components/settings/LlmProviderSection.tsx` | LLM provider settings card |
-| `src/renderer/src/components/settings/CategoriesSection.tsx` | Categories editor card |
-| `src/renderer/src/components/ui/input.tsx` | Input UI component |
-| `src/renderer/src/components/ui/label.tsx` | Label UI component |
-| `src/renderer/src/components/ui/select.tsx` | Select UI component |
-| `src/renderer/src/components/ui/textarea.tsx` | Textarea UI component |
+| File                                                            | Purpose                                   |
+| --------------------------------------------------------------- | ----------------------------------------- |
+| `src/renderer/src/pages/SettingsPage.tsx`                       | Full settings page (replaced placeholder) |
+| `src/renderer/src/hooks/useSettings.ts`                         | Central state management hook             |
+| `src/renderer/src/lib/validation.ts`                            | Pure validation functions                 |
+| `src/renderer/src/components/settings/AdoConnectionSection.tsx` | ADO settings card                         |
+| `src/renderer/src/components/settings/LlmProviderSection.tsx`   | LLM provider settings card                |
+| `src/renderer/src/components/settings/CategoriesSection.tsx`    | Categories editor card                    |
+| `src/renderer/src/components/ui/input.tsx`                      | Input UI component                        |
+| `src/renderer/src/components/ui/label.tsx`                      | Label UI component                        |
+| `src/renderer/src/components/ui/select.tsx`                     | Select UI component                       |
+| `src/renderer/src/components/ui/textarea.tsx`                   | Textarea UI component                     |
 
 ## Files Modified
 
-| File | Change |
-|---|---|
-| `src/shared/types.ts` | Added `TestConnectionResult` interface |
+| File                       | Change                                                                                 |
+| -------------------------- | -------------------------------------------------------------------------------------- |
+| `src/shared/types.ts`      | Added `TestConnectionResult` interface                                                 |
 | `src/main/ipc-handlers.ts` | Test connection stubs now return structured `{ success, message }` instead of throwing |
 
 ## Key Design Decisions

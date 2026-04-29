@@ -23,9 +23,9 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ### Features
 
-| #   | ID    | Descrizione                             | Status |
-| --- | ----- | --------------------------------------- | ------ |
-| 1   | FT-01 | Scaffold Electron + Infrastruttura Base | Done   |
+| #   | ID    | Descrizione                                  | Status |
+| --- | ----- | -------------------------------------------- | ------ |
+| 1   | FT-01 | Scaffold Electron + Infrastruttura Base      | Done   |
 | 2   | FT-02 | Pagina Settings e Persistenza Configurazione | Done   |
 
 ## Sources
