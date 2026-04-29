@@ -19,20 +19,20 @@ Pure validation functions for all settings fields. No React dependencies — can
 
 ## Validators
 
-| Function | Field(s) | Rule |
-|---|---|---|
-| `validateOrgUrl(url)` | `orgUrl` | Required; must match `https://dev.azure.com/{org}` or `https://{org}.visualstudio.com` |
-| `validateRequired(value, fieldName)` | `projectName`, `pat` | Non-empty after trim |
-| `validateUUID(value)` | `queryId` | Required; must be valid UUID format |
-| `validateIntRange(value, min, max, fieldName)` | `topN` (1–200), `chunkSize` (5–30) | Must be integer within range |
-| `validateApiKey(value, provider)` | `apiKey` | Required unless provider is `github-copilot` |
+| Function                                       | Field(s)                           | Rule                                                                                   |
+| ---------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
+| `validateOrgUrl(url)`                          | `orgUrl`                           | Required; must match `https://dev.azure.com/{org}` or `https://{org}.visualstudio.com` |
+| `validateRequired(value, fieldName)`           | `projectName`, `pat`               | Non-empty after trim                                                                   |
+| `validateUUID(value)`                          | `queryId`                          | Required; must be valid UUID format                                                    |
+| `validateIntRange(value, min, max, fieldName)` | `topN` (1–200), `chunkSize` (5–30) | Must be integer within range                                                           |
+| `validateApiKey(value, provider)`              | `apiKey`                           | Required unless provider is `github-copilot`                                           |
 
 ## Aggregate Functions
 
-| Function | Purpose |
-|---|---|
+| Function                     | Purpose                                                       |
+| ---------------------------- | ------------------------------------------------------------- |
 | `validateSettings(settings)` | Runs all validators, returns `Record<string, string \| null>` |
-| `isSettingsValid(errors)` | Returns `true` if all error values are `null` |
+| `isSettingsValid(errors)`    | Returns `true` if all error values are `null`                 |
 
 ## Regex Patterns
 

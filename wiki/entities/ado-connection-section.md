@@ -33,12 +33,12 @@ interface AdoConnectionSectionProps {
 
 ## Field Layout
 
-| Row | Fields |
-|---|---|
-| 1 | Organization URL (full width) |
-| 2 | Project Name + Query ID (2-col grid) |
-| 3 | Top N Bugs + PAT (2-col grid, PAT has eye toggle) |
-| 4 | Test Connection button (right-aligned) + result message |
+| Row | Fields                                                  |
+| --- | ------------------------------------------------------- |
+| 1   | Organization URL (full width)                           |
+| 2   | Project Name + Query ID (2-col grid)                    |
+| 3   | Top N Bugs + PAT (2-col grid, PAT has eye toggle)       |
+| 4   | Test Connection button (right-aligned) + result message |
 
 ## Features
 

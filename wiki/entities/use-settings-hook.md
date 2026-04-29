@@ -46,16 +46,16 @@ export interface UseSettingsReturn {
 
 ## State Management
 
-| State | Type | Purpose |
-|---|---|---|
-| `settings` | `AppSettings` | Current form values |
-| `originalSettings` | `AppSettings` | Snapshot at load time, for dirty comparison |
-| `errors` | `Record<string, string \| null>` | Per-field validation errors |
-| `touched` | `Record<string, boolean>` | Tracks which fields user has interacted with |
-| `loading` | `boolean` | True while loading from IPC |
-| `saving` | `boolean` | True while saving to IPC |
-| `saveResult` | `ResultMessage \| null` | Success/error feedback after save |
-| `testAdoResult` / `testLlmResult` | `ResultMessage \| null` | Test connection feedback |
+| State                             | Type                             | Purpose                                      |
+| --------------------------------- | -------------------------------- | -------------------------------------------- |
+| `settings`                        | `AppSettings`                    | Current form values                          |
+| `originalSettings`                | `AppSettings`                    | Snapshot at load time, for dirty comparison  |
+| `errors`                          | `Record<string, string \| null>` | Per-field validation errors                  |
+| `touched`                         | `Record<string, boolean>`        | Tracks which fields user has interacted with |
+| `loading`                         | `boolean`                        | True while loading from IPC                  |
+| `saving`                          | `boolean`                        | True while saving to IPC                     |
+| `saveResult`                      | `ResultMessage \| null`          | Success/error feedback after save            |
+| `testAdoResult` / `testLlmResult` | `ResultMessage \| null`          | Test connection feedback                     |
 
 ## Key Behaviors
 
@@ -72,10 +72,16 @@ export interface UseSettingsReturn {
 
 ```typescript
 const DEFAULT_SETTINGS: AppSettings = {
-  orgUrl: '', projectName: '', queryId: '',
-  topN: 20, chunkSize: 15,
-  llmProvider: 'openai', apiKey: '', pat: '',
-  categories: [], copilotAuthStatus: 'unknown'
+  orgUrl: '',
+  projectName: '',
+  queryId: '',
+  topN: 20,
+  chunkSize: 15,
+  llmProvider: 'openai',
+  apiKey: '',
+  pat: '',
+  categories: [],
+  copilotAuthStatus: 'unknown'
 }
 ```
 

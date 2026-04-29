@@ -19,16 +19,16 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 
 ## Registered Handlers
 
-| Channel               | Status         | Action                                 |
-| --------------------- | -------------- | -------------------------------------- |
-| `ping`                | ✅ Implemented | Returns `'pong'`                       |
-| `settings:get`        | ✅ Implemented | Returns `store.get('settings')`        |
-| `settings:set`        | ✅ Implemented | Calls `store.set('settings', payload)` |
-| `session:get`         | ✅ Implemented | Returns `store.get('session')`         |
-| `session:clear`       | ✅ Implemented | Sets `session` to `null`               |
-| `ado:fetch-bugs`      | ⏳ Placeholder | Throws `Not implemented — FT-03`       |
+| Channel               | Status         | Action                                                                  |
+| --------------------- | -------------- | ----------------------------------------------------------------------- |
+| `ping`                | ✅ Implemented | Returns `'pong'`                                                        |
+| `settings:get`        | ✅ Implemented | Returns `store.get('settings')`                                         |
+| `settings:set`        | ✅ Implemented | Calls `store.set('settings', payload)`                                  |
+| `session:get`         | ✅ Implemented | Returns `store.get('session')`                                          |
+| `session:clear`       | ✅ Implemented | Sets `session` to `null`                                                |
+| `ado:fetch-bugs`      | ⏳ Placeholder | Throws `Not implemented — FT-03`                                        |
 | `ado:test-connection` | ⏳ Stub        | Returns `{ success: false, message: '...not yet implemented (FT-03)' }` |
-| `llm:categorize`      | ⏳ Placeholder | Throws `Not implemented — FT-04`       |
+| `llm:categorize`      | ⏳ Placeholder | Throws `Not implemented — FT-04`                                        |
 | `llm:test-connection` | ⏳ Stub        | Returns `{ success: false, message: '...not yet implemented (FT-04)' }` |
 
 ## Security Notes

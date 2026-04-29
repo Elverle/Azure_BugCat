@@ -1,9 +1,9 @@
 # Wiki Operation Log
 
-| Date       | Action                     | Author         | Notes                                                                       |
-| ---------- | -------------------------- | -------------- | --------------------------------------------------------------------------- |
-| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                              |
-| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics. |
+| Date       | Action                     | Author         | Notes                                                                                           |
+| ---------- | -------------------------- | -------------- | ----------------------------------------------------------------------------------------------- |
+| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                  |
+| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                     |
 | 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic. |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base

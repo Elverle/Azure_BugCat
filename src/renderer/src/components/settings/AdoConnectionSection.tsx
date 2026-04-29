@@ -113,9 +113,7 @@ export function AdoConnectionSection({
                 {showPat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-            {touched.pat && errors.pat && (
-              <p className="text-xs text-red-500 mt-1">{errors.pat}</p>
-            )}
+            {touched.pat && errors.pat && <p className="text-xs text-red-500 mt-1">{errors.pat}</p>}
           </div>
         </div>
 
