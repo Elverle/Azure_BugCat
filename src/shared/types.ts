@@ -77,3 +77,8 @@ export interface LLMCategorizeResult {
 export interface LLMResponse {
   results: LLMCategorizeResult[]
 }
+
+export interface TestConnectionResult {
+  success: boolean
+  message: string
+}
