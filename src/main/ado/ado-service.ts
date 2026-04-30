@@ -26,15 +26,25 @@ function buildConfig(settings: AppSettings): AdoConnectionConfig {
 function mapWorkItemToBug(item: WorkItemRaw): BugItem {
   const fields = item.fields
 
-  const assignedTo = fields['System.AssignedTo'] as { displayName?: string } | null | undefined
+  const assignedTo = fields['System.AssignedTo'] as
+    | { displayName?: string }
+    | string
+    | null
+    | undefined
   const tagsRaw = fields['System.Tags'] as string | null | undefined
   const tags = tagsRaw ? tagsRaw.split('; ').filter((t) => t !== '') : []
+  const assignee =
+    typeof assignedTo === 'string'
+      ? assignedTo
+      : assignedTo && typeof assignedTo === 'object'
+        ? assignedTo.displayName ?? null
+        : null
 
   return {
     id: (fields['System.Id'] as number) ?? item.id,
     title: (fields['System.Title'] as string) ?? '',
     state: (fields['System.State'] as string) ?? '',
-    assignee: assignedTo?.displayName ?? null,
+    assignee,
     areaPath: (fields['System.AreaPath'] as string) ?? '',
     description: htmlToText(fields['System.Description'] as string | null | undefined),
     priority: (fields['Microsoft.VSTS.Common.Priority'] as number) ?? 0,

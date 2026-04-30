@@ -1,8 +1,9 @@
-import { ipcMain } from 'electron'
+import { ipcMain, IpcMainInvokeEvent } from 'electron'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { store } from './store'
-import { AppSettings } from '../shared/types'
+import { AppSettings, BugItem, SessionData, TestConnectionResult } from '../shared/types'
 import { fetchBugsFromQuery, testAdoConnection } from './ado/ado-service'
+import { categorizeBugs, testLLMConnection } from './llm'
 
 export function registerIPCHandlers(): void {
   // Ping
@@ -30,17 +31,66 @@ export function registerIPCHandlers(): void {
     if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
     return fetchBugsFromQuery(settings)
   })
-  ipcMain.handle(IPC_CHANNELS.ADO_TEST_CONNECTION, async () => {
-    const settings = store.get('settings') as AppSettings | null
-    if (!settings) return { success: false, message: 'Settings non configurate' }
-    return testAdoConnection(settings)
-  })
+  ipcMain.handle(
+    IPC_CHANNELS.ADO_TEST_CONNECTION,
+    async (_event, settingsOverride?: AppSettings) => {
+      const settings = settingsOverride ?? (store.get('settings') as AppSettings | null) ?? null
+      if (!settings) return { success: false, message: 'Settings non configurate' }
+      return testAdoConnection(settings)
+    }
+  )
 
-  // LLM placeholders — will be implemented in FT-04
-  ipcMain.handle(IPC_CHANNELS.LLM_CATEGORIZE, () => {
-    throw new Error('Not implemented — FT-04')
+  // LLM
+  ipcMain.handle(IPC_CHANNELS.LLM_CATEGORIZE, async (event: IpcMainInvokeEvent) => {
+    const settings = store.get('settings') as AppSettings | null
+    if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
+
+    const session = store.get('session') as SessionData | null
+    if (!session?.bugs?.length) throw { code: 'STORE_ERROR', message: 'Nessun bug in sessione' }
+
+    const bugs: BugItem[] = session.bugs
+
+    const categorized = await categorizeBugs(settings, bugs, (progress) => {
+      event.sender.send(IPC_CHANNELS.LLM_CATEGORIZE_PROGRESS, progress)
+    })
+
+    const updatedSession: SessionData = {
+      bugs: categorized,
+      fetchedAt: session.fetchedAt,
+      categorizedAt: new Date().toISOString()
+    }
+    store.set('session', updatedSession)
+
+    return categorized
   })
-  ipcMain.handle(IPC_CHANNELS.LLM_TEST_CONNECTION, () => {
-    return { success: false, message: 'LLM connection test not yet implemented (FT-04)' }
-  })
+  ipcMain.handle(
+    IPC_CHANNELS.LLM_TEST_CONNECTION,
+    async (_event, settingsOverride?: AppSettings) => {
+      const settings = settingsOverride ?? (store.get('settings') as AppSettings | null) ?? null
+      if (!settings)
+        return { success: false, message: 'Settings non configurate' } as TestConnectionResult
+
+      if (settings.llmProvider === 'github-copilot') {
+        if (settings.copilotAuthStatus === 'unauthenticated') {
+          return {
+            success: false,
+            message: 'Autenticazione GitHub Copilot richiesta'
+          } as TestConnectionResult
+        }
+      } else if (!settings.apiKey?.trim()) {
+        return { success: false, message: 'API Key mancante' } as TestConnectionResult
+      }
+
+      try {
+        await testLLMConnection(settings)
+        return { success: true, message: 'Connessione LLM riuscita' } as TestConnectionResult
+      } catch (error: unknown) {
+        const message =
+          error !== null && typeof error === 'object' && 'message' in error
+            ? (error as { message: string }).message
+            : 'Errore sconosciuto'
+        return { success: false, message } as TestConnectionResult
+      }
+    }
+  )
 }

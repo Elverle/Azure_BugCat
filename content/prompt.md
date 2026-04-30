@@ -31,6 +31,7 @@ Sei un agente di sviluppo software senior incaricato di implementare **solo la f
 - Provider LLM: tramite **SDK**
 - Architettura Electron: chiamate esterne e gestione credenziali nel **Main Process**, UI nel **Renderer**, bridge tramite **Preload/contextBridge**
 - Rispetta tutte le decisioni architetturali e i vincoli descritti nel PRD
+- Scrivi o adegua sempre i test
 
 ## Regole di implementazione
 
@@ -41,6 +42,7 @@ Sei un agente di sviluppo software senior incaricato di implementare **solo la f
 5. Non introdurre nuove dipendenze se non sono strettamente necessarie e coerenti con il PRD.
 6. Se la feature include UI, layout, componenti, interazioni o UX, **leggi anche `design.html`** e usalo come riferimento visivo primario.
 7. Se la feature **non** tocca la UI, non usare `design.html` come vincolo principale.
+8. Scrivi sempre i test per la feature implementata, o adatta quelli esistenti se presenti e pertinenti.
 
 ## Regole specifiche sul design
 
