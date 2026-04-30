@@ -1,5 +1,6 @@
 {
   "chat.tools.terminal.autoApprove": {
-    "npx electron-vite": true
+    "npx electron-vite": true,
+    "npx tsc": true
   }
 }

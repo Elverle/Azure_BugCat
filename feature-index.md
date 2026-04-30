@@ -4,3 +4,4 @@
 | --- | ---------- | -------------------------------------------- | -------- |
 | 1   | FT-01      | Scaffold Electron + Infrastruttura Base      | Complete |
 | 2   | FT-02      | Pagina Settings e Persistenza Configurazione | Complete |
+| 3   | FT-03      | Recupero Bug da Azure DevOps                 | Complete |

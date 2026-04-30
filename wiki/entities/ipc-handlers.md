@@ -3,8 +3,13 @@ title: 'IPC Handlers'
 type: entity
 subtype: service
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-02-settings]]']
+updated: 2026-04-30
+sources:
+  [
+    '[[wiki/sources/ft-01-scaffold]]',
+    '[[wiki/sources/ft-02-settings]]',
+    '[[wiki/sources/ft-03-ado-fetch]]'
+  ]
 tags: [electron, ipc, main-process]
 lang: en
 ---
@@ -26,8 +31,8 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 | `settings:set`        | ✅ Implemented | Calls `store.set('settings', payload)`                                  |
 | `session:get`         | ✅ Implemented | Returns `store.get('session')`                                          |
 | `session:clear`       | ✅ Implemented | Sets `session` to `null`                                                |
-| `ado:fetch-bugs`      | ⏳ Placeholder | Throws `Not implemented — FT-03`                                        |
-| `ado:test-connection` | ⏳ Stub        | Returns `{ success: false, message: '...not yet implemented (FT-03)' }` |
+| `ado:fetch-bugs`      | ✅ Implemented | Validates settings, calls `fetchBugsFromQuery()`, returns `BugItem[]`   |
+| `ado:test-connection` | ✅ Implemented | Calls `testAdoConnection()`, returns `TestConnectionResult`             |
 | `llm:categorize`      | ⏳ Placeholder | Throws `Not implemented — FT-04`                                        |
 | `llm:test-connection` | ⏳ Stub        | Returns `{ success: false, message: '...not yet implemented (FT-04)' }` |
 
@@ -40,6 +45,7 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 
 - [[wiki/entities/electron-store]] — `store` instance
 - `src/shared/ipc-channels.ts` — `IPC_CHANNELS` constant map
+- [[wiki/entities/ado-service]] — `fetchBugsFromQuery`, `testAdoConnection`
 
 ## See also
 
