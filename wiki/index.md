@@ -27,11 +27,13 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | --- | ----- | -------------------------------------------- | ------ |
 | 1   | FT-01 | Scaffold Electron + Infrastruttura Base      | Done   |
 | 2   | FT-02 | Pagina Settings e Persistenza Configurazione | Done   |
+| 3   | FT-03 | Azure DevOps Bug Fetching (Main Process)     | Done   |
 
 ## Sources
 
 - [[wiki/sources/ft-01-scaffold]] — FT-01 scaffold: electron-vite, React 18, IPC architecture, encrypted store (2026-04-29)
 - [[wiki/sources/ft-02-settings]] — FT-02 Settings page: form validation, IPC persistence, test connections, UI primitives (2026-04-29)
+- [[wiki/sources/ft-03-ado-fetch]] — FT-03 ADO bug fetching: WIQL query, batch fetch, field mapping, HTML→text, typed errors (2026-04-30)
 
 ## Entities
 
@@ -54,6 +56,10 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/entities/categories-section]] — Categories textarea editor card (FT-02)
 - [[wiki/entities/use-settings-hook]] — Central settings state management hook (FT-02)
 - [[wiki/entities/validation-utils]] — Pure validation functions for settings fields (FT-02)
+- [[wiki/entities/ado-types]] — ADO interfaces, QueryStrategy, constants (FT-03)
+- [[wiki/entities/ado-client]] — Low-level ADO HTTP client with auth and error mapping (FT-03)
+- [[wiki/entities/ado-service]] — ADO orchestration: validate → query → batch → map (FT-03)
+- [[wiki/entities/html-to-text]] — HTML→plain text conversion utility (FT-03)
 
 ## Concepts
 
@@ -62,6 +68,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/concepts/tailwind-styling]] — Tailwind CSS + Inter font + shadcn/ui approach + cn() utility
 - [[wiki/concepts/form-validation-pattern]] — Pure validation functions + React hook two-layer pattern (FT-02)
 - [[wiki/concepts/settings-persistence-flow]] — Renderer → IPC → Main → encrypted electron-store flow (FT-02)
+- [[wiki/concepts/ado-rest-api-pattern]] — ADO REST API consumption: layered architecture, batching, typed errors (FT-03)
 
 ## Topics
 

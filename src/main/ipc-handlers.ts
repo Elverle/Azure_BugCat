@@ -1,6 +1,8 @@
 import { ipcMain } from 'electron'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { store } from './store'
+import { AppSettings } from '../shared/types'
+import { fetchBugsFromQuery, testAdoConnection } from './ado/ado-service'
 
 export function registerIPCHandlers(): void {
   // Ping
@@ -22,13 +24,19 @@ export function registerIPCHandlers(): void {
     store.set('session', null)
   })
 
-  // ADO and LLM placeholders — will be implemented in FT-03 and FT-04
-  ipcMain.handle(IPC_CHANNELS.ADO_FETCH_BUGS, () => {
-    throw new Error('Not implemented — FT-03')
+  // Azure DevOps
+  ipcMain.handle(IPC_CHANNELS.ADO_FETCH_BUGS, async () => {
+    const settings = store.get('settings') as AppSettings | null
+    if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
+    return fetchBugsFromQuery(settings)
   })
-  ipcMain.handle(IPC_CHANNELS.ADO_TEST_CONNECTION, () => {
-    return { success: false, message: 'ADO connection test not yet implemented (FT-03)' }
+  ipcMain.handle(IPC_CHANNELS.ADO_TEST_CONNECTION, async () => {
+    const settings = store.get('settings') as AppSettings | null
+    if (!settings) return { success: false, message: 'Settings non configurate' }
+    return testAdoConnection(settings)
   })
+
+  // LLM placeholders — will be implemented in FT-04
   ipcMain.handle(IPC_CHANNELS.LLM_CATEGORIZE, () => {
     throw new Error('Not implemented — FT-04')
   })

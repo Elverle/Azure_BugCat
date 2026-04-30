@@ -5,6 +5,7 @@
 | 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                  |
 | 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                     |
 | 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic. |
+| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.           |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -48,6 +49,24 @@ Pages created:
 - [[wiki/entities/input-component]]
 - [[wiki/entities/label-component]]
 - [[wiki/entities/select-component]]
+
+## [2026-04-30] scan | FT-03 — Azure DevOps Bug Fetching
+
+Scanned FT-03 feature: ADO service layer with WIQL query execution, batch work item fetching, HTML→text conversion, typed error handling, and IPC handler wiring.
+
+Pages created:
+
+- [[wiki/sources/ft-03-ado-fetch]]
+- [[wiki/entities/ado-types]]
+- [[wiki/entities/ado-client]]
+- [[wiki/entities/ado-service]]
+- [[wiki/entities/html-to-text]]
+- [[wiki/concepts/ado-rest-api-pattern]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/textarea-component]]
 - [[wiki/concepts/form-validation-pattern]]
 - [[wiki/concepts/settings-persistence-flow]]
