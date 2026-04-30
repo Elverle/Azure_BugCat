@@ -27,7 +27,7 @@ export class AnthropicProvider implements LLMProvider {
     try {
       const response = await this.client.messages.create(
         {
-          model: this.config.model ?? 'claude-sonnet-4-20250514',
+          model: this.config.model ?? 'claude-sonnet-4.6',
           max_tokens: 4096,
           system: systemPrompt,
           messages: [{ role: 'user', content: userMessage }]

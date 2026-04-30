@@ -2,21 +2,21 @@
 title: 'Renderer UI'
 type: topic
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-02-settings]]']
+updated: 2026-04-30
+sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-05-dashboard]]']
 tags: [react, ui, routing, tailwind, shadcn-ui]
 lang: en
 ---
 
 ## Overview
 
-The renderer is a React 18 SPA bundled by Vite, styled with Tailwind CSS + Inter font, and using shadcn/ui components (manual). Routing uses `HashRouter` for Electron `file://` compatibility.
+The renderer is a React 18 SPA bundled by Vite, styled with Tailwind CSS + Inter font, and using shadcn/ui components (manual). Routing uses `HashRouter` for Electron `file://` compatibility. The primary landing surface is now the dashboard workspace for exploring fetched and categorized bugs.
 
 ## Routing
 
 | Path        | Component       | Status                 |
 | ----------- | --------------- | ---------------------- |
-| `/`         | `DashboardPage` | Placeholder (FT-05)    |
+| `/`         | `DashboardPage` | ✅ Implemented (FT-05) |
 | `/settings` | `SettingsPage`  | ✅ Implemented (FT-02) |
 | `*`         | `Navigate to /` | Catch-all redirect     |
 
@@ -49,12 +49,29 @@ All routes are wrapped in `AppLayout` (Topbar + Outlet).
 | [[wiki/entities/label-component]]        | UI primitive     | shadcn Label                |
 | [[wiki/entities/select-component]]       | UI primitive     | shadcn Select               |
 | [[wiki/entities/textarea-component]]     | UI primitive     | shadcn Textarea             |
+| [[wiki/entities/dashboard-page]]         | Page             | Main bug triage workspace   |
+| [[wiki/entities/dashboard-header]]       | Page header      | Fetch/Categorize actions    |
+| [[wiki/entities/kpi-cards]]              | Dashboard widget | KPI summary strip           |
+| [[wiki/entities/filter-bar]]             | Dashboard widget | Search, filters, grouping   |
+| [[wiki/entities/multi-select-component]] | UI primitive     | Custom searchable multi-select |
+| [[wiki/entities/bug-table]]              | Data grid        | Sortable flat list view     |
+| [[wiki/entities/bug-card]]               | Dashboard widget | Card renderer for grouped bugs |
+| [[wiki/entities/group-accordion]]        | Dashboard widget | Collapsible grouped sections |
+| [[wiki/entities/use-dashboard-hook]]     | Hook             | Session-backed dashboard state |
+| [[wiki/entities/dashboard-utils]]        | Library          | Pure filter/sort/group helpers |
 | [[wiki/entities/settings-page]]          | Page             | Full settings page          |
 | [[wiki/entities/ado-connection-section]] | Settings section | ADO connection card         |
 | [[wiki/entities/llm-provider-section]]   | Settings section | LLM provider card           |
 | [[wiki/entities/categories-section]]     | Settings section | Categories editor card      |
 | [[wiki/entities/use-settings-hook]]      | Hook             | Settings state management   |
 | [[wiki/entities/validation-utils]]       | Library          | Pure validation functions   |
+
+## Dashboard Surface
+
+- `DashboardPage` is the implemented index route and main operator workspace.
+- `useDashboard` hydrates renderer state from `SessionData`, wires `fetchBugs()` and `categorizeBugs()`, and subscribes to `ChunkProgress` updates.
+- View composition: `DashboardHeader` → `KpiCards` → `FilterBar` → `BugTable` or grouped `GroupAccordion` + `BugCard`.
+- Shared derivation logic lives in [[wiki/entities/dashboard-utils]] and presentation color mapping lives in [[wiki/entities/badge-color-utilities]].
 
 ## Styling Stack
 
@@ -75,3 +92,4 @@ See [[wiki/concepts/tailwind-styling]] for full details.
 
 - [[wiki/topics/electron-architecture]]
 - [[wiki/concepts/tailwind-styling]]
+- [[wiki/topics/dashboard-bug-exploration]]

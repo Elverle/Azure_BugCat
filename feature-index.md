@@ -6,3 +6,4 @@
 | 2   | FT-02      | Pagina Settings e Persistenza Configurazione | Complete |
 | 3   | FT-03      | Recupero Bug da Azure DevOps                 | Complete |
 | 4   | FT-04      | LLM Provider Abstraction e Categorizzazione  | Complete |
+| 5   | FT-05      | Dashboard Principale: Tabella, Filtri e Raggruppamenti | Complete |
