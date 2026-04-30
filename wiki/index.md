@@ -29,6 +29,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 2   | FT-02 | Pagina Settings e Persistenza Configurazione | Done   |
 | 3   | FT-03 | Azure DevOps Bug Fetching (Main Process)     | Done   |
 | 4   | FT-04 | LLM Provider Abstraction e Categorizzazione  | Done   |
+| 5   | FT-05 | Dashboard Principale: Tabella, Filtri e Raggruppamenti | Done   |
 
 ## Sources
 
@@ -36,6 +37,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/sources/ft-02-settings]] — FT-02 Settings page: form validation, IPC persistence, test connections, UI primitives (2026-04-29)
 - [[wiki/sources/ft-03-ado-fetch]] — FT-03 ADO bug fetching: WIQL query, batch fetch, field mapping, HTML→text, typed errors (2026-04-30)
 - [[wiki/sources/ft-04-llm-provider]] — FT-04 LLM provider abstraction: 4 providers, chunking, retry, response validation, progressive IPC (2026-04-30)
+- [[wiki/sources/ft-05-dashboard]] — FT-05 dashboard: session-backed bug triage workspace with KPIs, filters, grouped views, and accessible collection controls (2026-04-30)
 
 ## Entities
 
@@ -72,6 +74,17 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/entities/response-validator]] — LLM response validation with fence stripping and fallback (FT-04)
 - [[wiki/entities/chunking-utility]] — Bug array chunk splitter (FT-04)
 - [[wiki/entities/llm-prompts]] — System prompt and user message builders (FT-04)
+- [[wiki/entities/dashboard-page]] — Home page for browsing, filtering, grouping, and re-categorizing bugs (FT-05)
+- [[wiki/entities/dashboard-header]] — Dashboard title bar with session timestamps and Fetch/Categorize actions (FT-05)
+- [[wiki/entities/kpi-cards]] — KPI strip for totals, active bugs, clusters, and top assignees (FT-05)
+- [[wiki/entities/filter-bar]] — Debounced search + multi-select filter row + grouping controls (FT-05)
+- [[wiki/entities/bug-table]] — Sortable 8-column bug table with keyboard-accessible headers and rows (FT-05)
+- [[wiki/entities/bug-card]] — Card renderer for grouped bug exploration with deterministic tinting (FT-05)
+- [[wiki/entities/group-accordion]] — Collapsible grouped container with count badges and ARIA wiring (FT-05)
+- [[wiki/entities/multi-select-component]] — Custom searchable multi-select dropdown without external dependencies (FT-05)
+- [[wiki/entities/use-dashboard-hook]] — Renderer hook for session hydration, fetch/categorize actions, and progress subscription (FT-05)
+- [[wiki/entities/dashboard-utils]] — Pure filter/sort/group/KPI utilities for the dashboard (FT-05)
+- [[wiki/entities/badge-color-utilities]] — Deterministic badge and tint color helpers for status/categories (FT-05)
 
 ## Concepts
 
@@ -83,12 +96,15 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/concepts/ado-rest-api-pattern]] — ADO REST API consumption: layered architecture, batching, typed errors (FT-03)
 - [[wiki/concepts/llm-provider-abstraction]] — Strategy + Factory pattern for multi-provider LLM abstraction (FT-04)
 - [[wiki/concepts/chunk-retry-pattern]] — Chunked batch processing with exponential backoff retry (FT-04)
+- [[wiki/concepts/dashboard-derivation-pipeline]] — useMemo-based pipeline for filtering, sorting, grouping, KPI calculation, and dependent filter reconciliation (FT-05)
+- [[wiki/concepts/accessible-collection-controls]] — Project pattern for custom listbox, sortable table headers, and accordion controls with semantic HTML + ARIA (FT-05)
 
 ## Topics
 
 - [[wiki/topics/electron-architecture]] — Three-process architecture, source structure, data flow
 - [[wiki/topics/renderer-ui]] — React SPA: HashRouter routing, component tree, styling stack
 - [[wiki/topics/llm-categorization-pipeline]] — End-to-end LLM categorization: IPC → chunking → provider → validation → progressive results
+- [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, and categorization actions together
 
 ## Analyses
 

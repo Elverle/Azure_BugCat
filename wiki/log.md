@@ -7,6 +7,7 @@
 | 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.   |
 | 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.             |
 | 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity. |
+| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.     |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -103,4 +104,31 @@ Pages created:
 Pages updated:
 
 - [[wiki/entities/ipc-handlers]] — LLM stubs replaced with real handlers, added llm-service dependency
+- [[wiki/index.md]]
+
+## [2026-04-30] scan | FT-05 — Dashboard Principale: Tabella, Filtri e Raggruppamenti
+
+Scanned FT-05 feature: renderer dashboard with session hydration, KPI cards, debounced text search, multi-select filters, sortable table view, grouped card/table views, collapsible accordions, deterministic badge colors, and progress-aware categorization actions.
+
+Pages created:
+
+- [[wiki/sources/ft-05-dashboard]]
+- [[wiki/entities/dashboard-page]]
+- [[wiki/entities/dashboard-header]]
+- [[wiki/entities/kpi-cards]]
+- [[wiki/entities/filter-bar]]
+- [[wiki/entities/bug-table]]
+- [[wiki/entities/bug-card]]
+- [[wiki/entities/group-accordion]]
+- [[wiki/entities/multi-select-component]]
+- [[wiki/entities/use-dashboard-hook]]
+- [[wiki/entities/dashboard-utils]]
+- [[wiki/entities/badge-color-utilities]]
+- [[wiki/concepts/dashboard-derivation-pipeline]]
+- [[wiki/concepts/accessible-collection-controls]]
+- [[wiki/topics/dashboard-bug-exploration]]
+
+Pages updated:
+
+- [[wiki/topics/renderer-ui]] — DashboardPage is now the implemented index route with dashboard-specific components
 - [[wiki/index.md]]
