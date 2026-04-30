@@ -1,11 +1,12 @@
 # Wiki Operation Log
 
-| Date       | Action                     | Author         | Notes                                                                                           |
-| ---------- | -------------------------- | -------------- | ----------------------------------------------------------------------------------------------- |
-| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                  |
-| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                     |
-| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic. |
-| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.           |
+| Date       | Action                     | Author         | Notes                                                                                             |
+| ---------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------- |
+| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                    |
+| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                       |
+| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.   |
+| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.             |
+| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity. |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -76,4 +77,30 @@ Pages updated:
 - [[wiki/entities/ipc-handlers]] — test connection stubs now return structured responses
 - [[wiki/entities/shared-types]] — added TestConnectionResult
 - [[wiki/topics/renderer-ui]] — SettingsPage implemented, new components listed
+- [[wiki/index.md]]
+
+## [2026-04-30] scan | FT-04 — LLM Provider Abstraction e Categorizzazione
+
+Scanned FT-04 feature: LLM provider layer with polymorphic interface, 4 concrete providers (OpenAI, Anthropic, GitHub Copilot, Gemini), factory, chunking, response validation with markdown fence stripping, exponential backoff retry, progressive IPC chunk updates, and test connection flow.
+
+Pages created:
+
+- [[wiki/sources/ft-04-llm-provider]]
+- [[wiki/entities/llm-provider-interface]]
+- [[wiki/entities/openai-provider]]
+- [[wiki/entities/anthropic-provider]]
+- [[wiki/entities/copilot-provider]]
+- [[wiki/entities/gemini-provider]]
+- [[wiki/entities/llm-provider-factory]]
+- [[wiki/entities/llm-service]]
+- [[wiki/entities/response-validator]]
+- [[wiki/entities/chunking-utility]]
+- [[wiki/entities/llm-prompts]]
+- [[wiki/concepts/llm-provider-abstraction]]
+- [[wiki/concepts/chunk-retry-pattern]]
+- [[wiki/topics/llm-categorization-pipeline]]
+
+Pages updated:
+
+- [[wiki/entities/ipc-handlers]] — LLM stubs replaced with real handlers, added llm-service dependency
 - [[wiki/index.md]]

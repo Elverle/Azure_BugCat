@@ -8,7 +8,7 @@ export function htmlToText(html: string | null | undefined): string {
   text = text.replace(/<(pre|code)[^>]*>([\s\S]*?)<\/\1>/gi, (_, _tag, content) => {
     const index = preserved.length
     preserved.push(decodeEntities(content))
-    return `\x00PRESERVE_${index}\x00`
+    return `\n\n\x00PRESERVE_${index}\x00\n\n`
   })
 
   // Block-level replacements
@@ -16,7 +16,10 @@ export function htmlToText(html: string | null | undefined): string {
   text = text.replace(/<\/(?:p|div)>/gi, '\n\n')
   text = text.replace(/<\/h[1-6]>/gi, '\n\n')
   text = text.replace(/<li[^>]*>/gi, '\n- ')
+  text = text.replace(/<\/li>/gi, '')
+  text = text.replace(/<\/(?:ul|ol)>/gi, '\n')
   text = text.replace(/<\/tr>/gi, '\n')
+  text = text.replace(/<\/table>/gi, '\n')
 
   // Table cell separators (not first in row)
   text = text.replace(/<tr[^>]*>\s*<(td|th)[^>]*>/gi, '')
@@ -28,14 +31,14 @@ export function htmlToText(html: string | null | undefined): string {
   // Decode HTML entities
   text = decodeEntities(text)
 
-  // Re-insert preserved <pre>/<code> content
-  text = text.replace(/\x00PRESERVE_(\d+)\x00/g, (_, index) => preserved[Number(index)])
-
   // Normalize multiple consecutive spaces (not newlines) to single space per line
   text = text.replace(/[^\S\n]+/g, ' ')
 
   // Normalize 3+ consecutive newlines to double newline
   text = text.replace(/\n{3,}/g, '\n\n')
+
+  // Re-insert preserved <pre>/<code> content after whitespace normalization.
+  text = text.replace(/\x00PRESERVE_(\d+)\x00/g, (_, index) => preserved[Number(index)])
 
   return text.trim()
 }

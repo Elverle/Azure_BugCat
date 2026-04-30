@@ -145,7 +145,7 @@ export function useSettings(): UseSettingsReturn {
     setTestAdoResult(null)
     try {
       const response = (await Promise.race([
-        window.electronAPI.testAdoConnection(),
+        window.electronAPI.testAdoConnection(settings),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Connection test timed out')), CONNECTION_TIMEOUT)
         )
@@ -160,14 +160,14 @@ export function useSettings(): UseSettingsReturn {
     } finally {
       setTestAdoLoading(false)
     }
-  }, [])
+  }, [settings])
 
   const testLlmConnection = useCallback(async () => {
     setTestLlmLoading(true)
     setTestLlmResult(null)
     try {
       const response = (await Promise.race([
-        window.electronAPI.testLlmConnection(),
+        window.electronAPI.testLlmConnection(settings),
         new Promise<never>((_, reject) =>
           setTimeout(() => reject(new Error('Connection test timed out')), CONNECTION_TIMEOUT)
         )
@@ -182,7 +182,7 @@ export function useSettings(): UseSettingsReturn {
     } finally {
       setTestLlmLoading(false)
     }
-  }, [])
+  }, [settings])
 
   // Auto-dismiss test connection results after 5 seconds
   useEffect(() => {
