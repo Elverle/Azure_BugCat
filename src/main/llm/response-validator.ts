@@ -1,5 +1,7 @@
 import { BugItem, LLMCategorizeResult, LLMResponse } from '../../shared/types'
 
+const RAW_PREVIEW_LENGTH = 1200
+
 function stripMarkdownFences(text: string): string {
   return text
     .replace(/^```(?:json)?\s*\n?/m, '')
@@ -7,32 +9,217 @@ function stripMarkdownFences(text: string): string {
     .trim()
 }
 
-export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCategorizeResult[] {
-  let parsed: LLMResponse
-  const cleaned = stripMarkdownFences(raw)
+function extractJsonCandidate(text: string): string | null {
+  const startIndexes = [text.indexOf('{'), text.indexOf('[')].filter((index) => index >= 0)
+  if (startIndexes.length === 0) {
+    return null
+  }
 
-  try {
-    parsed = JSON.parse(cleaned) as LLMResponse
-  } catch {
+  let start = Math.min(...startIndexes)
+  let depth = 0
+  let inString = false
+  let isEscaped = false
+
+  for (let index = start; index < text.length; index++) {
+    const char = text[index]
+
+    if (isEscaped) {
+      isEscaped = false
+      continue
+    }
+
+    if (char === '\\') {
+      isEscaped = true
+      continue
+    }
+
+    if (char === '"') {
+      inString = !inString
+      continue
+    }
+
+    if (inString) {
+      continue
+    }
+
+    if (char === '{' || char === '[') {
+      depth++
+      continue
+    }
+
+    if (char === '}' || char === ']') {
+      depth--
+      if (depth === 0) {
+        return text.slice(start, index + 1)
+      }
+    }
+  }
+
+  return null
+}
+
+function getResultItems(parsed: unknown): unknown[] | null {
+  if (Array.isArray(parsed)) {
+    return parsed
+  }
+
+  if (!parsed || typeof parsed !== 'object') {
+    return null
+  }
+
+  const candidate = parsed as {
+    results?: unknown
+    items?: unknown
+    data?: unknown
+  }
+
+  if (Array.isArray(candidate.results)) {
+    return candidate.results
+  }
+
+  if (Array.isArray(candidate.items)) {
+    return candidate.items
+  }
+
+  if (candidate.data && typeof candidate.data === 'object') {
+    const nestedData = candidate.data as { results?: unknown; items?: unknown }
+    if (Array.isArray(nestedData.results)) {
+      return nestedData.results
+    }
+    if (Array.isArray(nestedData.items)) {
+      return nestedData.items
+    }
+  }
+
+  return null
+}
+
+function normalizeBugId(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) {
+      return parsed
+    }
+  }
+
+  return null
+}
+
+function getStringField(value: unknown, fallback = 'N/D'): string {
+  if (typeof value !== 'string') {
+    return fallback
+  }
+
+  const trimmed = value.trim()
+  return trimmed || fallback
+}
+
+function buildRawPreview(raw: string): string {
+  const normalized = raw.replace(/\s+/g, ' ').trim()
+  return normalized.length > RAW_PREVIEW_LENGTH
+    ? `${normalized.slice(0, RAW_PREVIEW_LENGTH)}...`
+    : normalized
+}
+
+function logValidationFailure(reason: string, raw: string, chunkBugs: BugItem[]): void {
+  console.warn('[LLM] Response validation fallback', {
+    reason,
+    bugIds: chunkBugs.map((bug) => bug.id),
+    rawPreview: buildRawPreview(raw)
+  })
+}
+
+function logMissingBugResults(
+  raw: string,
+  chunkBugs: BugItem[],
+  resultMap: Map<number, LLMCategorizeResult>
+): void {
+  const missingBugIds = chunkBugs.map((bug) => bug.id).filter((bugId) => !resultMap.has(bugId))
+
+  if (missingBugIds.length === 0) {
+    return
+  }
+
+  console.warn('[LLM] Response did not include all bugs from the chunk', {
+    expectedBugIds: chunkBugs.map((bug) => bug.id),
+    returnedBugIds: [...resultMap.keys()],
+    missingBugIds,
+    rawPreview: buildRawPreview(raw)
+  })
+}
+
+export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCategorizeResult[] {
+  const cleaned = stripMarkdownFences(raw)
+    .replace(/^\uFEFF/, '')
+    .trim()
+  const candidates = [cleaned, extractJsonCandidate(cleaned)].filter(
+    (candidate, index, array): candidate is string =>
+      !!candidate && array.indexOf(candidate) === index
+  )
+
+  let parsed: unknown = null
+  for (const candidate of candidates) {
+    try {
+      parsed = JSON.parse(candidate) as LLMResponse
+      break
+    } catch {
+      continue
+    }
+  }
+
+  if (parsed === null) {
+    logValidationFailure('invalid-json', raw, chunkBugs)
     return buildFallbackResults(chunkBugs, 'Non categorizzato', 'Errore parsing')
   }
 
-  if (!parsed.results || !Array.isArray(parsed.results)) {
+  const resultItems = getResultItems(parsed)
+  if (!resultItems) {
+    logValidationFailure('missing-results-array', raw, chunkBugs)
     return buildFallbackResults(chunkBugs, 'Non categorizzato', 'Errore parsing')
   }
 
   const resultMap = new Map<number, LLMCategorizeResult>()
 
-  for (const item of parsed.results) {
-    if (typeof item.bugId !== 'number') continue
+  for (const item of resultItems) {
+    if (!item || typeof item !== 'object') continue
 
-    resultMap.set(item.bugId, {
-      bugId: item.bugId,
-      macroCategory: item.macroCategory?.trim() || 'N/D',
-      subCategory: item.subCategory?.trim() || 'N/D',
-      categoryReason: item.categoryReason?.trim() || 'N/D'
+    const result = item as {
+      bugId?: unknown
+      bugID?: unknown
+      id?: unknown
+      bug_id?: unknown
+      macroCategory?: unknown
+      macro_category?: unknown
+      category?: unknown
+      macro?: unknown
+      subCategory?: unknown
+      sub_category?: unknown
+      subcategory?: unknown
+      reason?: unknown
+      categoryReason?: unknown
+      category_reason?: unknown
+    }
+
+    const bugId = normalizeBugId(result.bugId ?? result.bugID ?? result.id ?? result.bug_id)
+    if (bugId === null) continue
+
+    resultMap.set(bugId, {
+      bugId,
+      macroCategory: getStringField(
+        result.macroCategory ?? result.macro_category ?? result.category ?? result.macro
+      ),
+      subCategory: getStringField(result.subCategory ?? result.sub_category ?? result.subcategory),
+      categoryReason: getStringField(
+        result.categoryReason ?? result.category_reason ?? result.reason
+      )
     })
   }
+
+  logMissingBugResults(raw, chunkBugs, resultMap)
 
   const results: LLMCategorizeResult[] = []
   for (const bug of chunkBugs) {

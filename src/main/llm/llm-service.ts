@@ -13,6 +13,12 @@ import { splitIntoChunks } from './chunking'
 import { validateLLMResponse } from './response-validator'
 
 const RETRY_DELAYS = [2000, 4000, 8000]
+const MAX_TITLE_LOG_LENGTH = 120
+
+function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
+  const err: AppError = { code, message, ...(details !== undefined && { details }) }
+  throw err
+}
 
 function isAppError(error: unknown): error is AppError {
   return (
@@ -28,6 +34,66 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function isAbortLikeError(error: unknown): boolean {
+  if (error instanceof Error && error.name === 'AbortError') {
+    return true
+  }
+
+  if (error !== null && typeof error === 'object' && 'name' in error) {
+    return (error as { name?: unknown }).name === 'AbortError'
+  }
+
+  if (typeof error === 'string') {
+    return error.includes('AbortError') || error.includes('aborted')
+  }
+
+  return false
+}
+
+function buildErrorDiagnostics(error: unknown): Record<string, unknown> {
+  if (isAppError(error)) {
+    return {
+      type: 'AppError',
+      code: error.code,
+      message: error.message,
+      details: error.details
+    }
+  }
+
+  if (error instanceof Error) {
+    return {
+      type: error.name,
+      message: error.message,
+      stack: error.stack?.split('\n').slice(0, 3).join('\n')
+    }
+  }
+
+  if (error !== null && typeof error === 'object') {
+    return { type: 'object', value: error }
+  }
+
+  return { type: typeof error, value: error }
+}
+
+function buildChunkDiagnostics(
+  providerName: string,
+  chunk: BugItem[],
+  chunkIndex: number,
+  totalChunks: number
+): Record<string, unknown> {
+  return {
+    provider: providerName,
+    chunkIndex: chunkIndex + 1,
+    totalChunks,
+    bugIds: chunk.map((bug) => bug.id),
+    bugTitles: chunk.map((bug) =>
+      bug.title.length > MAX_TITLE_LOG_LENGTH
+        ? `${bug.title.slice(0, MAX_TITLE_LOG_LENGTH)}...`
+        : bug.title
+    )
+  }
+}
+
 async function chatWithRetry(
   provider: LLMProvider,
   systemPrompt: string,
@@ -40,9 +106,17 @@ async function chatWithRetry(
       return await provider.chat(systemPrompt, userMessage)
     } catch (error: unknown) {
       lastError = error
+      if (isAbortLikeError(error)) {
+        throwAppError('LLM_TIMEOUT', `Timeout nella richiesta al provider ${provider.name}`, {
+          provider: provider.name,
+          attempt: attempt + 1,
+          originalError: buildErrorDiagnostics(error)
+        })
+      }
+
       if (isAppError(error) && error.code === 'LLM_RATE_LIMIT' && attempt < RETRY_DELAYS.length) {
         console.warn(
-          `Rate limit hit, retrying in ${RETRY_DELAYS[attempt]}ms (attempt ${attempt + 1}/${RETRY_DELAYS.length})`
+          `[LLM] Rate limit hit for ${provider.name}, retrying in ${RETRY_DELAYS[attempt]}ms (attempt ${attempt + 1}/${RETRY_DELAYS.length})`
         )
         await sleep(RETRY_DELAYS[attempt])
         continue
@@ -75,18 +149,42 @@ export async function categorizeBugs(
   const allResults: LLMCategorizeResult[] = []
   let completed = 0
 
-  for (const chunk of chunks) {
+  for (const [chunkIndex, chunk] of chunks.entries()) {
     let chunkResults: LLMCategorizeResult[]
+    const chunkDiagnostics = buildChunkDiagnostics(provider.name, chunk, chunkIndex, chunks.length)
 
     try {
       const userMessage = buildUserMessage(chunk)
       const raw = await chatWithRetry(provider, systemPrompt, userMessage)
       chunkResults = validateLLMResponse(raw, chunk)
     } catch (error: unknown) {
-      if (isAppError(error) && (error.code === 'LLM_AUTH_ERROR' || error.code === 'LLM_TIMEOUT')) {
-        throw error
+      const normalizedError = isAbortLikeError(error)
+        ? ({
+            code: 'LLM_TIMEOUT',
+            message: `Timeout nella richiesta al provider ${provider.name}`,
+            details: {
+              provider: provider.name,
+              originalError: buildErrorDiagnostics(error)
+            }
+          } satisfies AppError)
+        : error
+
+      if (
+        isAppError(normalizedError) &&
+        (normalizedError.code === 'LLM_AUTH_ERROR' || normalizedError.code === 'LLM_TIMEOUT')
+      ) {
+        console.error('[LLM] Chunk failed with blocking error', {
+          ...chunkDiagnostics,
+          error: buildErrorDiagnostics(normalizedError)
+        })
+        throw normalizedError
       }
-      console.error('Chunk processing error, marking bugs as non-categorized:', error)
+
+      console.error('[LLM] Chunk processing error, marking bugs as non-categorized', {
+        ...chunkDiagnostics,
+        error: buildErrorDiagnostics(normalizedError)
+      })
+
       chunkResults = chunk.map((bug) => ({
         bugId: bug.id,
         macroCategory: 'Non categorizzato',
