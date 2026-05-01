@@ -24,7 +24,11 @@ export type GroupBy = 'none' | 'macroCategory' | 'subCategory' | 'assignee'
 
 export interface KpiData {
   total: number
-  active: number
+  statusSummary: {
+    todo: number
+    inProgress: number
+    suspended: number
+  }
   macroCategories: number
   topAssignees: Array<{ name: string; count: number }>
 }
@@ -60,7 +64,10 @@ export function filterBugs(bugs: CategorizedBug[], filters: FilterState): Catego
       }
     }
 
-    if (filters.macroCategories.length > 0 && !filters.macroCategories.includes(bug.macroCategory)) {
+    if (
+      filters.macroCategories.length > 0 &&
+      !filters.macroCategories.includes(bug.macroCategory)
+    ) {
       return false
     }
 
@@ -171,13 +178,25 @@ export function groupBugs(bugs: CategorizedBug[], groupBy: GroupBy): Map<string,
 
 export function computeKpis(bugs: CategorizedBug[]): KpiData {
   const total = bugs.length
-  let active = 0
+  const statusSummary = {
+    todo: 0,
+    inProgress: 0,
+    suspended: 0
+  }
   const macroCategorySet = new Set<string>()
   const assigneeCounts = new Map<string, number>()
 
   for (const bug of bugs) {
-    if (bug.state === 'Active') {
-      active++
+    switch (normalizeKpiState(bug.state)) {
+      case 'todo':
+        statusSummary.todo++
+        break
+      case 'inProgress':
+        statusSummary.inProgress++
+        break
+      case 'suspended':
+        statusSummary.suspended++
+        break
     }
 
     if (bug.macroCategory) {
@@ -196,10 +215,28 @@ export function computeKpis(bugs: CategorizedBug[]): KpiData {
 
   return {
     total,
-    active,
+    statusSummary,
     macroCategories: macroCategorySet.size,
     topAssignees
   }
+}
+
+function normalizeKpiState(state: string): 'todo' | 'inProgress' | 'suspended' | null {
+  const normalized = state.trim().toLowerCase()
+
+  if (normalized === 'todo' || normalized === 'to do') {
+    return 'todo'
+  }
+
+  if (normalized === 'in progress' || normalized === 'inprogress' || normalized === 'active') {
+    return 'inProgress'
+  }
+
+  if (normalized === 'suspended') {
+    return 'suspended'
+  }
+
+  return null
 }
 
 // ============================================

@@ -247,7 +247,11 @@ describe('computeKpis', () => {
   it('should compute KPIs for standard dataset', () => {
     const kpis = computeKpis(mockBugs)
     expect(kpis.total).toBe(5)
-    expect(kpis.active).toBe(3)
+    expect(kpis.statusSummary).toEqual({
+      todo: 0,
+      inProgress: 3,
+      suspended: 0
+    })
     expect(kpis.macroCategories).toBe(3)
     expect(kpis.topAssignees).toEqual([
       { name: 'Laura K.', count: 2 },
@@ -258,9 +262,31 @@ describe('computeKpis', () => {
   it('should handle empty array', () => {
     const kpis = computeKpis([])
     expect(kpis.total).toBe(0)
-    expect(kpis.active).toBe(0)
+    expect(kpis.statusSummary).toEqual({
+      todo: 0,
+      inProgress: 0,
+      suspended: 0
+    })
     expect(kpis.macroCategories).toBe(0)
     expect(kpis.topAssignees).toEqual([])
+  })
+
+  it('should normalize Todo, To Do, In Progress, Active, and Suspended states', () => {
+    const stateVariants: CategorizedBug[] = [
+      { ...mockBugs[0], id: 100, state: 'Todo' },
+      { ...mockBugs[0], id: 101, state: 'To Do' },
+      { ...mockBugs[0], id: 102, state: 'In Progress' },
+      { ...mockBugs[0], id: 103, state: 'Active' },
+      { ...mockBugs[0], id: 104, state: 'Suspended' }
+    ]
+
+    const kpis = computeKpis(stateVariants)
+
+    expect(kpis.statusSummary).toEqual({
+      todo: 2,
+      inProgress: 2,
+      suspended: 1
+    })
   })
 
   it('should return empty topAssignees when all assignees are null', () => {
