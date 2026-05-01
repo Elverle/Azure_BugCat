@@ -15,7 +15,11 @@ import { MultiSelect } from '../../src/renderer/src/components/ui/multi-select'
 
 const mockKpis: KpiData = {
   total: 42,
-  active: 28,
+  statusSummary: {
+    todo: 6,
+    inProgress: 28,
+    suspended: 4
+  },
   macroCategories: 8,
   topAssignees: [
     { name: 'Marco R.', count: 10 },
@@ -80,10 +84,15 @@ describe('KpiCards', () => {
     expect(screen.getByText('Total Bugs')).toBeInTheDocument()
   })
 
-  it('renders active bugs in red-600', () => {
+  it('renders the status summary card with the requested states', () => {
     render(<KpiCards kpis={mockKpis} />)
-    const activeElement = screen.getByText('28')
-    expect(activeElement).toHaveClass('text-red-600')
+    expect(screen.getByText('Stati')).toBeInTheDocument()
+    expect(screen.getByText('Todo')).toBeInTheDocument()
+    expect(screen.getByText('In progress')).toBeInTheDocument()
+    expect(screen.getByText('Suspended')).toBeInTheDocument()
+    expect(screen.getByText('6')).toBeInTheDocument()
+    expect(screen.getByText('28')).toHaveClass('text-amber-600')
+    expect(screen.getByText('4')).toHaveClass('text-sky-700')
   })
 
   it('renders macro-categories count in purple-600', () => {
@@ -192,7 +201,12 @@ describe('MultiSelect', () => {
   it('deselects an item when clicked again', () => {
     const onChange = vi.fn()
     render(
-      <MultiSelect options={options} selected={['Active']} onChange={onChange} placeholder="Stato" />
+      <MultiSelect
+        options={options}
+        selected={['Active']}
+        onChange={onChange}
+        placeholder="Stato"
+      />
     )
     fireEvent.click(screen.getByRole('button'))
     // "Active" appears in both the button text and the dropdown option — click the second one
@@ -203,7 +217,13 @@ describe('MultiSelect', () => {
 
   it('searchable variant filters options', () => {
     render(
-      <MultiSelect options={options} selected={[]} onChange={vi.fn()} placeholder="Stato" searchable />
+      <MultiSelect
+        options={options}
+        selected={[]}
+        onChange={vi.fn()}
+        placeholder="Stato"
+        searchable
+      />
     )
     fireEvent.click(screen.getByText('Stato'))
     const searchInput = screen.getByPlaceholderText('Search...')

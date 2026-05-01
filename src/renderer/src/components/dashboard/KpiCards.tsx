@@ -13,8 +13,21 @@ export function KpiCards({ kpis }: KpiCardsProps): JSX.Element {
       </div>
 
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <div className="text-sm text-gray-500 mb-1">Open / Active</div>
-        <div className="text-2xl font-bold text-red-600">{kpis.active}</div>
+        <div className="text-sm text-gray-500 mb-2">Stati</div>
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Todo</span>
+            <span className="font-semibold text-slate-700">{kpis.statusSummary.todo}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">In progress</span>
+            <span className="font-semibold text-amber-600">{kpis.statusSummary.inProgress}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-gray-600">Suspended</span>
+            <span className="font-semibold text-sky-700">{kpis.statusSummary.suspended}</span>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
