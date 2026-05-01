@@ -11,3 +11,4 @@
 | 7   | FT-07      | Persistenza Dati e Gestione Sessione                   | Complete |
 | 8   | FT-08      | GenericProvider (OpenAI-compatible, replaces Copilot)  | Complete |
 | 9   | FT-09      | Structured Output (response_format / json_schema)      | Complete |
+| 10  | FT-10      | AI Cluster: Similar Bug Detection                      | Complete |

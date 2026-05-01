@@ -19,6 +19,10 @@ export const IPC_CHANNELS = {
   LLM_CATEGORIZE_PROGRESS: 'llm:categorize-progress',
   LLM_TEST_CONNECTION: 'llm:test-connection',
 
+  // LLM - Similarity
+  LLM_FIND_SIMILAR: 'llm:find-similar',
+  LLM_FIND_SIMILAR_PROGRESS: 'llm:find-similar-progress',
+
   // Session
   SESSION_GET: 'session:get',
   SESSION_CLEAR: 'session:clear',

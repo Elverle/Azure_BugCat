@@ -91,7 +91,7 @@
   - Priority: Must-Have
 
 - **FR-BUILD-002:** electron-builder configuration
-  - Description: Configure electron-builder in `electron-builder.yml` (or `package.json`) for Windows (NSIS), macOS (DMG), and Linux (AppImage). App name: "BugCat", app ID: `com.alpitour.bugcat`.
+  - Description: Configure electron-builder in `electron-builder.yml` (or `package.json`) for Windows (NSIS), macOS (DMG), and Linux (AppImage). App name: "BugCat", app ID: `com.gversino.bugcat`.
   - Acceptance Criteria: Given `npm run package` is executed on Windows, then a `.exe` installer is produced in the `dist` folder.
   - Priority: Must-Have
 
@@ -336,7 +336,7 @@ Both paths converge at T-013 (final integration). Overall critical path length: 
 - **Wave:** 2 — PARALLEL
 - **Implementation Notes:**
   1. Create `electron-builder.yml` at project root.
-  2. Configure: `appId: com.alpitour.bugcat`, `productName: BugCat`.
+  2. Configure: `appId: com.gversino.bugcat`, `productName: BugCat`.
   3. Add platform targets: `win: { target: nsis }`, `mac: { target: dmg }`, `linux: { target: AppImage }`.
   4. Configure `directories: { output: dist, buildResources: build }`.
   5. Add `"package": "electron-vite build && electron-builder --config electron-builder.yml"` to npm scripts.

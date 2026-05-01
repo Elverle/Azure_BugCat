@@ -3,9 +3,14 @@ title: 'Preload Bridge (contextBridge)'
 type: entity
 subtype: middleware
 created: 2026-04-29
-updated: 2026-04-30
-sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-06-bug-detail-drawer]]']
-tags: [electron, ipc, preload, context-bridge, shell]
+updated: 2026-05-01
+sources:
+  [
+    '[[wiki/sources/ft-01-scaffold]]',
+    '[[wiki/sources/ft-06-bug-detail-drawer]]',
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
+  ]
+tags: [electron, ipc, preload, context-bridge, shell, similarity]
 lang: en
 ---
 
@@ -20,19 +25,21 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 
 ## Exposed API (`window.electronAPI`)
 
-| Method                     | IPC Channel               | Direction                |
-| -------------------------- | ------------------------- | ------------------------ |
-| `ping()`                   | `ping`                    | invoke                   |
-| `getSettings()`            | `settings:get`            | invoke                   |
-| `setSettings(settings)`    | `settings:set`            | invoke                   |
-| `fetchBugs()`              | `ado:fetch-bugs`          | invoke                   |
-| `testAdoConnection()`      | `ado:test-connection`     | invoke                   |
-| `categorizeBugs()`         | `llm:categorize`          | invoke                   |
-| `testLlmConnection()`      | `llm:test-connection`     | invoke                   |
-| `onCategorizeProgress(cb)` | `llm:categorize-progress` | on (returns unsubscribe) |
-| `getSession()`             | `session:get`             | invoke                   |
-| `clearSession()`           | `session:clear`           | invoke                   |
-| `openExternal(url)`        | `shell:open-external`     | invoke                   |
+| Method                      | IPC Channel                 | Direction                |
+| --------------------------- | --------------------------- | ------------------------ |
+| `ping()`                    | `ping`                      | invoke                   |
+| `getSettings()`             | `settings:get`              | invoke                   |
+| `setSettings(settings)`     | `settings:set`              | invoke                   |
+| `fetchBugs()`               | `ado:fetch-bugs`            | invoke                   |
+| `testAdoConnection()`       | `ado:test-connection`       | invoke                   |
+| `categorizeBugs()`          | `llm:categorize`            | invoke                   |
+| `testLlmConnection()`       | `llm:test-connection`       | invoke                   |
+| `onCategorizeProgress(cb)`  | `llm:categorize-progress`   | on (returns unsubscribe) |
+| `findSimilarBugs()`         | `llm:find-similar`          | invoke                   |
+| `onFindSimilarProgress(cb)` | `llm:find-similar-progress` | on (returns unsubscribe) |
+| `getSession()`              | `session:get`               | invoke                   |
+| `clearSession()`            | `session:clear`             | invoke                   |
+| `openExternal(url)`         | `shell:open-external`       | invoke                   |
 
 ## Type Export
 
@@ -53,7 +60,7 @@ declare global {
 ## Security
 
 - Only named methods are exposed — no raw `ipcRenderer.send`/`invoke` access.
-- `onCategorizeProgress` returns a cleanup function to prevent listener leaks.
+- Progress subscriptions return cleanup functions to prevent listener leaks.
 - `openExternal()` preserves the security boundary by routing browser launches through the validated main-process handler.
 
 ## See also
@@ -61,5 +68,6 @@ declare global {
 - [[wiki/entities/ipc-handlers]] — main-process counterpart
 - [[wiki/entities/ipc-channels]] — channel constant definitions
 - [[wiki/entities/open-external-ipc]]
+- [[wiki/entities/use-ai-cluster-hook]]
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/electron-architecture]]

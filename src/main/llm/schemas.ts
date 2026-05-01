@@ -1,3 +1,5 @@
+import { TECHNICAL_LAYER_VALUES } from './technical-layer'
+
 export const CATEGORIZATION_SCHEMA = {
   type: 'object',
   properties: {
@@ -8,7 +10,7 @@ export const CATEGORIZATION_SCHEMA = {
         properties: {
           bugId: { type: 'number' },
           macroCategory: { type: 'string' },
-          subCategory: { type: 'string' },
+          subCategory: { type: 'string', enum: TECHNICAL_LAYER_VALUES },
           categoryReason: { type: 'string' }
         },
         required: ['bugId', 'macroCategory', 'subCategory', 'categoryReason'],

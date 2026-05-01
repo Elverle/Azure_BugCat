@@ -1,6 +1,6 @@
 # Bug Categorizer — Wiki Index
 
-L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **Electron + React + TypeScript** per la categorizzazione automatica dei bug Azure DevOps tramite LLM.
+L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **Electron + React + TypeScript** per la categorizzazione automatica dei bug Azure DevOps tramite LLM e il rilevamento di bug simili o duplicati all'interno delle categorie individuate.
 
 ### Struttura Wiki
 
@@ -34,6 +34,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 7   | FT-07 | Persistenza Dati e Gestione Sessione                   | Done   |
 | 8   | FT-08 | GenericProvider OpenAI-compatible e rimozione Copilot  | Done   |
 | 9   | FT-09 | Structured output JSON Schema per tutti i provider LLM | Done   |
+| 10  | FT-10 | AI Cluster - Similar Bug Detection                     | Done   |
 
 ## Sources
 
@@ -46,6 +47,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/sources/ft-07-session-persistence]] — FT-07 persistence hardening: schema-versioned store bootstrap, reusable confirm dialog, session clear UX, and extracted date formatting (2026-05-01)
 - [[wiki/sources/ft-08-generic-provider]] — FT-08 generic provider: OpenAI-compatible fetch client, Generic settings UI, HTTPS base URL validation, and schema v2 migration from Copilot (2026-05-01)
 - [[wiki/sources/ft-09-structured-output]] — FT-09 structured output: shared JSON Schemas, provider-native schema enforcement, simplified prompts, and temperature 0.1 standardization (2026-05-01)
+- [[wiki/sources/ft-10-ai-cluster-similarity]] — FT-10 AI Cluster: macroCategory-scoped similar-bug detection with progress IPC, session persistence, and drawer drill-down (2026-05-01)
 
 ## Entities
 
@@ -82,6 +84,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/entities/gemini-provider]] — Google GenAI provider (gemini-2.5-flash) (FT-04)
 - [[wiki/entities/llm-provider-factory]] — Factory function for LLM provider instantiation (FT-04)
 - [[wiki/entities/llm-service]] — Bug categorization orchestrator with retry and progress (FT-04)
+- [[wiki/entities/similarity-service]] — Macro-category similarity orchestrator with per-category progress and partial failures (FT-10)
 - [[wiki/entities/response-validator]] — LLM response validation with fence stripping and fallback (FT-04)
 - [[wiki/entities/chunking-utility]] — Bug array chunk splitter (FT-04)
 - [[wiki/entities/llm-prompts]] — System prompt and user message builders (FT-04)
@@ -92,10 +95,13 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/entities/bug-table]] — Sortable 8-column bug table with keyboard-accessible headers and rows (FT-05)
 - [[wiki/entities/bug-card]] — Card renderer for grouped bug exploration with deterministic tinting (FT-05)
 - [[wiki/entities/bug-detail-drawer]] — Fixed right-side detail drawer with LLM reasoning, metadata, and prev/next navigation (FT-06)
+- [[wiki/entities/ai-cluster-category-section]] — Collapsible per-category result section for AI Cluster (FT-10)
+- [[wiki/entities/similarity-group-card]] — Similarity score/reason card with clickable bug list (FT-10)
 - [[wiki/entities/group-accordion]] — Collapsible grouped container with count badges and ARIA wiring (FT-05)
 - [[wiki/entities/multi-select-component]] — Custom searchable multi-select dropdown without external dependencies (FT-05)
 - [[wiki/entities/use-bug-drawer-hook]] — Hook for selected bug state and filtered-list navigation inside the drawer (FT-06)
 - [[wiki/entities/use-dashboard-hook]] — Renderer hook for session hydration, fetch/categorize actions, and progress subscription (FT-05)
+- [[wiki/entities/use-ai-cluster-hook]] — Renderer hook for similarity hydration, analysis progress, and stale detection (FT-10)
 - [[wiki/entities/dashboard-utils]] — Pure filter/sort/group/KPI utilities for the dashboard (FT-05)
 - [[wiki/entities/date-format-utility]] — Pure `formatDate()` helper for renderer session timestamps (FT-07)
 - [[wiki/entities/badge-color-utilities]] — Deterministic badge and tint color helpers for status/categories (FT-05)
@@ -113,6 +119,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/concepts/llm-provider-abstraction]] — Strategy + Factory pattern for multi-provider LLM abstraction (FT-04)
 - [[wiki/concepts/provider-native-structured-output]] — Single logical schema contract translated into OpenAI, Anthropic, Gemini, and generic provider-native structured output primitives (FT-09)
 - [[wiki/concepts/chunk-retry-pattern]] — Chunked batch processing with exponential backoff retry (FT-04)
+- [[wiki/concepts/macro-category-scoped-similarity-analysis]] — Second-pass similarity workflow bounded by existing macro-categories (FT-10)
 - [[wiki/concepts/dashboard-derivation-pipeline]] — useMemo-based pipeline for filtering, sorting, grouping, KPI calculation, and dependent filter reconciliation (FT-05)
 - [[wiki/concepts/accessible-collection-controls]] — Project pattern for custom listbox, sortable table headers, and accordion controls with semantic HTML + ARIA (FT-05)
 - [[wiki/concepts/accessible-confirmation-dialog]] — Focus-managed modal confirmation pattern for destructive actions (FT-07)
@@ -123,6 +130,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/topics/electron-architecture]] — Three-process architecture, source structure, data flow
 - [[wiki/topics/renderer-ui]] — React SPA: HashRouter routing, component tree, styling stack
 - [[wiki/topics/llm-categorization-pipeline]] — End-to-end LLM categorization: IPC → chunking → provider → validation → progressive results
+- [[wiki/topics/ai-cluster-similar-bug-detection]] — End-to-end similar-bug detection: dashboard tab → session gate → IPC → per-category LLM analysis → persisted results
 - [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, drawer drill-down, and categorization actions together
 - [[wiki/topics/session-persistence-lifecycle]] — Startup migration, session hydration, timestamp display, and user-triggered session reset (FT-07)
 

@@ -2,8 +2,8 @@
 title: 'IPC Security Model'
 type: concept
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]']
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-10-ai-cluster-similarity]]']
 tags: [electron, security, ipc, architecture]
 lang: en
 ---
@@ -42,11 +42,13 @@ Only these IPC channels are exposed (no generic store access):
 - `ping`, `settings:get`, `settings:set`
 - `ado:fetch-bugs`, `ado:test-connection`
 - `llm:categorize`, `llm:categorize-progress`, `llm:test-connection`
+- `llm:find-similar`, `llm:find-similar-progress`
 - `session:get`, `session:clear`
+- `shell:open-external`
 
 ## External Navigation
 
-`shell.openExternal` is restricted to `https:` protocol only. Invalid URLs and non-HTTPS schemes are silently blocked.
+`shell.openExternal` is restricted to `https:` protocol only. Invalid URLs and non-HTTPS schemes are rejected in the main process before the browser can be opened.
 
 ## CSP (Content Security Policy)
 

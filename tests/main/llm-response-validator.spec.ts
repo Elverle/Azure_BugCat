@@ -21,8 +21,8 @@ describe('response-validator', () => {
   it('parses valid JSON response and maps results', () => {
     const raw = JSON.stringify({
       results: [
-        { bugId: 1, macroCategory: 'UI', subCategory: 'Layout', categoryReason: 'Visual issue' },
-        { bugId: 2, macroCategory: 'Backend', subCategory: 'API', categoryReason: 'Server crash' }
+        { bugId: 1, macroCategory: 'UI', subCategory: 'FE', categoryReason: 'Visual issue' },
+        { bugId: 2, macroCategory: 'Backend', subCategory: 'BE', categoryReason: 'Server crash' }
       ]
     })
     const bugs = [makeBug(1), makeBug(2)]
@@ -31,13 +31,13 @@ describe('response-validator', () => {
     expect(results[0]).toEqual({
       bugId: 1,
       macroCategory: 'UI',
-      subCategory: 'Layout',
+      subCategory: 'FE',
       categoryReason: 'Visual issue'
     })
     expect(results[1]).toEqual({
       bugId: 2,
       macroCategory: 'Backend',
-      subCategory: 'API',
+      subCategory: 'BE',
       categoryReason: 'Server crash'
     })
   })
@@ -78,7 +78,7 @@ describe('response-validator', () => {
     const bugs = [makeBug(1)]
     const results = validateLLMResponse(raw, bugs)
     expect(results[0].macroCategory).toBe('N/D')
-    expect(results[0].subCategory).toBe('N/D')
+    expect(results[0].subCategory).toBe('Non determinabile')
     expect(results[0].categoryReason).toBe('N/D')
   })
 
@@ -103,7 +103,7 @@ describe('response-validator', () => {
           {
             bugId: 1,
             macroCategory: 'Validazioni',
-            subCategory: 'Costo management',
+            subCategory: 'backend',
             categoryReason: 'The title explicitly mentions final validations and cost error.'
           }
         ]
@@ -117,7 +117,7 @@ describe('response-validator', () => {
       {
         bugId: 1,
         macroCategory: 'Validazioni',
-        subCategory: 'Costo management',
+        subCategory: 'BE',
         categoryReason: 'The title explicitly mentions final validations and cost error.'
       }
     ])
@@ -128,7 +128,7 @@ describe('response-validator', () => {
       {
         id: '1',
         category: 'Validazioni',
-        subcategory: 'Controlli finali',
+        subcategory: 'frontend',
         reason:
           'The title contains "Validazioni finali" and the description points to a validation problem.'
       }
@@ -140,10 +140,26 @@ describe('response-validator', () => {
       {
         bugId: 1,
         macroCategory: 'Validazioni',
-        subCategory: 'Controlli finali',
+        subCategory: 'FE',
         categoryReason:
           'The title contains "Validazioni finali" and the description points to a validation problem.'
       }
+    ])
+  })
+
+  it('normalizes common legacy layer labels to FE or BE', () => {
+    const raw = JSON.stringify({
+      results: [
+        { bugId: 1, macroCategory: 'UI', subCategory: 'Layout', categoryReason: 'Visual issue' },
+        { bugId: 2, macroCategory: 'Services', subCategory: 'API', categoryReason: 'Server issue' }
+      ]
+    })
+
+    const results = validateLLMResponse(raw, [makeBug(1), makeBug(2)])
+
+    expect(results).toEqual([
+      { bugId: 1, macroCategory: 'UI', subCategory: 'FE', categoryReason: 'Visual issue' },
+      { bugId: 2, macroCategory: 'Services', subCategory: 'BE', categoryReason: 'Server issue' }
     ])
   })
 })

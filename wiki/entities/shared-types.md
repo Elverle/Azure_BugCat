@@ -8,7 +8,8 @@ sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
     '[[wiki/sources/ft-02-settings]]',
-    '[[wiki/sources/ft-08-generic-provider]]'
+    '[[wiki/sources/ft-08-generic-provider]]',
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
   ]
 tags: [typescript, types, shared, domain-model]
 lang: en
@@ -43,7 +44,7 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | Type          | Purpose                                                                                                      |
 | ------------- | ------------------------------------------------------------------------------------------------------------ |
 | `AppSettings` | Full settings object, including optional `baseUrl` and `llmModel` for the generic OpenAI-compatible provider |
-| `SessionData` | Cached bug list with fetch/categorize timestamps                                                             |
+| `SessionData` | Cached bug list with fetch/categorize timestamps plus optional `similarityResults` snapshot                  |
 
 ### Error & Progress
 
@@ -59,6 +60,15 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | `LLMCategorizeResult` | Single bug categorization result |
 | `LLMResponse`         | Array of categorization results  |
 
+### Similarity analysis
+
+| Type                       | Purpose                                                                     |
+| -------------------------- | --------------------------------------------------------------------------- |
+| `SimilarityGroup`          | One detected group with normalized score, reason, and participating bug IDs |
+| `CategorySimilarityResult` | Similarity results for a single `macroCategory`, optionally with an error   |
+| `SimilarityResult`         | Session-persisted aggregate result with `categories[]` and `analyzedAt`     |
+| `SimilarityProgress`       | Per-category progress payload for the AI Cluster renderer                   |
+
 ### Connection Testing
 
 | Type                   | Purpose                                                              |
@@ -72,7 +82,13 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `copilotAuthStatus` was removed from `AppSettings`; generic provider configuration now relies on `apiKey`, `baseUrl`, and optional `llmModel`.
 - The settings shape intentionally remains backward-compatible with older persisted payloads because [[wiki/entities/store-migration]] upgrades legacy provider values during bootstrap.
 
+## FT-10 Notes
+
+- `SessionData` now acts as the shared persistence surface for both categorization and AI Cluster similarity analysis.
+- Similarity-specific types live alongside categorization types because they cross the same main/preload/renderer boundary.
+
 ## See also
 
 - [[wiki/entities/electron-store]] — persists `AppSettings` and `SessionData`
 - [[wiki/entities/ipc-handlers]] — serves settings/session over IPC
+- [[wiki/topics/ai-cluster-similar-bug-detection]]

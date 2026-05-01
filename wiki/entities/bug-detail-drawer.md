@@ -3,15 +3,16 @@ title: 'Bug Detail Drawer'
 type: entity
 subtype: component
 created: 2026-04-30
-updated: 2026-04-30
-sources: ['[[wiki/sources/ft-06-bug-detail-drawer]]']
+updated: 2026-05-01
+sources:
+  ['[[wiki/sources/ft-06-bug-detail-drawer]]', '[[wiki/sources/ft-10-ai-cluster-similarity]]']
 tags: [react, component, dashboard, drawer, accessibility]
 lang: en
 ---
 
 ## Description
 
-Fixed right-side detail panel used by the dashboard to inspect one bug without leaving the current filtered workspace. It combines status/title context, LLM categorization output, Azure DevOps metadata, a scrollable description, list navigation controls, and a secure external-link action.
+Fixed right-side detail panel used by the dashboard across both exploration views and the `Similarità` tab to inspect one bug without leaving the current workspace. It combines status/title context, LLM categorization output, Azure DevOps metadata, a scrollable description, list navigation controls, and a secure external-link action.
 
 ## Location
 
@@ -50,3 +51,4 @@ Fixed right-side detail panel used by the dashboard to inspect one bug without l
 - [[wiki/entities/dashboard-page]]
 - [[wiki/entities/open-external-ipc]]
 - [[wiki/topics/dashboard-bug-exploration]]
+- [[wiki/topics/ai-cluster-similar-bug-detection]]

@@ -8,15 +8,16 @@ sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-08-generic-provider]]',
-    '[[wiki/sources/ft-09-structured-output]]'
+    '[[wiki/sources/ft-09-structured-output]]',
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
   ]
-tags: [llm, main-process, categorization, orchestration]
+tags: [llm, main-process, categorization, orchestration, retry]
 lang: en
 ---
 
 ## Description
 
-Top-level orchestration service for LLM-based bug categorization. Coordinates provider instantiation, prompt building, chunking, retry logic, schema-aware provider calls, response validation, and progressive result delivery.
+Top-level orchestration service for LLM-based bug categorization. Coordinates provider instantiation, prompt building, chunking, retry logic, schema-aware provider calls, response validation, and progressive result delivery. FT-10 also reuses its exported retry helper from the dedicated similarity service.
 
 ## Location
 
@@ -29,13 +30,18 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 | `categorizeBugs`    | `(settings, bugs, onProgress?) → Promise<CategorizedBug[]>` | Process all bugs through LLM in chunks with progress callbacks |
 | `testLLMConnection` | `(settings) → Promise<void>`                                | Verify LLM provider credentials work                           |
 
+## Shared Helper Export
+
+| Function        | Signature                                                           | Purpose                                                                        |
+| --------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `chatWithRetry` | `(provider, systemPrompt, userMessage, options?) → Promise<string>` | Shared rate-limit retry wrapper reused by [[wiki/entities/similarity-service]] |
+
 ## Internal Functions
 
-| Function              | Purpose                                                                                                                             |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `chatWithRetry`       | Wraps `provider.chat()` with up to 3 retries on rate-limit, exponential backoff `[2s, 4s, 8s]`, and forwards optional `ChatOptions` |
-| `applyCategorization` | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId`                                                |
-| `sleep`               | Promise-based delay utility                                                                                                         |
+| Function              | Purpose                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `applyCategorization` | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId` |
+| `sleep`               | Promise-based delay utility                                                          |
 
 ## Behavior
 
@@ -63,6 +69,11 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 - Structured output reduces parse risk, but `validateLLMResponse()` remains mandatory because providers can still return incomplete or empty payloads.
 - FT-09 does not change chunking or retry semantics; it hardens the provider call boundary.
 
+## FT-10 Notes
+
+- `chatWithRetry()` is now a shared LLM transport primitive, not only a categorization detail.
+- The dedicated [[wiki/entities/similarity-service]] reuses the same provider selection and retry behavior, but swaps chunking for macro-category iteration and swaps `categorization` for the `similar-bugs` response schema.
+
 ## Dependencies
 
 - [[wiki/entities/llm-provider-factory]] - `createLLMProvider`
@@ -73,6 +84,7 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 ## See also
 
 - [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/similarity-service]]
 - [[wiki/concepts/chunk-retry-pattern]]
 - [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

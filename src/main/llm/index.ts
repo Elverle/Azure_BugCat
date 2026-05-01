@@ -1,5 +1,6 @@
 export { createLLMProvider } from './provider-factory'
 export { categorizeBugs, testLLMConnection } from './llm-service'
+export { findSimilarBugs } from './similarity-service'
 export {
   buildSystemPrompt,
   buildUserMessage,
@@ -9,4 +10,11 @@ export {
 export { splitIntoChunks } from './chunking'
 export { validateLLMResponse } from './response-validator'
 export { CATEGORIZATION_SCHEMA, SIMILAR_BUGS_SCHEMA, getSchema } from './schemas'
-export type { LLMProvider, LLMProviderConfig, ChunkInput, ChunkResult, SchemaType, ChatOptions } from './types'
+export type {
+  LLMProvider,
+  LLMProviderConfig,
+  ChunkInput,
+  ChunkResult,
+  SchemaType,
+  ChatOptions
+} from './types'

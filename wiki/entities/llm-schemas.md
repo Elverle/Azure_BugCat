@@ -4,7 +4,8 @@ type: entity
 subtype: model
 created: 2026-05-01
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-09-structured-output]]']
+sources:
+  ['[[wiki/sources/ft-09-structured-output]]', '[[wiki/sources/ft-10-ai-cluster-similarity]]']
 tags: [llm, json-schema, structured-output, types]
 lang: en
 ---
@@ -30,7 +31,7 @@ Shared schema registry for structured LLM outputs. Centralizes the JSON contract
 
 - Both schemas use `additionalProperties: false` at the top level and nested item level.
 - The module is provider-agnostic; concrete adapters decide how to encode the schema for each vendor API.
-- `similar-bugs` is already modeled even though FT-09 wires the categorization path first, which keeps the abstraction ready for adjacent LLM workflows.
+- FT-10 turns the `similar-bugs` schema from a prepared abstraction into an actively used renderer-to-main feature path.
 
 ## Validation
 
@@ -40,5 +41,6 @@ Shared schema registry for structured LLM outputs. Centralizes the JSON contract
 
 - [[wiki/entities/llm-provider-interface]]
 - [[wiki/entities/llm-service]]
+- [[wiki/entities/similarity-service]]
 - [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

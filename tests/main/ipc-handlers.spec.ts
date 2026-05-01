@@ -35,7 +35,7 @@ vi.mock('@main/ado/ado-service', () => ({
 import { registerIPCHandlers } from '@main/ipc-handlers'
 
 const baseSettings: AppSettings = {
-  orgUrl: 'https://dev.azure.com/alpitour',
+  orgUrl: 'https://dev.azure.com/gversino',
   projectName: 'BugCat',
   queryId: '123e4567-e89b-12d3-a456-426614174000',
   topN: 20,

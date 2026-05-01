@@ -2,171 +2,113 @@
 title: 'Electron Architecture'
 type: topic
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]']
-tags: [electron, architecture, ipc, security]
+updated: 2026-05-01
+sources:
+  [
+    '[[wiki/sources/ft-01-scaffold]]',
+    '[[wiki/sources/ft-07-session-persistence]]',
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
+  ]
+tags: [electron, architecture, ipc, security, session]
 lang: en
 ---
 
 ## Overview
 
-The Bug Categorizer is an Electron desktop app with a strict three-process architecture: Main, Preload, and Renderer. The design prioritizes security (sandbox, context isolation) and type safety (shared IPC channel constants, typed bridge).
+The Bug Categorizer is an Electron desktop app with a strict three-process architecture: Main, Preload, and Renderer. The design prioritizes security (sandbox, context isolation), type safety (shared IPC channel constants, typed bridge), and explicit persistence bootstrapping through store migration before app services come online.
 
 ## Architecture Diagram
 
-```
+```text
 ┌──────────────────────────────────────────────────┐
-│                   Renderer                        │
-│        React 18 + TypeScript + Tailwind           │
-│  window.electronAPI.* (typed, whitelisted)        │
-│                                                   │
-│  Routes: / (Dashboard) | /settings (Settings)     │
-│  Router: HashRouter (file:// compatible)          │
+│                   Renderer                       │
+│        React 18 + TypeScript + Tailwind         │
+│  window.electronAPI.* (typed, whitelisted)      │
+│                                                  │
+│  Routes: / | /settings                         │
+│  Router: HashRouter (file:// compatible)        │
 ├──────────────────────────────────────────────────┤
-│                   Preload                         │
-│        contextBridge.exposeInMainWorld            │
-│  ipcRenderer.invoke() → typed channels only       │
+│                   Preload                        │
+│        contextBridge.exposeInMainWorld          │
+│  ipcRenderer.invoke/on -> typed channels only   │
 ├──────────────────────────────────────────────────┤
-│                    Main                           │
-│        Node.js + Electron APIs                    │
-│  ipcMain.handle() registered in ipc-handlers.ts   │
-│  electron-store (encrypted) for persistence       │
-│  app lifecycle, window management                 │
+│                    Main                          │
+│        Node.js + Electron APIs                   │
+│  migrateStore(store)                             │
+│    -> ipcMain.handle() registration              │
+│    -> window creation                            │
+│  electron-store (encrypted) for persistence      │
 └──────────────────────────────────────────────────┘
 ```
 
 ## Source Structure
 
-```
+```text
 src/
 ├── main/
-│   ├── index.ts          # App entry, window creation
-│   ├── store.ts          # Encrypted electron-store
-│   └── ipc-handlers.ts   # IPC handler registration
+│   ├── index.ts            # App entry, migration bootstrap, window creation
+│   ├── store.ts            # Encrypted electron-store
+│   ├── store-migration.ts  # Schema-versioned migration pipeline
+│   ├── ipc-handlers.ts     # IPC handler registration
+│   ├── ado/                # Azure DevOps integration
+│   └── llm/                # Categorization + similarity services and providers
 ├── preload/
-│   ├── index.ts          # contextBridge with typed API
-│   └── index.d.ts        # Window.electronAPI declarations
+│   ├── index.ts            # contextBridge with typed API
+│   └── index.d.ts          # Window.electronAPI declarations
 ├── shared/
-│   ├── types.ts          # Domain types (BugItem, AppSettings, etc.)
-│   └── ipc-channels.ts   # Typed IPC channel constants
+│   ├── types.ts            # Domain/session types
+│   └── ipc-channels.ts     # Typed IPC channel constants
 └── renderer/
-    ├── index.html        # HTML entry with CSP
-    └── src/
-        ├── main.tsx      # React entry
-        ├── App.tsx       # HashRouter + routes
-        ├── assets/       # CSS (Tailwind + Inter)
-        ---
-        title: 'Electron Architecture'
-        type: topic
-        created: 2026-04-29
-        updated: 2026-05-01
-        sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-07-session-persistence]]']
-        tags: [electron, architecture, ipc, security]
-        lang: en
-        ---
+        ├── index.html          # HTML entry with CSP
+        └── src/
+                ├── App.tsx         # HashRouter + route registration
+                ├── pages/          # Dashboard, Settings
+                ├── hooks/          # Session/action hooks
+                └── components/     # Layout, dashboard, AI Cluster, settings UI
+```
 
-        ## Overview
+## Process Roles
 
-        The Bug Categorizer is an Electron desktop app with a strict three-process architecture: Main, Preload, and Renderer. The design prioritizes security (sandbox, context isolation), type safety (shared IPC channel constants, typed bridge), and now explicit persistence bootstrapping through store migration before app services come online.
+| Process       | Responsibility                                                               |
+| ------------- | ---------------------------------------------------------------------------- |
+| Renderer      | SPA routing, user interactions, progress UI, drawer drill-down               |
+| Preload       | Typed, minimal bridge for invoke and progress subscriptions                  |
+| Main          | Store access, Azure DevOps calls, LLM provider orchestration, URL validation |
+| Shared module | Channel constants and DTOs crossing process boundaries                       |
 
-        ## Architecture Diagram
+## Key Flows
 
-        ```
-        ┌──────────────────────────────────────────────────┐
-        │                   Renderer                        │
-        │        React 18 + TypeScript + Tailwind           │
-        │  window.electronAPI.* (typed, whitelisted)        │
-        │                                                   │
-        │  Routes: / (Dashboard) | /settings (Settings)     │
-        │  Router: HashRouter (file:// compatible)          │
-        ├──────────────────────────────────────────────────┤
-        │                   Preload                         │
-        │        contextBridge.exposeInMainWorld            │
-        │  ipcRenderer.invoke() → typed channels only       │
-        ├──────────────────────────────────────────────────┤
-        │                    Main                           │
-        │        Node.js + Electron APIs                    │
-        │  migrateStore(store)                              │
-        │    → ipcMain.handle() registration                │
-        │    → window creation                              │
-        │  electron-store (encrypted) for persistence       │
-        └──────────────────────────────────────────────────┘
-        ```
+### App bootstrap
 
-        ## Source Structure
+1. `app.whenReady()` resolves.
+2. Main process runs `migrateStore(store)`.
+3. IPC handlers are registered only after the store is at the current schema.
+4. The browser window is created and loads the renderer.
 
-        ```
-        src/
-        ├── main/
-        │   ├── index.ts            # App entry, migration bootstrap, window creation
-        │   ├── store.ts            # Encrypted electron-store
-        │   ├── store-migration.ts  # Schema-versioned migration pipeline
-        │   └── ipc-handlers.ts     # IPC handler registration
-        ├── preload/
-        │   ├── index.ts            # contextBridge with typed API
-        │   └── index.d.ts          # Window.electronAPI declarations
-        └── renderer/
-            ├── index.html          # HTML entry with CSP
-            └── src/
-                ├── main.tsx        # React entry
-                ├── App.tsx         # HashRouter + routes
-                ├── assets/         # CSS (Tailwind + Inter)
-                ├── lib/            # Utilities (`cn`, `formatDate`)
-                ├── components/     # UI + layout components, including ConfirmDialog
-                └── pages/          # Route pages
-        ```
+### Categorization flow
 
-        ## Components
+1. Renderer invokes `llm:categorize` through the preload bridge.
+2. Main loads session bugs and settings from the encrypted store.
+3. `categorizeBugs()` runs in the main process and streams chunk progress.
+4. Main persists updated categorized session data.
 
-        | Component                               | Page                     |
-        | --------------------------------------- | ------------------------ |
-        | [[wiki/entities/electron-main-process]] | Main process entry       |
-        | [[wiki/entities/electron-store]]        | Encrypted persistence    |
-        | [[wiki/entities/store-migration]]       | Startup schema upgrades  |
-        | [[wiki/entities/ipc-handlers]]          | IPC handler registration |
-        | [[wiki/entities/preload-bridge]]        | Context bridge           |
-        | [[wiki/entities/ipc-channels]]          | Channel constants        |
-        | [[wiki/entities/shared-types]]          | Domain model             |
+### Similarity flow
 
-        ## Key Concepts
+1. Renderer invokes `llm:find-similar` from the dashboard `Similarità` tab.
+2. Main validates that the session has already been categorized.
+3. `findSimilarBugs()` groups bugs by `macroCategory`, calls the LLM per category, and streams progress.
+4. Main persists `session.similarityResults` for later hydration.
 
-        | Concept                                          | Page                                      |
-        | ------------------------------------------------ | ----------------------------------------- |
-        | [[wiki/concepts/ipc-security-model]]             | Security layers and CSP                   |
-        | [[wiki/concepts/electron-vite-build]]            | Build pipeline and packaging              |
-        | [[wiki/concepts/schema-versioned-store-migration]] | Startup persistence compatibility model |
+## Feature Milestones
 
-        ## Data Flow
+- **FT-02**: Settings page UI and persistence workflow
+- **FT-03**: Azure DevOps integration (`ado:fetch-bugs`, `ado:test-connection`)
+- **FT-04**: LLM categorization (`llm:categorize`, `llm:test-connection`, progress events)
+- **FT-07**: Schema-versioned store migration and guarded session reset UX
+- **FT-10**: AI Cluster similarity analysis integrated into dashboard (`llm:find-similar`, similarity progress events, session-persisted results)
 
-        ### App bootstrap
+## See also
 
-        1. `app.whenReady()` resolves.
-        2. Main process runs `migrateStore(store)`.
-        3. IPC handlers are registered only after the store is at the current schema.
-        4. The browser window is created and loads the renderer.
-
-        ### Settings read (renderer → main → store)
-
-        1. `window.electronAPI.getSettings()` — renderer calls bridge
-        2. Preload: `ipcRenderer.invoke('settings:get')` — sends to main
-        3. Main: `store.get('settings')` — reads from encrypted store
-        4. Result flows back through the same chain
-
-        ### Settings write (renderer → main → store)
-
-        1. `window.electronAPI.setSettings(data)` — renderer calls bridge
-        2. Preload: `ipcRenderer.invoke('settings:set', data)` — sends to main
-        3. Main: `store.set('settings', data)` — writes to encrypted store
-
-        ## Feature Milestones
-
-        - **FT-02**: Settings page UI and persistence workflow
-        - **FT-03**: Azure DevOps integration (`ado:fetch-bugs`, `ado:test-connection`)
-        - **FT-04**: LLM categorization (`llm:categorize`, `llm:test-connection`, progress events)
-        - **FT-05**: Dashboard page with bug triage UI
-        - **FT-07**: Schema-versioned store migration and guarded session reset UX
-
-        ## See also
-
-        - [[wiki/topics/renderer-ui]]
-        - [[wiki/topics/session-persistence-lifecycle]]
+- [[wiki/topics/renderer-ui]]
+- [[wiki/topics/session-persistence-lifecycle]]
+- [[wiki/topics/ai-cluster-similar-bug-detection]]

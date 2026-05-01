@@ -3,15 +3,16 @@ title: 'useBugDrawer Hook'
 type: entity
 subtype: hook
 created: 2026-04-30
-updated: 2026-04-30
-sources: ['[[wiki/sources/ft-06-bug-detail-drawer]]']
+updated: 2026-05-01
+sources:
+  ['[[wiki/sources/ft-06-bug-detail-drawer]]', '[[wiki/sources/ft-10-ai-cluster-similarity]]']
 tags: [react, hook, dashboard, drawer]
 lang: en
 ---
 
 ## Description
 
-Renderer hook that owns bug drawer selection state and index-based navigation across the current filtered and sorted bug list. It keeps the detail panel aligned with whatever slice of data the dashboard is currently showing.
+Renderer hook that owns bug drawer selection state and index-based navigation across the current bug list supplied by a page. It now supports both standard dashboard exploration and the dashboard `Similarità` drill-down flow while keeping the detail panel aligned with the currently visible slice of data.
 
 ## Location
 
@@ -43,3 +44,4 @@ Renderer hook that owns bug drawer selection state and index-based navigation ac
 - [[wiki/entities/bug-detail-drawer]]
 - [[wiki/entities/dashboard-page]]
 - [[wiki/topics/dashboard-bug-exploration]]
+- [[wiki/topics/ai-cluster-similar-bug-detection]]

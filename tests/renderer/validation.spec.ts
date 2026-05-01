@@ -12,7 +12,7 @@ import {
 } from '@renderer/lib/validation'
 
 const validSettings: AppSettings = {
-  orgUrl: 'https://dev.azure.com/alpitour',
+  orgUrl: 'https://dev.azure.com/gversino',
   projectName: 'BugCat',
   queryId: '123e4567-e89b-12d3-a456-426614174000',
   topN: 20,
@@ -26,7 +26,7 @@ const validSettings: AppSettings = {
 describe('validation utils', () => {
   it('accepts valid ADO organization urls and rejects invalid ones', () => {
     expect(validateOrgUrl(validSettings.orgUrl)).toBeNull()
-    expect(validateOrgUrl('http://dev.azure.com/alpitour')).toBe(
+    expect(validateOrgUrl('http://dev.azure.com/gversino')).toBe(
       'Must be https://dev.azure.com/{org} or https://{org}.visualstudio.com'
     )
   })
