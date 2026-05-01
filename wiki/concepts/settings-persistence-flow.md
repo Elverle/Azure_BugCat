@@ -4,12 +4,13 @@ type: concept
 created: 2026-04-29
 updated: 2026-05-01
 sources:
-    [
-        '[[wiki/sources/ft-02-settings]]',
-        '[[wiki/sources/ft-03-ado-fetch]]',
-        '[[wiki/sources/ft-04-llm-provider]]',
-        '[[wiki/sources/ft-07-session-persistence]]'
-    ]
+  [
+    '[[wiki/sources/ft-02-settings]]',
+    '[[wiki/sources/ft-03-ado-fetch]]',
+    '[[wiki/sources/ft-04-llm-provider]]',
+    '[[wiki/sources/ft-07-session-persistence]]',
+    '[[wiki/sources/ft-08-generic-provider]]'
+  ]
 tags: [electron, ipc, electron-store, persistence, settings, session]
 lang: en
 ---
@@ -46,8 +47,8 @@ Renderer
 
 1. `app.whenReady()` calls [[wiki/entities/store-migration]] before registering IPC handlers.
 2. The migration layer detects legacy stores via `store.has('schemaVersion')`.
-3. Pending migrations transform the persisted `settings`/`session` payloads in version order.
-4. The current schema version is written back before normal app flows continue.
+3. Pending migrations transform the persisted `settings`/`session` payloads in version order, including FT-08's provider cleanup.
+4. Migrated data is written back first, then the current schema version is stored before normal app flows continue.
 
 ### Settings load/save
 

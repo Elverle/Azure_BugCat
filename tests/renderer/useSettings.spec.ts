@@ -14,8 +14,7 @@ const validSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'pat-token',
-  categories: ['UI'],
-  copilotAuthStatus: 'unknown'
+  categories: ['UI']
 }
 
 type ElectronApiMock = {

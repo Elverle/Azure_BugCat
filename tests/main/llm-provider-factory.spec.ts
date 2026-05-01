@@ -12,9 +12,20 @@ describe('provider-factory', () => {
     expect(provider.name).toBe('anthropic')
   })
 
-  it('creates Copilot provider', () => {
-    const provider = createLLMProvider('github-copilot', {})
-    expect(provider.name).toBe('github-copilot')
+  it('creates Generic provider', () => {
+    const provider = createLLMProvider('generic', {
+      apiKey: 'key',
+      baseUrl: 'https://api.example.com/v1'
+    })
+    expect(provider.name).toBe('generic')
+  })
+
+  it('throws for Generic without API key', () => {
+    expect(() => createLLMProvider('generic', { baseUrl: 'https://api.example.com/v1' })).toThrow()
+  })
+
+  it('throws for Generic without baseUrl', () => {
+    expect(() => createLLMProvider('generic', { apiKey: 'key' })).toThrow()
   })
 
   it('creates Gemini provider', () => {

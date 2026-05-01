@@ -1,21 +1,27 @@
 ---
-title: 'GitHub Copilot Provider'
+title: 'GitHub Copilot Provider (Removed)'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-04-30
-sources: ['[[wiki/sources/ft-04-llm-provider]]']
-tags: [llm, github-copilot, provider]
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-08-generic-provider]]']
+tags: [llm, github-copilot, provider, removed, historical]
 lang: en
 ---
 
 ## Description
 
-LLM provider implementation using the GitHub Copilot SDK (`@github/copilot-sdk`). Unlike other providers, it uses a session-based model — creates a client, opens a session, sends a message, then disconnects.
+Historical record of the GitHub Copilot SDK implementation that existed in FT-04. This provider was removed in FT-08 when the project adopted a generic OpenAI-compatible HTTP client instead.
 
 ## Location
 
-`src/main/llm/providers/copilot-provider.ts`
+Historical file: `src/main/llm/providers/copilot-provider.ts` (deleted in FT-08)
+
+## Removal Summary
+
+- Replaced by [[wiki/entities/generic-provider]] for OpenAI-compatible endpoints configured through `apiKey`, `baseUrl`, and optional `llmModel`.
+- `@github/copilot-sdk` was removed from dependencies.
+- Persisted settings that still reference `github-copilot` are normalized to `openai` by [[wiki/entities/store-migration]].
 
 ## Configuration
 
@@ -48,5 +54,7 @@ The `approveAll` handler means Copilot can use any tools it requests during the 
 
 ## See also
 
+- [[wiki/entities/generic-provider]]
+- [[wiki/entities/store-migration]]
 - [[wiki/entities/llm-provider-factory]]
 - [[wiki/concepts/llm-provider-abstraction]]

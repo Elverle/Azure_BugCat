@@ -3,6 +3,7 @@ import { BugItem, LLMCategorizeResult } from '../../shared/types'
 export interface LLMProviderConfig {
   apiKey?: string
   model?: string
+  baseUrl?: string
   timeout?: number
 }
 

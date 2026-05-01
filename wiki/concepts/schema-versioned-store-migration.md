@@ -3,7 +3,7 @@ title: 'Schema-Versioned Store Migration'
 type: concept
 created: 2026-05-01
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-07-session-persistence]]']
+sources: ['[[wiki/sources/ft-07-session-persistence]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [electron-store, persistence, migration, schema-versioning]
 lang: en
 ---
@@ -18,6 +18,8 @@ Persistence schema changes are managed through an explicit `schemaVersion` key a
 - Startup code in `src/main/index.ts` runs `migrateStore(store)` before `registerIPCHandlers()` or `createWindow()`.
 - Legacy stores are identified by checking whether `schemaVersion` actually exists, not by reading a defaulted value.
 - The migration layer reads existing `settings` and `session` payloads, applies pending migration steps in ascending version order, and writes the final data back.
+- FT-08 demonstrates a compatibility migration that rewrites deprecated provider state (`github-copilot` → `openai`) and drops removed keys (`copilotAuthStatus`).
+- The final payload is persisted before the schema version bump is written, so version metadata cannot get ahead of actual migrated data.
 - If a migration throws, the app prefers recoverability over perfect session retention by clearing `session` and forcing the current schema version.
 
 ## Why It Matters Here

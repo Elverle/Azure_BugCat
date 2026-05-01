@@ -15,8 +15,7 @@ const mockElectronAPI = {
     llmProvider: 'openai',
     apiKey: '',
     pat: '',
-    categories: [],
-    copilotAuthStatus: 'unknown'
+    categories: []
   }),
   setSettings: vi.fn().mockResolvedValue(undefined),
   clearSession: vi.fn().mockResolvedValue(undefined),
@@ -54,8 +53,7 @@ describe('SettingsPage — clear session', () => {
       llmProvider: 'openai',
       apiKey: '',
       pat: '',
-      categories: [],
-      copilotAuthStatus: 'unknown'
+      categories: []
     })
     mockElectronAPI.clearSession.mockResolvedValue(undefined)
   })

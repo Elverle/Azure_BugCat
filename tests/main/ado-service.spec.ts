@@ -23,8 +23,7 @@ const baseSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'secret',
-  categories: [],
-  copilotAuthStatus: 'unknown'
+  categories: []
 }
 
 function makeWorkItem(id: number): WorkItemRaw {
@@ -93,7 +92,9 @@ describe('ado-service', () => {
   it('respects topN before batching and fetches only the configured number of ids', async () => {
     const ids = Array.from({ length: 500 }, (_, index) => ({ id: index + 1, url: `u${index + 1}` }))
     fetchWiqlQuery.mockResolvedValue({ workItems: ids })
-    fetchWorkItemsBatch.mockResolvedValue(Array.from({ length: 20 }, (_, index) => makeWorkItem(index + 1)))
+    fetchWorkItemsBatch.mockResolvedValue(
+      Array.from({ length: 20 }, (_, index) => makeWorkItem(index + 1))
+    )
 
     const bugs = await fetchBugsFromQuery({ ...baseSettings, topN: 20 })
 
@@ -116,14 +117,31 @@ describe('ado-service', () => {
     const bugs = await fetchBugsFromQuery({ ...baseSettings, topN: 450 })
 
     expect(fetchWorkItemsBatch).toHaveBeenCalledTimes(3)
-    expect(fetchWorkItemsBatch).toHaveBeenNthCalledWith(1, expect.any(Object), Array.from({ length: 200 }, (_, index) => index + 1))
-    expect(fetchWorkItemsBatch).toHaveBeenNthCalledWith(2, expect.any(Object), Array.from({ length: 200 }, (_, index) => index + 201))
-    expect(fetchWorkItemsBatch).toHaveBeenNthCalledWith(3, expect.any(Object), Array.from({ length: 50 }, (_, index) => index + 401))
+    expect(fetchWorkItemsBatch).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Object),
+      Array.from({ length: 200 }, (_, index) => index + 1)
+    )
+    expect(fetchWorkItemsBatch).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Object),
+      Array.from({ length: 200 }, (_, index) => index + 201)
+    )
+    expect(fetchWorkItemsBatch).toHaveBeenNthCalledWith(
+      3,
+      expect.any(Object),
+      Array.from({ length: 50 }, (_, index) => index + 401)
+    )
     expect(bugs).toHaveLength(450)
   })
 
   it('maps description, tags and assignee edge cases gracefully', async () => {
-    fetchWiqlQuery.mockResolvedValue({ workItems: [{ id: 1, url: 'u1' }, { id: 2, url: 'u2' }] })
+    fetchWiqlQuery.mockResolvedValue({
+      workItems: [
+        { id: 1, url: 'u1' },
+        { id: 2, url: 'u2' }
+      ]
+    })
     fetchWorkItemsBatch.mockResolvedValue([
       {
         id: 1,
@@ -172,14 +190,22 @@ describe('ado-service', () => {
   })
 
   it('returns success and error messages from testAdoConnection', async () => {
-    fetchWiqlQuery.mockResolvedValueOnce({ workItems: [{ id: 1, url: 'u1' }, { id: 2, url: 'u2' }] })
+    fetchWiqlQuery.mockResolvedValueOnce({
+      workItems: [
+        { id: 1, url: 'u1' },
+        { id: 2, url: 'u2' }
+      ]
+    })
 
     await expect(testAdoConnection(baseSettings)).resolves.toEqual({
       success: true,
       message: 'Connessione riuscita — 2 bug trovati'
     })
 
-    fetchWiqlQuery.mockRejectedValueOnce({ code: 'ADO_TIMEOUT', message: 'Errore di rete: socket hang up' })
+    fetchWiqlQuery.mockRejectedValueOnce({
+      code: 'ADO_TIMEOUT',
+      message: 'Errore di rete: socket hang up'
+    })
 
     await expect(testAdoConnection(baseSettings)).resolves.toEqual({
       success: false,

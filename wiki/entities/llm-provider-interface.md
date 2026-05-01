@@ -3,8 +3,8 @@ title: 'LLM Provider Interface'
 type: entity
 subtype: model
 created: 2026-04-30
-updated: 2026-04-30
-sources: ['[[wiki/sources/ft-04-llm-provider]]']
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [llm, interface, types]
 lang: en
 ---
@@ -35,6 +35,7 @@ interface LLMProvider {
 interface LLMProviderConfig {
   apiKey?: string
   model?: string
+  baseUrl?: string
   timeout?: number
 }
 ```

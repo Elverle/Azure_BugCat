@@ -3,8 +3,8 @@ title: 'LLM Service'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-04-30
-sources: ['[[wiki/sources/ft-04-llm-provider]]']
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [llm, main-process, categorization, orchestration]
 lang: en
 ---
@@ -34,7 +34,7 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 
 ## Behavior
 
-1. Creates provider via `createLLMProvider(settings.llmProvider, { apiKey, timeout })`
+1. Creates provider via `createLLMProvider(settings.llmProvider, { apiKey, baseUrl, model, timeout })`
 2. Builds system prompt from `settings.categories`
 3. Splits bugs into chunks of `settings.chunkSize`
 4. For each chunk:
@@ -50,6 +50,11 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 - `LLM_AUTH_ERROR` and `LLM_TIMEOUT` → re-thrown immediately (abort all)
 - `LLM_RATE_LIMIT` → retried with exponential backoff
 - Other chunk errors → graceful degradation (fallback categories)
+
+## FT-08 Notes
+
+- Generic-provider requests now receive `settings.baseUrl` and `settings.llmModel` from the orchestration layer instead of relying on provider-local defaults only.
+- The retry behavior is unchanged; FT-08 only swaps one provider implementation and its config surface, not the chunking or fallback semantics.
 
 ## Dependencies
 

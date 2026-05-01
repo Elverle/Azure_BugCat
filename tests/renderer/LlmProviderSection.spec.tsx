@@ -14,12 +14,11 @@ const baseSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'secret-key',
   pat: 'pat-token',
-  categories: [],
-  copilotAuthStatus: 'authenticated'
+  categories: []
 }
 
 describe('LlmProviderSection', () => {
-  it('shows api key input for non-copilot providers and badge for copilot', () => {
+  it('shows api key input for all providers and base url + model for generic', () => {
     const onFieldChange = vi.fn()
     const { rerender } = render(
       <LlmProviderSection
@@ -34,12 +33,20 @@ describe('LlmProviderSection', () => {
     )
 
     expect(screen.getByLabelText('OpenAI API Key')).toHaveValue('secret-key')
-    fireEvent.change(screen.getByLabelText('Provider'), { target: { value: 'github-copilot' } })
-    expect(onFieldChange).toHaveBeenCalledWith('llmProvider', 'github-copilot')
+    expect(screen.queryByLabelText('Base URL')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Model')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Provider'), { target: { value: 'generic' } })
+    expect(onFieldChange).toHaveBeenCalledWith('llmProvider', 'generic')
 
     rerender(
       <LlmProviderSection
-        settings={{ ...baseSettings, llmProvider: 'github-copilot' }}
+        settings={{
+          ...baseSettings,
+          llmProvider: 'generic',
+          baseUrl: 'https://api.example.com/v1',
+          llmModel: 'my-model'
+        }}
         errors={{}}
         touched={{}}
         onFieldChange={onFieldChange}
@@ -49,22 +56,8 @@ describe('LlmProviderSection', () => {
       />
     )
 
-    expect(screen.queryByLabelText('OpenAI API Key')).not.toBeInTheDocument()
-    expect(screen.getByText('Authenticated')).toBeInTheDocument()
-    expect(screen.getByText('GitHub Copilot uses your GitHub session. No API key needed.')).toBeInTheDocument()
-
-    rerender(
-      <LlmProviderSection
-        settings={baseSettings}
-        errors={{}}
-        touched={{}}
-        onFieldChange={onFieldChange}
-        onTestConnection={vi.fn().mockResolvedValue(undefined)}
-        testResult={null}
-        testLoading={false}
-      />
-    )
-
-    expect(screen.getByLabelText('OpenAI API Key')).toHaveValue('secret-key')
+    expect(screen.getByLabelText('API Key')).toBeInTheDocument()
+    expect(screen.getByLabelText('Base URL')).toHaveValue('https://api.example.com/v1')
+    expect(screen.getByLabelText('Model')).toHaveValue('my-model')
   })
 })

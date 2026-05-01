@@ -89,14 +89,7 @@ export function registerIPCHandlers(): void {
       if (!settings)
         return { success: false, message: 'Settings non configurate' } as TestConnectionResult
 
-      if (settings.llmProvider === 'github-copilot') {
-        if (settings.copilotAuthStatus === 'unauthenticated') {
-          return {
-            success: false,
-            message: 'Autenticazione GitHub Copilot richiesta'
-          } as TestConnectionResult
-        }
-      } else if (!settings.apiKey?.trim()) {
+      if (!settings.apiKey?.trim()) {
         return { success: false, message: 'API Key mancante' } as TestConnectionResult
       }
 

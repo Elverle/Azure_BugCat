@@ -2,7 +2,7 @@
 title: 'FT-02 — Settings Page & Configuration Persistence'
 type: source
 created: 2026-04-29
-updated: 2026-04-29
+updated: 2026-05-01
 sources: []
 tags: [feature, settings, react, ipc, validation, electron-store]
 lang: en
@@ -10,7 +10,7 @@ lang: en
 
 ## Summary
 
-Full implementation of the Settings page for the Bug Categorizer Electron app. Includes a form with real-time validation for Azure DevOps connection fields (org URL, project, query ID, PAT, topN) and LLM provider settings (provider select with conditional API key / Copilot auth status, chunk size). Categories management via textarea editor. Settings persisted via IPC to encrypted electron-store. Test Connection buttons with 5 s timeout handling. Clean corporate design matching `design.html` reference.
+Initial implementation of the Settings page for the Bug Categorizer Electron app. Includes a form with real-time validation for Azure DevOps connection fields (org URL, project, query ID, PAT, topN) and the first LLM provider settings flow. Categories management via textarea editor. Settings persisted via IPC to encrypted electron-store. Test Connection buttons with 5 s timeout handling. Clean corporate design matching `design.html` reference.
 
 ## Feature Scope
 
@@ -46,7 +46,7 @@ Full implementation of the Settings page for the Bug Categorizer Electron app. I
 - **Pure validation functions** separated from React state — enables unit testing without DOM
 - **Single `useSettings` hook** owns all form state, dirty tracking, save/load, and test connections
 - **Auto-dismiss** for test connection results (5 s) and save success banners (3 s)
-- **Conditional rendering** in LLM section: API key field for OpenAI/Anthropic/Gemini, auth status badge for GitHub Copilot
+- **Historical note:** FT-08 later replaced the Copilot-specific branch with Generic provider `Base URL` / `Model` fields and an always-on API key input
 - **Categories as textarea** with line-based parsing, deduplication, and empty-line trimming
 
 ## Entities Created

@@ -3,8 +3,13 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-02-settings]]']
+updated: 2026-05-01
+sources:
+  [
+    '[[wiki/sources/ft-01-scaffold]]',
+    '[[wiki/sources/ft-02-settings]]',
+    '[[wiki/sources/ft-08-generic-provider]]'
+  ]
 tags: [typescript, types, shared, domain-model]
 lang: en
 ---
@@ -23,7 +28,7 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 | Type              | Purpose                                                             |
 | ----------------- | ------------------------------------------------------------------- |
-| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'github-copilot' \| 'gemini'`    |
+| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini'`           |
 | `ErrorCode`       | Union of known error codes (ADO*\*, LLM*\_, STORE\_\_, UNKNOWN\_\*) |
 
 ### Bug types
@@ -35,10 +40,10 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Configuration
 
-| Type          | Purpose                                                                         |
-| ------------- | ------------------------------------------------------------------------------- |
-| `AppSettings` | Full settings object (ADO connection, LLM provider, API keys, categories, etc.) |
-| `SessionData` | Cached bug list with fetch/categorize timestamps                                |
+| Type          | Purpose                                                                                                      |
+| ------------- | ------------------------------------------------------------------------------------------------------------ |
+| `AppSettings` | Full settings object, including optional `baseUrl` and `llmModel` for the generic OpenAI-compatible provider |
+| `SessionData` | Cached bug list with fetch/categorize timestamps                                                             |
 
 ### Error & Progress
 
@@ -61,6 +66,11 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | `TestConnectionResult` | Structured response from test connection IPC: `{ success, message }` |
 
 _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]] and consumed by [[wiki/entities/use-settings-hook]].
+
+## FT-08 Notes
+
+- `copilotAuthStatus` was removed from `AppSettings`; generic provider configuration now relies on `apiKey`, `baseUrl`, and optional `llmModel`.
+- The settings shape intentionally remains backward-compatible with older persisted payloads because [[wiki/entities/store-migration]] upgrades legacy provider values during bootstrap.
 
 ## See also
 
