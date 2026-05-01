@@ -18,7 +18,7 @@ const baseSettings: AppSettings = {
 }
 
 describe('LlmProviderSection', () => {
-  it('shows api key input for all providers and base url + model for generic', () => {
+  it('shows the model field for all providers and base url only for generic', () => {
     const onFieldChange = vi.fn()
     const { rerender } = render(
       <LlmProviderSection
@@ -34,7 +34,8 @@ describe('LlmProviderSection', () => {
 
     expect(screen.getByLabelText('OpenAI API Key')).toHaveValue('secret-key')
     expect(screen.queryByLabelText('Base URL')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Model')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Model')).toBeInTheDocument()
+    expect(screen.getByLabelText('Model')).toHaveAttribute('placeholder', 'gpt-4o')
 
     fireEvent.change(screen.getByLabelText('Provider'), { target: { value: 'generic' } })
     expect(onFieldChange).toHaveBeenCalledWith('llmProvider', 'generic')
@@ -59,5 +60,36 @@ describe('LlmProviderSection', () => {
     expect(screen.getByLabelText('API Key')).toBeInTheDocument()
     expect(screen.getByLabelText('Base URL')).toHaveValue('https://api.example.com/v1')
     expect(screen.getByLabelText('Model')).toHaveValue('my-model')
+  })
+
+  it('updates the model placeholder when the provider changes', () => {
+    const onFieldChange = vi.fn()
+    const { rerender } = render(
+      <LlmProviderSection
+        settings={baseSettings}
+        errors={{}}
+        touched={{}}
+        onFieldChange={onFieldChange}
+        onTestConnection={vi.fn().mockResolvedValue(undefined)}
+        testResult={null}
+        testLoading={false}
+      />
+    )
+
+    expect(screen.getByLabelText('Model')).toHaveAttribute('placeholder', 'gpt-4o')
+
+    rerender(
+      <LlmProviderSection
+        settings={{ ...baseSettings, llmProvider: 'anthropic' }}
+        errors={{}}
+        touched={{}}
+        onFieldChange={onFieldChange}
+        onTestConnection={vi.fn().mockResolvedValue(undefined)}
+        testResult={null}
+        testLoading={false}
+      />
+    )
+
+    expect(screen.getByLabelText('Model')).toHaveAttribute('placeholder', 'claude-sonnet-4.6')
   })
 })
