@@ -16,7 +16,6 @@ function getEncryptionKey(): string {
     }
     const generated = randomBytes(32).toString('hex')
     writeFileSync(keyPath, generated, { mode: 0o600 })
-    console.warn('Machine ID unavailable — generated fallback encryption key')
     return generated
   }
 }

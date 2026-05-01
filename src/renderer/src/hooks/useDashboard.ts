@@ -14,7 +14,10 @@ export function useDashboard(): UseDashboardReturn {
   const [bugs, setBugs] = useState<CategorizedBug[]>([])
   const [loading, setLoading] = useState(true)
   const [progress, setProgress] = useState<ChunkProgress | null>(null)
-  const [sessionInfo, setSessionInfo] = useState<{ fetchedAt: string | null; categorizedAt: string | null }>({
+  const [sessionInfo, setSessionInfo] = useState<{
+    fetchedAt: string | null
+    categorizedAt: string | null
+  }>({
     fetchedAt: null,
     categorizedAt: null
   })

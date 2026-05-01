@@ -28,7 +28,13 @@ const COLUMNS: ColumnDef[] = [
   { key: 'subCategory', label: 'Sotto-cat', className: 'w-28' }
 ]
 
-function SortIcon({ columnKey, sortState }: { columnKey: keyof CategorizedBug; sortState: SortState }): JSX.Element {
+function SortIcon({
+  columnKey,
+  sortState
+}: {
+  columnKey: keyof CategorizedBug
+  sortState: SortState
+}): JSX.Element {
   if (sortState.key !== columnKey) {
     return <ChevronsUpDown className="w-4 h-4 text-gray-400" />
   }
@@ -53,7 +59,10 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
     case 'state':
       return (
         <span
-          className={cn('px-2 py-1 rounded-full text-xs font-medium', getStatusBadgeClasses(bug.state))}
+          className={cn(
+            'px-2 py-1 rounded-full text-xs font-medium',
+            getStatusBadgeClasses(bug.state)
+          )}
         >
           {bug.state}
         </span>
@@ -72,7 +81,13 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
     case 'macroCategory': {
       const macroColor = getCategoryColor(bug.macroCategory)
       return (
-        <span className={cn('px-2 py-1 rounded text-xs border border-gray-200', macroColor.bg, macroColor.text)}>
+        <span
+          className={cn(
+            'px-2 py-1 rounded text-xs border border-gray-200',
+            macroColor.bg,
+            macroColor.text
+          )}
+        >
           {bug.macroCategory || '—'}
         </span>
       )
@@ -81,7 +96,13 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
     case 'subCategory': {
       const subColor = getCategoryColor(bug.subCategory)
       return (
-        <span className={cn('px-2 py-1 rounded text-xs border border-gray-200', subColor.bg, subColor.text)}>
+        <span
+          className={cn(
+            'px-2 py-1 rounded text-xs border border-gray-200',
+            subColor.bg,
+            subColor.text
+          )}
+        >
           {bug.subCategory || '—'}
         </span>
       )
@@ -92,7 +113,10 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
   }
 }
 
-function getAriaSortValue(columnKey: keyof CategorizedBug, sortState: SortState): 'ascending' | 'descending' | 'none' {
+function getAriaSortValue(
+  columnKey: keyof CategorizedBug,
+  sortState: SortState
+): 'ascending' | 'descending' | 'none' {
   if (sortState.key !== columnKey) return 'none'
   return sortState.direction === 'asc' ? 'ascending' : 'descending'
 }
@@ -106,7 +130,10 @@ export function BugTable({ bugs, sortState, onSort, onBugClick }: BugTableProps)
             {COLUMNS.map((col) => (
               <th
                 key={col.key}
-                className={cn('p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider', col.className)}
+                className={cn(
+                  'p-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
+                  col.className
+                )}
                 aria-sort={getAriaSortValue(col.key, sortState)}
               >
                 <button
@@ -128,8 +155,14 @@ export function BugTable({ bugs, sortState, onSort, onBugClick }: BugTableProps)
               className="hover:bg-blue-50 cursor-pointer transition border-b border-gray-100"
               tabIndex={0}
               role={onBugClick ? 'button' : undefined}
+              data-bug-click=""
               onClick={() => onBugClick?.(bug)}
-              onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && onBugClick) { e.preventDefault(); onBugClick(bug) } }}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && onBugClick) {
+                  e.preventDefault()
+                  onBugClick(bug)
+                }
+              }}
             >
               {COLUMNS.map((col) => (
                 <td key={col.key} className={cn('p-3', col.className)}>

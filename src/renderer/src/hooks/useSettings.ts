@@ -172,6 +172,7 @@ export function useSettings(): UseSettingsReturn {
           setTimeout(() => reject(new Error('Connection test timed out')), CONNECTION_TIMEOUT)
         )
       ])) as { success: boolean; message: string }
+
       setTestLlmResult({
         type: response.success ? 'success' : 'error',
         message: response.message

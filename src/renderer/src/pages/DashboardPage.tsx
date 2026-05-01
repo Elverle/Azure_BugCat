@@ -1,12 +1,14 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { List, Layers, Bug } from 'lucide-react'
 import { useDashboard } from '@renderer/hooks/useDashboard'
+import { useBugDrawer } from '@renderer/hooks/useBugDrawer'
 import { DashboardHeader } from '@renderer/components/dashboard/DashboardHeader'
 import { KpiCards } from '@renderer/components/dashboard/KpiCards'
 import { FilterBar } from '@renderer/components/dashboard/FilterBar'
 import { BugTable } from '@renderer/components/dashboard/BugTable'
 import BugCard from '@renderer/components/dashboard/BugCard'
 import { GroupAccordion } from '@renderer/components/dashboard/GroupAccordion'
+import BugDetailDrawer from '@renderer/components/dashboard/BugDetailDrawer'
 import {
   filterBugs,
   sortBugs,
@@ -22,6 +24,7 @@ import {
   type GroupBy
 } from '@renderer/lib/dashboard-utils'
 import { cn } from '@renderer/lib/utils'
+import type { AppSettings } from '@shared/types'
 
 export function DashboardPage(): JSX.Element {
   const { bugs, loading, progress, sessionInfo, fetchBugs, categorizeBugs } = useDashboard()
@@ -32,6 +35,10 @@ export function DashboardPage(): JSX.Element {
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [searchText, setSearchText] = useState('')
+  const [adoSettings, setAdoSettings] = useState<{ orgUrl: string; projectName: string }>({
+    orgUrl: '',
+    projectName: ''
+  })
 
   // Computed values
   const filteredBugs = useMemo(
@@ -43,6 +50,18 @@ export function DashboardPage(): JSX.Element {
     () => sortBugs(filteredBugs, sortState.key, sortState.direction),
     [filteredBugs, sortState]
   )
+
+  // Bug drawer
+  const {
+    isOpen: drawerOpen,
+    selectedBug,
+    hasPrev,
+    hasNext,
+    openDrawer,
+    closeDrawer,
+    goToPrev,
+    goToNext
+  } = useBugDrawer(sortedBugs)
 
   const kpis = useMemo(() => computeKpis(filteredBugs), [filteredBugs])
 
@@ -85,6 +104,16 @@ export function DashboardPage(): JSX.Element {
       setExpandedGroups(new Set(groupedBugs.keys()))
     }
   }, [groupBy]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch ADO settings for "View in Azure DevOps" link
+  useEffect(() => {
+    window.electronAPI.getSettings().then((s: unknown) => {
+      const settings = s as AppSettings | null
+      if (settings) {
+        setAdoSettings({ orgUrl: settings.orgUrl, projectName: settings.projectName })
+      }
+    })
+  }, [])
 
   // Sort handler with tri-state toggle: asc → desc → none
   const handleSort = useCallback((key: SortKey) => {
@@ -139,6 +168,16 @@ export function DashboardPage(): JSX.Element {
     setGroupBy('none')
   }, [])
 
+  // View in Azure DevOps
+  const adoLinkEnabled = Boolean(adoSettings.orgUrl && adoSettings.projectName)
+  const handleViewInAdo = useCallback(() => {
+    if (!selectedBug || !adoLinkEnabled) return
+    const url = `${adoSettings.orgUrl.replace(/\/$/, '')}/${adoSettings.projectName}/_workitems/edit/${selectedBug.id}`
+    window.electronAPI.openExternal(url).catch(() => {
+      // Silently handled — URL validation in main process prevents invalid links
+    })
+  }, [selectedBug, adoSettings, adoLinkEnabled])
+
   // No bugs loaded at all
   if (!loading && bugs.length === 0) {
     return (
@@ -162,100 +201,128 @@ export function DashboardPage(): JSX.Element {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
-      <DashboardHeader
-        onFetch={fetchBugs}
-        onCategorize={categorizeBugs}
-        loading={loading}
-        sessionInfo={sessionInfo}
-        progress={progress}
-      />
+    <>
+      <div
+        className={cn(
+          'flex-1 overflow-y-auto p-6 transition-all duration-200',
+          drawerOpen && 'pr-[400px]'
+        )}
+      >
+        <DashboardHeader
+          onFetch={fetchBugs}
+          onCategorize={categorizeBugs}
+          loading={loading}
+          sessionInfo={sessionInfo}
+          progress={progress}
+        />
 
-      {/* View Tabs */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setTab('table')}
-            className={cn(
-              'whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm',
-              viewMode === 'table'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            )}
-          >
-            <List className="w-4 h-4 mr-2 inline" />
-            Lista Completa
-          </button>
-          <button
-            onClick={() => setTab('card')}
-            className={cn(
-              'whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm',
-              viewMode === 'card'
-                ? 'border-indigo-600 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            )}
-          >
-            <Layers className="w-4 h-4 mr-2 inline" />
-            AI Clusters (Raggruppati)
-          </button>
-        </nav>
+        {/* View Tabs */}
+        <div className="border-b border-gray-200 mb-6">
+          <nav className="-mb-px flex space-x-8">
+            <button
+              onClick={() => setTab('table')}
+              className={cn(
+                'whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm',
+                viewMode === 'table'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <List className="w-4 h-4 mr-2 inline" />
+              Lista Completa
+            </button>
+            <button
+              onClick={() => setTab('card')}
+              className={cn(
+                'whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm',
+                viewMode === 'card'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <Layers className="w-4 h-4 mr-2 inline" />
+              AI Clusters (Raggruppati)
+            </button>
+          </nav>
+        </div>
+
+        <KpiCards kpis={kpis} />
+
+        <FilterBar
+          filterState={filterState}
+          onFilterChange={setFilterState}
+          filterOptions={filterOptions}
+          groupBy={groupBy}
+          onGroupByChange={setGroupBy}
+          onReset={handleReset}
+          onCollapseAll={handleCollapseAll}
+          allCollapsed={allCollapsed}
+          searchText={searchText}
+          onSearchChange={setSearchText}
+        />
+
+        {/* Bug list */}
+        {filteredBugs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-32 text-center">
+            <p className="text-sm text-gray-500">Nessun bug corrisponde ai filtri</p>
+            <button
+              onClick={handleReset}
+              className="text-sm text-indigo-600 hover:text-indigo-800 mt-2"
+            >
+              Reset Filtri
+            </button>
+          </div>
+        ) : groupedBugs ? (
+          Array.from(groupedBugs.entries()).map(([groupName, groupBugs]) => (
+            <GroupAccordion
+              key={groupName}
+              groupName={groupName}
+              bugCount={groupBugs.length}
+              isExpanded={expandedGroups.has(groupName)}
+              onToggle={() => toggleGroup(groupName)}
+            >
+              {viewMode === 'table' ? (
+                <BugTable
+                  bugs={groupBugs}
+                  sortState={sortState}
+                  onSort={handleSort}
+                  onBugClick={openDrawer}
+                />
+              ) : (
+                <div className="p-4 space-y-3">
+                  {groupBugs.map((bug) => (
+                    <BugCard key={bug.id} bug={bug} onClick={openDrawer} />
+                  ))}
+                </div>
+              )}
+            </GroupAccordion>
+          ))
+        ) : viewMode === 'table' ? (
+          <BugTable
+            bugs={sortedBugs}
+            sortState={sortState}
+            onSort={handleSort}
+            onBugClick={openDrawer}
+          />
+        ) : (
+          <div className="space-y-3">
+            {sortedBugs.map((bug) => (
+              <BugCard key={bug.id} bug={bug} onClick={openDrawer} />
+            ))}
+          </div>
+        )}
       </div>
-
-      <KpiCards kpis={kpis} />
-
-      <FilterBar
-        filterState={filterState}
-        onFilterChange={setFilterState}
-        filterOptions={filterOptions}
-        groupBy={groupBy}
-        onGroupByChange={setGroupBy}
-        onReset={handleReset}
-        onCollapseAll={handleCollapseAll}
-        allCollapsed={allCollapsed}
-        searchText={searchText}
-        onSearchChange={setSearchText}
+      <BugDetailDrawer
+        bug={selectedBug}
+        isOpen={drawerOpen}
+        onClose={closeDrawer}
+        onPrev={goToPrev}
+        onNext={goToNext}
+        hasPrev={hasPrev}
+        hasNext={hasNext}
+        onViewInAdo={handleViewInAdo}
+        adoLinkEnabled={adoLinkEnabled}
       />
-
-      {/* Bug list */}
-      {filteredBugs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-32 text-center">
-          <p className="text-sm text-gray-500">Nessun bug corrisponde ai filtri</p>
-          <button
-            onClick={handleReset}
-            className="text-sm text-indigo-600 hover:text-indigo-800 mt-2"
-          >
-            Reset Filtri
-          </button>
-        </div>
-      ) : groupedBugs ? (
-        Array.from(groupedBugs.entries()).map(([groupName, groupBugs]) => (
-          <GroupAccordion
-            key={groupName}
-            groupName={groupName}
-            bugCount={groupBugs.length}
-            isExpanded={expandedGroups.has(groupName)}
-            onToggle={() => toggleGroup(groupName)}
-          >
-            {viewMode === 'table' ? (
-              <BugTable bugs={groupBugs} sortState={sortState} onSort={handleSort} />
-            ) : (
-              <div className="p-4 space-y-3">
-                {groupBugs.map((bug) => (
-                  <BugCard key={bug.id} bug={bug} />
-                ))}
-              </div>
-            )}
-          </GroupAccordion>
-        ))
-      ) : viewMode === 'table' ? (
-        <BugTable bugs={sortedBugs} sortState={sortState} onSort={handleSort} />
-      ) : (
-        <div className="space-y-3">
-          {sortedBugs.map((bug) => (
-            <BugCard key={bug.id} bug={bug} />
-          ))}
-        </div>
-      )}
-    </div>
+    </>
   )
 }

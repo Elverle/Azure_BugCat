@@ -23,13 +23,14 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ### Features
 
-| #   | ID    | Descrizione                                  | Status |
-| --- | ----- | -------------------------------------------- | ------ |
-| 1   | FT-01 | Scaffold Electron + Infrastruttura Base      | Done   |
-| 2   | FT-02 | Pagina Settings e Persistenza Configurazione | Done   |
-| 3   | FT-03 | Azure DevOps Bug Fetching (Main Process)     | Done   |
-| 4   | FT-04 | LLM Provider Abstraction e Categorizzazione  | Done   |
+| #   | ID    | Descrizione                                            | Status |
+| --- | ----- | ------------------------------------------------------ | ------ |
+| 1   | FT-01 | Scaffold Electron + Infrastruttura Base                | Done   |
+| 2   | FT-02 | Pagina Settings e Persistenza Configurazione           | Done   |
+| 3   | FT-03 | Azure DevOps Bug Fetching (Main Process)               | Done   |
+| 4   | FT-04 | LLM Provider Abstraction e Categorizzazione            | Done   |
 | 5   | FT-05 | Dashboard Principale: Tabella, Filtri e Raggruppamenti | Done   |
+| 6   | FT-06 | Pannello Dettaglio Bug (Drawer)                        | Done   |
 
 ## Sources
 
@@ -38,6 +39,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/sources/ft-03-ado-fetch]] — FT-03 ADO bug fetching: WIQL query, batch fetch, field mapping, HTML→text, typed errors (2026-04-30)
 - [[wiki/sources/ft-04-llm-provider]] — FT-04 LLM provider abstraction: 4 providers, chunking, retry, response validation, progressive IPC (2026-04-30)
 - [[wiki/sources/ft-05-dashboard]] — FT-05 dashboard: session-backed bug triage workspace with KPIs, filters, grouped views, and accessible collection controls (2026-04-30)
+- [[wiki/sources/ft-06-bug-detail-drawer]] — FT-06 bug drawer: filtered-list drill-down, secure open-external IPC, and click-outside exclusion guard (2026-04-30)
 
 ## Entities
 
@@ -80,11 +82,14 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/entities/filter-bar]] — Debounced search + multi-select filter row + grouping controls (FT-05)
 - [[wiki/entities/bug-table]] — Sortable 8-column bug table with keyboard-accessible headers and rows (FT-05)
 - [[wiki/entities/bug-card]] — Card renderer for grouped bug exploration with deterministic tinting (FT-05)
+- [[wiki/entities/bug-detail-drawer]] — Fixed right-side detail drawer with LLM reasoning, metadata, and prev/next navigation (FT-06)
 - [[wiki/entities/group-accordion]] — Collapsible grouped container with count badges and ARIA wiring (FT-05)
 - [[wiki/entities/multi-select-component]] — Custom searchable multi-select dropdown without external dependencies (FT-05)
+- [[wiki/entities/use-bug-drawer-hook]] — Hook for selected bug state and filtered-list navigation inside the drawer (FT-06)
 - [[wiki/entities/use-dashboard-hook]] — Renderer hook for session hydration, fetch/categorize actions, and progress subscription (FT-05)
 - [[wiki/entities/dashboard-utils]] — Pure filter/sort/group/KPI utilities for the dashboard (FT-05)
 - [[wiki/entities/badge-color-utilities]] — Deterministic badge and tint color helpers for status/categories (FT-05)
+- [[wiki/entities/open-external-ipc]] — Secure IPC contract for opening Azure DevOps work item URLs in the system browser (FT-06)
 
 ## Concepts
 
@@ -98,13 +103,14 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/concepts/chunk-retry-pattern]] — Chunked batch processing with exponential backoff retry (FT-04)
 - [[wiki/concepts/dashboard-derivation-pipeline]] — useMemo-based pipeline for filtering, sorting, grouping, KPI calculation, and dependent filter reconciliation (FT-05)
 - [[wiki/concepts/accessible-collection-controls]] — Project pattern for custom listbox, sortable table headers, and accordion controls with semantic HTML + ARIA (FT-05)
+- [[wiki/concepts/click-outside-exclusion-pattern]] — Document-level outside-click closing with `data-bug-click` exclusion markers (FT-06)
 
 ## Topics
 
 - [[wiki/topics/electron-architecture]] — Three-process architecture, source structure, data flow
 - [[wiki/topics/renderer-ui]] — React SPA: HashRouter routing, component tree, styling stack
 - [[wiki/topics/llm-categorization-pipeline]] — End-to-end LLM categorization: IPC → chunking → provider → validation → progressive results
-- [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, and categorization actions together
+- [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, drawer drill-down, and categorization actions together
 
 ## Analyses
 

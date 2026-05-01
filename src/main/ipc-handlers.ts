@@ -1,4 +1,4 @@
-import { ipcMain, IpcMainInvokeEvent } from 'electron'
+import { ipcMain, IpcMainInvokeEvent, shell } from 'electron'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { store } from './store'
 import { AppSettings, BugItem, SessionData, TestConnectionResult } from '../shared/types'
@@ -29,7 +29,26 @@ export function registerIPCHandlers(): void {
   ipcMain.handle(IPC_CHANNELS.ADO_FETCH_BUGS, async () => {
     const settings = store.get('settings') as AppSettings | null
     if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
-    return fetchBugsFromQuery(settings)
+
+    try {
+      const fetchedBugs = await fetchBugsFromQuery(settings)
+      const updatedSession: SessionData = {
+        bugs: fetchedBugs.map((bug) => ({
+          ...bug,
+          macroCategory: '',
+          subCategory: '',
+          categoryReason: '',
+          categorizedAt: ''
+        })),
+        fetchedAt: new Date().toISOString()
+      }
+
+      store.set('session', updatedSession)
+
+      return updatedSession.bugs
+    } catch (error: unknown) {
+      throw error
+    }
   })
   ipcMain.handle(
     IPC_CHANNELS.ADO_TEST_CONNECTION,
@@ -93,4 +112,21 @@ export function registerIPCHandlers(): void {
       }
     }
   )
+
+  // Shell
+  ipcMain.handle(IPC_CHANNELS.OPEN_EXTERNAL, async (_event, url: unknown) => {
+    if (typeof url !== 'string') {
+      throw new Error('URL must be a string')
+    }
+    let parsed: URL
+    try {
+      parsed = new URL(url)
+    } catch {
+      throw new Error(`Invalid URL: ${url}`)
+    }
+    if (parsed.protocol !== 'https:') {
+      throw new Error('Only https:// URLs are allowed')
+    }
+    await shell.openExternal(url)
+  })
 }

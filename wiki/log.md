@@ -1,13 +1,14 @@
 # Wiki Operation Log
 
-| Date       | Action                     | Author         | Notes                                                                                             |
-| ---------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------- |
-| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                    |
-| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                       |
-| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.   |
-| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.             |
-| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity. |
-| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.     |
+| Date       | Action                     | Author         | Notes                                                                                                                |
+| ---------- | -------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                       |
+| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                          |
+| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.                      |
+| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.                                |
+| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity.                    |
+| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.                        |
+| 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index. |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -131,4 +132,28 @@ Pages created:
 Pages updated:
 
 - [[wiki/topics/renderer-ui]] — DashboardPage is now the implemented index route with dashboard-specific components
+- [[wiki/index.md]]
+
+## [2026-04-30] scan | FT-06 — Pannello Dettaglio Bug (Drawer)
+
+Scanned FT-06 feature: slide-in bug detail drawer, filtered-list prev/next navigation, click-outside guard with `data-bug-click` exclusion, and secure `shell:open-external` IPC integration for Azure DevOps deep links.
+
+Pages created:
+
+- [[wiki/sources/ft-06-bug-detail-drawer]]
+- [[wiki/entities/bug-detail-drawer]]
+- [[wiki/entities/use-bug-drawer-hook]]
+- [[wiki/entities/open-external-ipc]]
+- [[wiki/concepts/click-outside-exclusion-pattern]]
+
+Pages updated:
+
+- [[wiki/entities/bug-table]] — rows now participate in drawer drill-down and expose exclusion markers for outside-click handling
+- [[wiki/entities/bug-card]] — grouped cards are now keyboard-triggerable drawer launchers with exclusion markers
+- [[wiki/entities/ipc-channels]] — added `shell:open-external` channel constant
+- [[wiki/entities/ipc-handlers]] — added validated shell handler for external HTTPS links
+- [[wiki/entities/preload-bridge]] — exposed `openExternal(url)` on `window.electronAPI`
+- [[wiki/entities/dashboard-page]] — integrated drawer state, content offset, and ADO deep-link composition
+- [[wiki/concepts/accessible-collection-controls]] — extended accessibility pattern to row/card drill-down and drawer controls
+- [[wiki/topics/dashboard-bug-exploration]] — added persistent drawer interaction model and secure external navigation flow
 - [[wiki/index.md]]
