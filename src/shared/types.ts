@@ -54,6 +54,7 @@ export interface SessionData {
   bugs: CategorizedBug[]
   fetchedAt: string
   categorizedAt?: string
+  similarityResults?: SimilarityResult
 }
 
 export interface AppError {
@@ -82,4 +83,27 @@ export interface LLMResponse {
 export interface TestConnectionResult {
   success: boolean
   message: string
+}
+
+export interface SimilarityGroup {
+  similarityScore: number
+  reason: string
+  bugIds: number[]
+}
+
+export interface CategorySimilarityResult {
+  macroCategory: string
+  groups: SimilarityGroup[]
+  error?: string
+}
+
+export interface SimilarityResult {
+  categories: CategorySimilarityResult[]
+  analyzedAt: string
+}
+
+export interface SimilarityProgress {
+  total: number
+  completed: number
+  currentGroup: string
 }

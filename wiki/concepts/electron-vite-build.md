@@ -50,7 +50,7 @@ Three-file split (`tsconfig.json` → references):
 
 ## Packaging (electron-builder)
 
-- App ID: `com.alpitour.bugcat`
+- App ID: `com.gversino.bugcat`
 - Product name: `BugCat`
 - Output: `dist-electron/`
 - Targets: NSIS (Win), DMG (macOS), AppImage (Linux)

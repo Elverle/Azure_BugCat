@@ -3,7 +3,7 @@ import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { store } from './store'
 import { AppSettings, BugItem, SessionData, TestConnectionResult } from '../shared/types'
 import { fetchBugsFromQuery, testAdoConnection } from './ado/ado-service'
-import { categorizeBugs, testLLMConnection } from './llm'
+import { categorizeBugs, testLLMConnection, findSimilarBugs } from './llm'
 
 export function registerIPCHandlers(): void {
   // Ping
@@ -105,6 +105,25 @@ export function registerIPCHandlers(): void {
       }
     }
   )
+
+  ipcMain.handle(IPC_CHANNELS.LLM_FIND_SIMILAR, async (event: IpcMainInvokeEvent) => {
+    const settings = store.get('settings') as AppSettings | null
+    if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
+
+    const session = store.get('session') as SessionData | null
+    if (!session?.categorizedAt)
+      throw { code: 'STORE_ERROR', message: 'Categorizzazione non eseguita' }
+
+    const result = await findSimilarBugs(settings, session.bugs, (progress) => {
+      event.sender.send(IPC_CHANNELS.LLM_FIND_SIMILAR_PROGRESS, progress)
+    })
+
+    // Persist results in session
+    const updatedSession: SessionData = { ...session, similarityResults: result }
+    store.set('session', updatedSession)
+
+    return result
+  })
 
   // Shell
   ipcMain.handle(IPC_CHANNELS.OPEN_EXTERNAL, async (_event, url: unknown) => {

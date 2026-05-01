@@ -7,9 +7,10 @@ sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-08-generic-provider]]',
-    '[[wiki/sources/ft-09-structured-output]]'
+    '[[wiki/sources/ft-09-structured-output]]',
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
   ]
-tags: [llm, categorization, pipeline, ipc, main-process]
+tags: [llm, categorization, similarity, pipeline, ipc, main-process]
 lang: en
 ---
 
@@ -82,9 +83,19 @@ IPC (llm:test-connection)
   -> returns TestConnectionResult { success, message }
 ```
 
+## FT-10 Extension
+
+The AI Cluster feature introduces a sibling pipeline rather than replacing this one. It reuses the same provider abstraction, prompt module, schema registry, and `chatWithRetry()` helper, but changes the unit of work from chunks of raw bugs to macro-category groups of already categorized bugs.
+
+Shared infrastructure now spans two LLM workflows:
+
+- categorization: `llm:categorize` -> chunked `BugItem[]` -> `CategorizedBug[]`
+- similarity: `llm:find-similar` -> grouped `CategorizedBug[]` -> `SimilarityResult`
+
 ## See also
 
 - [[wiki/topics/electron-architecture]]
 - [[wiki/entities/electron-store]]
 - [[wiki/sources/ft-04-llm-provider]]
 - [[wiki/sources/ft-09-structured-output]]
+- [[wiki/topics/ai-cluster-similar-bug-detection]]

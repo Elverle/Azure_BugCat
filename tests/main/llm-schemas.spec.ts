@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CATEGORIZATION_SCHEMA, SIMILAR_BUGS_SCHEMA, getSchema } from '@main/llm/schemas'
+import { TECHNICAL_LAYER_VALUES } from '@main/llm/technical-layer'
 
 describe('schemas', () => {
   describe('CATEGORIZATION_SCHEMA', () => {
@@ -21,6 +22,7 @@ describe('schemas', () => {
       expect(props.bugId.type).toBe('number')
       expect(props.macroCategory.type).toBe('string')
       expect(props.subCategory.type).toBe('string')
+      expect(props.subCategory.enum).toEqual(TECHNICAL_LAYER_VALUES)
       expect(props.categoryReason.type).toBe('string')
     })
   })

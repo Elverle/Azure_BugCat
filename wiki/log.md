@@ -1,17 +1,18 @@
 # Wiki Operation Log
 
-| Date       | Action                     | Author         | Notes                                                                                                                                 |
-| ---------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                                        |
-| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                                           |
-| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.                                       |
-| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.                                                 |
-| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity.                                     |
-| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.                                         |
-| 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index.                  |
-| 2026-05-01 | scan FT-07                 | GitHub Copilot | Scanned FT-07 session persistence. Created 1 source, 3 entities, 2 concepts, 1 topic. Updated 8 existing pages.                       |
-| 2026-05-01 | scan FT-08                 | GitHub Copilot | Scanned FT-08 generic provider. Created 1 source, 1 entity. Updated LLM/settings/migration pages, index, and historical Copilot docs. |
-| 2026-05-01 | scan FT-09                 | GitHub Copilot | Scanned FT-09 structured output. Created 1 source, 1 entity, 1 concept. Updated LLM provider, prompt, validator, topic, index, and log pages. |
+| Date       | Action                     | Author         | Notes                                                                                                                                          |
+| ---------- | -------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                                                 |
+| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                                                    |
+| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.                                                |
+| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.                                                          |
+| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity.                                              |
+| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.                                                  |
+| 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index.                           |
+| 2026-05-01 | scan FT-07                 | GitHub Copilot | Scanned FT-07 session persistence. Created 1 source, 3 entities, 2 concepts, 1 topic. Updated 8 existing pages.                                |
+| 2026-05-01 | scan FT-08                 | GitHub Copilot | Scanned FT-08 generic provider. Created 1 source, 1 entity. Updated LLM/settings/migration pages, index, and historical Copilot docs.          |
+| 2026-05-01 | scan FT-09                 | GitHub Copilot | Scanned FT-09 structured output. Created 1 source, 1 entity, 1 concept. Updated LLM provider, prompt, validator, topic, index, and log pages.  |
+| 2026-05-01 | scan FT-10                 | GitHub Copilot | Scanned FT-10 AI Cluster. Created 1 source, 5 entities, 1 concept, 1 topic. Updated LLM, IPC, renderer, drawer, session, index, and log pages. |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -230,6 +231,21 @@ Pages updated:
 
 - [[wiki/index.md]]
 - [[wiki/log.md]]
+- [[wiki/entities/llm-service]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/preload-bridge]]
+- [[wiki/entities/ipc-channels]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/topbar]]
+- [[wiki/entities/llm-prompts]]
+- [[wiki/entities/llm-schemas]]
+- [[wiki/entities/bug-detail-drawer]]
+- [[wiki/entities/use-bug-drawer-hook]]
+- [[wiki/concepts/ipc-security-model]]
+- [[wiki/topics/llm-categorization-pipeline]]
+- [[wiki/topics/renderer-ui]]
+- [[wiki/topics/session-persistence-lifecycle]]
+- [[wiki/topics/electron-architecture]]
 - [[wiki/entities/llm-provider-interface]]
 - [[wiki/entities/llm-service]]
 - [[wiki/entities/llm-prompts]]
@@ -240,3 +256,23 @@ Pages updated:
 - [[wiki/entities/generic-provider]]
 - [[wiki/concepts/llm-provider-abstraction]]
 - [[wiki/topics/llm-categorization-pipeline]]
+
+## [2026-05-01] scan | FT-10 - AI Cluster Similar Bug Detection
+
+Scanned FT-10 feature: added a dedicated AI Cluster route for macro-category-scoped similar-bug detection, a new main-process similarity orchestrator that reuses the LLM provider abstraction and FT-09 similar-bugs schema, progress IPC events, session-persisted results, stale detection, and bug drawer drill-down from grouped similarity cards.
+
+Pages created:
+
+- [[wiki/sources/ft-10-ai-cluster-similarity]]
+- [[wiki/entities/similarity-service]]
+- [[wiki/entities/use-ai-cluster-hook]]
+- [[wiki/entities/ai-cluster-page]]
+- [[wiki/entities/ai-cluster-category-section]]
+- [[wiki/entities/similarity-group-card]]
+- [[wiki/concepts/macro-category-scoped-similarity-analysis]]
+- [[wiki/topics/ai-cluster-similar-bug-detection]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/log.md]]

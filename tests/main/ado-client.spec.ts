@@ -3,7 +3,7 @@ import { fetchWiqlQuery, fetchWorkItemsBatch } from '@main/ado/ado-client'
 import type { AdoConnectionConfig } from '@main/ado/types'
 
 const config: AdoConnectionConfig = {
-  orgUrl: 'https://dev.azure.com/alpitour',
+  orgUrl: 'https://dev.azure.com/gversino',
   projectName: 'BugCat',
   queryId: 'query-id',
   pat: 'secret-pat',
@@ -26,7 +26,7 @@ describe('ado-client', () => {
 
     expect(result.workItems).toEqual([{ id: 1, url: 'u1' }])
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://dev.azure.com/alpitour/BugCat/_apis/wit/wiql/query-id?api-version=7.0',
+      'https://dev.azure.com/gversino/BugCat/_apis/wit/wiql/query-id?api-version=7.0',
       expect.objectContaining({
         method: 'GET',
         headers: expect.objectContaining({
@@ -52,7 +52,8 @@ describe('ado-client', () => {
   it('maps HTTP 403 and 404 responses to typed app errors', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn()
+      vi
+        .fn()
         .mockResolvedValueOnce({ ok: false, status: 403, statusText: 'Forbidden' })
         .mockResolvedValueOnce({ ok: false, status: 404, statusText: 'Not Found' })
     )
@@ -87,7 +88,9 @@ describe('ado-client', () => {
       message: 'Timeout nella connessione ad Azure DevOps'
     })
 
-    await expect(fetchWiqlQuery({ ...config, orgUrl: 'http://dev.azure.com/alpitour' })).rejects.toMatchObject({
+    await expect(
+      fetchWiqlQuery({ ...config, orgUrl: 'http://dev.azure.com/gversino' })
+    ).rejects.toMatchObject({
       code: 'ADO_AUTH_ERROR',
       message: 'URL organizzazione non valido: deve iniziare con https://'
     })

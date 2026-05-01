@@ -4,7 +4,12 @@ type: entity
 subtype: service
 created: 2026-04-30
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-09-structured-output]]']
+sources:
+	[
+		'[[wiki/sources/ft-04-llm-provider]]',
+		'[[wiki/sources/ft-09-structured-output]]',
+		'[[wiki/sources/ft-10-ai-cluster-similarity]]'
+	]
 tags: [llm, prompts, categorization, similar-bugs]
 lang: en
 ---
@@ -19,12 +24,12 @@ Builder functions for the system prompts and user messages sent to LLM providers
 
 ## Public API
 
-| Function                       | Signature                                                        | Purpose                                                                                   |
-| ------------------------------ | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `buildSystemPrompt`            | `(categories: string[]) -> string`                               | Builds the categorization system prompt with task rules and optional category constraints |
-| `buildUserMessage`             | `(bugs: { id, title, description, tags? }[]) -> string`          | Serializes categorization input payload with tags included                                |
-| `buildSimilarBugsSystemPrompt` | `() -> string`                                                   | Builds the duplicate/similar-bug detection prompt                                         |
-| `buildSimilarBugsUserMessage`  | `(bugs: { id, title, description, macroCategory? }[]) -> string` | Serializes similar-bugs input payload                                                     |
+| Function                       | Signature                                                        | Purpose                                                                                                          |
+| ------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `buildSystemPrompt`            | `(categories: string[]) -> string`                               | Builds the categorization system prompt with task rules, FE/BE layer guidance, and optional category constraints |
+| `buildUserMessage`             | `(bugs: { id, title, description, tags? }[]) -> string`          | Serializes categorization input payload with tags included                                                       |
+| `buildSimilarBugsSystemPrompt` | `() -> string`                                                   | Builds the duplicate/similar-bug detection prompt                                                                |
+| `buildSimilarBugsUserMessage`  | `(bugs: { id, title, description, macroCategory? }[]) -> string` | Serializes similar-bugs input payload                                                                            |
 
 ## FT-09 Prompt Role
 
@@ -37,11 +42,26 @@ Builder functions for the system prompts and user messages sent to LLM providers
 - Role: bilingual software quality analyst.
 - Decision signals: title and tags first, description as supporting evidence.
 - Category discipline: choose exactly one configured macro-category when a list is provided.
+- Technical layer discipline: `subCategory` is no longer free text; it represents the likely ownership layer and must be one of `FE`, `BE`, `FE/BE`, or `Non determinabile`.
 - Output guidance: return one result per input bug with `bugId`, `macroCategory`, `subCategory`, and `categoryReason`.
+
+## Technical Layer Semantics
+
+- `FE`: UI, browser behavior, rendering, navigation, client-side validations, or frontend state issues.
+- `BE`: API, server logic, persistence, integrations, backend validations, or data processing issues.
+- `FE/BE`: boundary or contract issues where evidence clearly spans both layers.
+- `Non determinabile`: evidence is insufficient to assign the bug confidently to FE, BE, or FE/BE.
+
+## Similar-Bug Prompt Role
+
+- `buildSimilarBugsSystemPrompt()` defines the duplicate/similarity task for bugs that already share a `macroCategory`.
+- `buildSimilarBugsUserMessage()` serializes only the bugs from the current category, which keeps the prompt focused and aligned with [[wiki/concepts/macro-category-scoped-similarity-analysis]].
+- FT-10 is the first end-to-end feature to consume this prompt pair through a user-facing page.
 
 ## See also
 
 - [[wiki/entities/llm-service]]
+- [[wiki/entities/similarity-service]]
 - [[wiki/entities/llm-schemas]]
 - [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

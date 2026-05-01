@@ -94,7 +94,7 @@ function buildChunkDiagnostics(
   }
 }
 
-async function chatWithRetry(
+export async function chatWithRetry(
   provider: LLMProvider,
   systemPrompt: string,
   userMessage: string,

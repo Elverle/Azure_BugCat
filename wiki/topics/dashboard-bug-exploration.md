@@ -2,7 +2,7 @@
 title: 'Dashboard Bug Exploration'
 type: topic
 created: 2026-04-30
-updated: 2026-04-30
+updated: 2026-05-01
 sources: ['[[wiki/sources/ft-05-dashboard]]', '[[wiki/sources/ft-06-bug-detail-drawer]]']
 tags: [dashboard, triage, renderer, filters, grouping, drawer]
 lang: en
@@ -10,7 +10,7 @@ lang: en
 
 ## Overview
 
-The dashboard is the main triage workspace of the app. It consumes the cached `SessionData` produced by FT-03 and FT-04, then gives operators a fast way to inspect bug volume, narrow the dataset, switch between list and cluster-oriented views, drill into one bug with a persistent side drawer, and rerun categorization from the same screen.
+The dashboard is the main triage workspace of the app. It consumes the cached `SessionData` produced by FT-03 and FT-04, then gives operators a fast way to inspect bug volume, narrow the dataset, switch between list, cluster-oriented, and similarity-analysis views, drill into one bug with a persistent side drawer, and rerun categorization from the same screen.
 
 ## End-to-End Flow
 
@@ -41,6 +41,12 @@ DashboardHeader actions
 - Uses [[wiki/entities/group-accordion]] plus [[wiki/entities/bug-card]] to emphasize cluster structure and category similarity.
 - Can also switch grouping to sub-category or assignee.
 
+### Similarità
+
+- Reuses [[wiki/entities/use-ai-cluster-hook]] to load persisted similarity results and trigger new analysis runs.
+- Shows a guided state before categorization, progress while `llm:find-similar` is running, and category-level result sections afterwards.
+- Uses [[wiki/entities/ai-cluster-category-section]] and [[wiki/entities/similarity-group-card]] to show grouped matches, including a dedicated `Motivazione` panel for each similarity group.
+
 ## Interaction Model
 
 - Session hydration and action state come from [[wiki/entities/use-dashboard-hook]].
@@ -64,6 +70,9 @@ DashboardHeader actions
 - [[wiki/entities/bug-detail-drawer]]
 - [[wiki/entities/group-accordion]]
 - [[wiki/entities/use-bug-drawer-hook]]
+- [[wiki/entities/use-ai-cluster-hook]]
+- [[wiki/entities/ai-cluster-category-section]]
+- [[wiki/entities/similarity-group-card]]
 
 ## See also
 

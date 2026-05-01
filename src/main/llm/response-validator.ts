@@ -1,4 +1,5 @@
 import { BugItem, LLMCategorizeResult, LLMResponse } from '../../shared/types'
+import { normalizeTechnicalLayer } from './technical-layer'
 
 const RAW_PREVIEW_LENGTH = 1200
 
@@ -212,7 +213,9 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
       macroCategory: getStringField(
         result.macroCategory ?? result.macro_category ?? result.category ?? result.macro
       ),
-      subCategory: getStringField(result.subCategory ?? result.sub_category ?? result.subcategory),
+      subCategory: normalizeTechnicalLayer(
+        result.subCategory ?? result.sub_category ?? result.subcategory
+      ),
       categoryReason: getStringField(
         result.categoryReason ?? result.category_reason ?? result.reason
       )

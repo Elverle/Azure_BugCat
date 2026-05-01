@@ -5,6 +5,7 @@ import {
   buildSimilarBugsSystemPrompt,
   buildSimilarBugsUserMessage
 } from '@main/llm/prompts'
+import { TECHNICAL_LAYER_VALUES } from '@main/llm/technical-layer'
 
 describe('prompts', () => {
   describe('buildSystemPrompt', () => {
@@ -13,6 +14,7 @@ describe('prompts', () => {
       expect(prompt).toContain('expert software quality analyst')
       expect(prompt).toContain('Return ONLY valid JSON')
       expect(prompt).toContain('bugId (number)')
+      expect(prompt).toContain('technical ownership layer')
     })
 
     it('includes semantic analysis instructions', () => {
@@ -24,6 +26,7 @@ describe('prompts', () => {
       expect(prompt).toContain('Validazioni')
       expect(prompt).toContain('Costo sistemazione - errore apertura modale')
       expect(prompt).toContain('Best category: "Costi"')
+      expect(prompt).toContain(`Use exactly one of: ${TECHNICAL_LAYER_VALUES.join(', ')}`)
     })
 
     it('includes category constraint when categories provided', () => {
@@ -57,6 +60,9 @@ describe('prompts', () => {
       ])
       expect(message).toContain('Analyze each bug below and assign the most appropriate category')
       expect(message).toContain('Use tag and title as the primary signals')
+      expect(message).toContain(
+        `Set subCategory to exactly one technical layer: ${TECHNICAL_LAYER_VALUES.join(', ')}`
+      )
       const json = message.replace(/^[^\[]*/, '')
       const parsed = JSON.parse(json)
       expect(parsed).toHaveLength(2)
