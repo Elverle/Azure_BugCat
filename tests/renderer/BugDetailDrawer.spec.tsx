@@ -28,6 +28,10 @@ function makeBug(overrides: Partial<CategorizedBug> = {}): CategorizedBug {
 const defaultProps = {
   bug: makeBug(),
   isOpen: true,
+  width: 400,
+  minWidth: 400,
+  maxWidth: 760,
+  onResize: vi.fn(),
   onClose: vi.fn(),
   onPrev: vi.fn(),
   onNext: vi.fn(),
@@ -112,6 +116,49 @@ describe('BugDetailDrawer', () => {
     expect(screen.getByRole('button', { name: 'Bug successivo' })).toBeDisabled()
   })
 
+  it('resizes the drawer while dragging the left border handle', () => {
+    const onResize = vi.fn()
+    render(<BugDetailDrawer {...defaultProps} onResize={onResize} width={400} />)
+
+    fireEvent.mouseDown(screen.getByRole('separator', { name: 'Ridimensiona dettaglio' }), {
+      clientX: 800
+    })
+    fireEvent.mouseMove(document, { clientX: 700 })
+    fireEvent.mouseUp(document)
+
+    expect(onResize).toHaveBeenCalledWith(500)
+  })
+
+  it('clamps resize drag values to the configured bounds', () => {
+    const onResize = vi.fn()
+    render(<BugDetailDrawer {...defaultProps} onResize={onResize} width={400} />)
+
+    fireEvent.mouseDown(screen.getByRole('separator', { name: 'Ridimensiona dettaglio' }), {
+      clientX: 800
+    })
+    fireEvent.mouseMove(document, { clientX: 100 })
+    fireEvent.mouseMove(document, { clientX: 900 })
+    fireEvent.mouseUp(document)
+
+    expect(onResize).toHaveBeenNthCalledWith(1, 760)
+    expect(onResize).toHaveBeenNthCalledWith(2, 400)
+  })
+
+  it('toggles the description between collapsed and expanded states', () => {
+    render(<BugDetailDrawer {...defaultProps} />)
+
+    const toggleButton = screen.getByRole('button', { name: 'Espandi descrizione' })
+    const description = screen.getByText(
+      'Users report redirect loop on Safari when using Microsoft Account login.'
+    )
+
+    expect(description.className).toContain('max-h-64')
+    fireEvent.click(toggleButton)
+
+    expect(screen.getByRole('button', { name: 'Riduci descrizione' })).toBeInTheDocument()
+    expect(description.className).not.toContain('max-h-64')
+  })
+
   it('renders tags correctly', () => {
     render(<BugDetailDrawer {...defaultProps} />)
     expect(screen.getByText('OAuth, Safari')).toBeInTheDocument()
@@ -145,5 +192,11 @@ describe('BugDetailDrawer', () => {
     const { container } = render(<BugDetailDrawer {...defaultProps} isOpen={true} />)
     const drawer = container.firstElementChild as HTMLElement
     expect(drawer.className).toContain('translate-x-0')
+  })
+
+  it('applies the requested drawer width through inline style', () => {
+    const { container } = render(<BugDetailDrawer {...defaultProps} width={520} />)
+    const drawer = container.firstElementChild as HTMLElement
+    expect(drawer.style.width).toBe('520px')
   })
 })

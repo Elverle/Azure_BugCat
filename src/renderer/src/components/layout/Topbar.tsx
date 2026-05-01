@@ -39,12 +39,6 @@ export function Topbar() {
           </NavLink>
         </nav>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="text-sm text-gray-500 flex items-center">
-          <Database className="w-3.5 h-3.5 mr-1" />
-          Project: —
-        </div>
-      </div>
     </header>
   )
 }

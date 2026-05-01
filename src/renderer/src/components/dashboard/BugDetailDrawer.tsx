@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Bot, ExternalLink } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
@@ -7,6 +7,10 @@ import { getStatusBadgeClasses } from '@renderer/lib/badge-colors'
 interface BugDetailDrawerProps {
   bug: CategorizedBug | null
   isOpen: boolean
+  width: number
+  minWidth: number
+  maxWidth: number
+  onResize: (nextWidth: number) => void
   onClose: () => void
   onPrev: () => void
   onNext: () => void
@@ -19,6 +23,10 @@ interface BugDetailDrawerProps {
 export default function BugDetailDrawer({
   bug,
   isOpen,
+  width,
+  minWidth,
+  maxWidth,
+  onResize,
   onClose,
   onPrev,
   onNext,
@@ -28,6 +36,12 @@ export default function BugDetailDrawer({
   adoLinkEnabled
 }: BugDetailDrawerProps): JSX.Element {
   const drawerRef = useRef<HTMLDivElement>(null)
+  const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null)
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
+
+  useEffect(() => {
+    setDescriptionExpanded(false)
+  }, [bug?.id])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
@@ -52,15 +66,60 @@ export default function BugDetailDrawer({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isOpen, onClose])
 
+  useEffect(() => {
+    function handleMouseMove(e: MouseEvent): void {
+      const resizeState = resizeStateRef.current
+      if (!resizeState) return
+
+      const delta = resizeState.startX - e.clientX
+      const nextWidth = resizeState.startWidth + delta
+      onResize(Math.min(maxWidth, Math.max(minWidth, nextWidth)))
+    }
+
+    function handleMouseUp(): void {
+      resizeStateRef.current = null
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [maxWidth, minWidth, onResize])
+
+  function handleResizeMouseDown(e: React.MouseEvent<HTMLDivElement>): void {
+    resizeStateRef.current = { startX: e.clientX, startWidth: width }
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+    e.preventDefault()
+  }
+
   return (
     <div
       ref={drawerRef}
       className={cn(
-        'w-[400px] bg-white border-l border-gray-200 shadow-xl fixed right-0 top-[57px] bottom-0 overflow-y-auto z-20 flex flex-col transition-transform duration-200',
+        'bg-white border-l border-gray-200 shadow-xl fixed right-0 top-[57px] bottom-0 overflow-y-auto z-20 flex flex-col transition-transform duration-200',
         isOpen ? 'translate-x-0' : 'translate-x-full'
       )}
+      style={{ width: `${width}px` }}
       onClick={(e) => e.stopPropagation()}
     >
+      <div
+        role="separator"
+        aria-label="Ridimensiona dettaglio"
+        aria-orientation="vertical"
+        aria-valuemin={minWidth}
+        aria-valuemax={maxWidth}
+        aria-valuenow={width}
+        className="absolute left-0 top-0 bottom-0 w-2 -translate-x-1/2 cursor-col-resize bg-transparent before:absolute before:inset-y-0 before:left-1/2 before:w-px before:-translate-x-1/2 before:bg-gray-200 hover:before:bg-indigo-400"
+        onMouseDown={handleResizeMouseDown}
+      />
       {bug && (
         <>
           {/* Header */}
@@ -180,9 +239,22 @@ export default function BugDetailDrawer({
               </div>
 
               <div>
-                <div className="text-xs text-gray-500 mb-2">Description</div>
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <div className="text-xs text-gray-500">Description</div>
+                  <button
+                    onClick={() => setDescriptionExpanded((current) => !current)}
+                    className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                  >
+                    {descriptionExpanded ? 'Riduci descrizione' : 'Espandi descrizione'}
+                  </button>
+                </div>
                 {bug.description ? (
-                  <div className="prose prose-sm text-gray-800 bg-gray-50 p-4 rounded-lg border border-gray-100 h-64 overflow-y-auto whitespace-pre-line">
+                  <div
+                    className={cn(
+                      'prose prose-sm max-w-none text-gray-800 bg-gray-50 p-4 rounded-lg border border-gray-100 whitespace-pre-line transition-all duration-200',
+                      descriptionExpanded ? 'overflow-visible' : 'max-h-64 overflow-y-auto'
+                    )}
+                  >
                     {bug.description}
                   </div>
                 ) : (
