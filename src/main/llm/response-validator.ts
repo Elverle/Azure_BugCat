@@ -14,12 +14,10 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
   try {
     parsed = JSON.parse(cleaned) as LLMResponse
   } catch {
-    console.error('LLM response parse error:', raw.slice(0, 200))
     return buildFallbackResults(chunkBugs, 'Non categorizzato', 'Errore parsing')
   }
 
   if (!parsed.results || !Array.isArray(parsed.results)) {
-    console.error('LLM response missing results array')
     return buildFallbackResults(chunkBugs, 'Non categorizzato', 'Errore parsing')
   }
 

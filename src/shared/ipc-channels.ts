@@ -21,7 +21,10 @@ export const IPC_CHANNELS = {
 
   // Session
   SESSION_GET: 'session:get',
-  SESSION_CLEAR: 'session:clear'
+  SESSION_CLEAR: 'session:clear',
+
+  // Shell
+  OPEN_EXTERNAL: 'shell:open-external'
 } as const
 
 export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

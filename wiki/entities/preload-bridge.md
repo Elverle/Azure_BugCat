@@ -3,9 +3,9 @@ title: 'Preload Bridge (contextBridge)'
 type: entity
 subtype: middleware
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]']
-tags: [electron, ipc, preload, context-bridge]
+updated: 2026-04-30
+sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-06-bug-detail-drawer]]']
+tags: [electron, ipc, preload, context-bridge, shell]
 lang: en
 ---
 
@@ -32,6 +32,7 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 | `onCategorizeProgress(cb)` | `llm:categorize-progress` | on (returns unsubscribe) |
 | `getSession()`             | `session:get`             | invoke                   |
 | `clearSession()`           | `session:clear`           | invoke                   |
+| `openExternal(url)`        | `shell:open-external`     | invoke                   |
 
 ## Type Export
 
@@ -53,10 +54,12 @@ declare global {
 
 - Only named methods are exposed — no raw `ipcRenderer.send`/`invoke` access.
 - `onCategorizeProgress` returns a cleanup function to prevent listener leaks.
+- `openExternal()` preserves the security boundary by routing browser launches through the validated main-process handler.
 
 ## See also
 
 - [[wiki/entities/ipc-handlers]] — main-process counterpart
 - [[wiki/entities/ipc-channels]] — channel constant definitions
+- [[wiki/entities/open-external-ipc]]
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/electron-architecture]]

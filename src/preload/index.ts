@@ -27,7 +27,10 @@ const electronAPI = {
 
   // Session
   getSession: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_GET),
-  clearSession: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_CLEAR)
+  clearSession: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_CLEAR),
+
+  // Shell
+  openExternal: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI)

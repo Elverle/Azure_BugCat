@@ -3,9 +3,9 @@ title: 'IPC Channel Constants'
 type: entity
 subtype: config
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]']
-tags: [electron, ipc, shared]
+updated: 2026-04-30
+sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-06-bug-detail-drawer]]']
+tags: [electron, ipc, shared, shell]
 lang: en
 ---
 
@@ -31,6 +31,7 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `LLM_TEST_CONNECTION`     | `llm:test-connection`     | LLM          |
 | `SESSION_GET`             | `session:get`             | Session      |
 | `SESSION_CLEAR`           | `session:clear`           | Session      |
+| `OPEN_EXTERNAL`           | `shell:open-external`     | Shell        |
 
 ## Type
 
@@ -42,3 +43,4 @@ export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
 
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/preload-bridge]]
+- [[wiki/entities/open-external-ipc]]

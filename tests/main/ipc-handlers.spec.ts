@@ -119,6 +119,29 @@ describe('registerIPCHandlers', () => {
 
     const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
     expect(fetchBugsFromQuery).toHaveBeenCalledWith(baseSettings)
-    expect(result).toEqual([{ id: 1 }])
+    expect(storeSet).toHaveBeenCalledWith(
+      'session',
+      expect.objectContaining({
+        fetchedAt: expect.any(String),
+        bugs: [
+          expect.objectContaining({
+            id: 1,
+            macroCategory: '',
+            subCategory: '',
+            categoryReason: '',
+            categorizedAt: ''
+          })
+        ]
+      })
+    )
+    expect(result).toEqual([
+      expect.objectContaining({
+        id: 1,
+        macroCategory: '',
+        subCategory: '',
+        categoryReason: '',
+        categorizedAt: ''
+      })
+    ])
   })
 })

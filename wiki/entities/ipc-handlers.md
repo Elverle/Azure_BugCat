@@ -9,9 +9,10 @@ sources:
     '[[wiki/sources/ft-01-scaffold]]',
     '[[wiki/sources/ft-02-settings]]',
     '[[wiki/sources/ft-03-ado-fetch]]',
-    '[[wiki/sources/ft-04-llm-provider]]'
+    '[[wiki/sources/ft-04-llm-provider]]',
+    '[[wiki/sources/ft-06-bug-detail-drawer]]'
   ]
-tags: [electron, ipc, main-process]
+tags: [electron, ipc, main-process, shell]
 lang: en
 ---
 
@@ -36,11 +37,13 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 | `ado:test-connection` | ✅ Implemented | Calls `testAdoConnection()`, returns `TestConnectionResult`                                                                      |
 | `llm:categorize`      | ✅ Implemented | Loads settings+session, calls `categorizeBugs()`, sends progressive `ChunkProgress` via `event.sender`, persists updated session |
 | `llm:test-connection` | ✅ Implemented | Validates apiKey/copilotAuth, calls `testLLMConnection()`, returns `TestConnectionResult`                                        |
+| `shell:open-external` | ✅ Implemented | Validates that the payload is a well-formed `https://` URL, then delegates to `shell.openExternal()`                             |
 
 ## Security Notes
 
 - Only whitelisted channels are exposed — no generic `store:get`/`store:set`.
 - `settings:set` accepts `unknown` — **no runtime validation** (technical debt).
+- The shell handler uses `new URL(url)` plus protocol enforcement so the renderer cannot open arbitrary schemes.
 
 ## Dependencies
 
@@ -48,10 +51,12 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - `src/shared/ipc-channels.ts` — `IPC_CHANNELS` constant map
 - [[wiki/entities/ado-service]] — `fetchBugsFromQuery`, `testAdoConnection`
 - [[wiki/entities/llm-service]] — `categorizeBugs`, `testLLMConnection`
+- [[wiki/entities/open-external-ipc]]
 
 ## See also
 
 - [[wiki/entities/preload-bridge]]
+- [[wiki/entities/open-external-ipc]]
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/electron-architecture]]
 - [[wiki/topics/llm-categorization-pipeline]]

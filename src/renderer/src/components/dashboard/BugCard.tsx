@@ -1,5 +1,9 @@
 import type { CategorizedBug } from '@shared/types'
-import { getStatusBadgeClasses, getCategoryColor, getSubCategoryBgTint } from '@renderer/lib/badge-colors'
+import {
+  getStatusBadgeClasses,
+  getCategoryColor,
+  getSubCategoryBgTint
+} from '@renderer/lib/badge-colors'
 import { cn } from '@renderer/lib/utils'
 
 interface BugCardProps {
@@ -17,7 +21,16 @@ export default function BugCard({ bug, onClick }: BugCardProps): JSX.Element {
         'rounded-lg border border-gray-200 p-4 shadow-sm cursor-pointer hover:shadow-md transition',
         getSubCategoryBgTint(bug.subCategory)
       )}
+      data-bug-click=""
+      tabIndex={0}
+      role={onClick ? 'button' : undefined}
       onClick={() => onClick?.(bug)}
+      onKeyDown={(e) => {
+        if ((e.key === 'Enter' || e.key === ' ') && onClick) {
+          e.preventDefault()
+          onClick(bug)
+        }
+      }}
     >
       {/* Top row: ID + Status badge */}
       <div className="flex items-center justify-between">
@@ -38,12 +51,24 @@ export default function BugCard({ bug, onClick }: BugCardProps): JSX.Element {
       {/* Bottom section */}
       <div className="mt-3 flex flex-wrap gap-2 items-center">
         {bug.macroCategory && (
-          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', macroColor.bg, macroColor.text)}>
+          <span
+            className={cn(
+              'text-xs font-medium px-2 py-0.5 rounded-full',
+              macroColor.bg,
+              macroColor.text
+            )}
+          >
             {bug.macroCategory}
           </span>
         )}
         {bug.subCategory && (
-          <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', subColor.bg, subColor.text)}>
+          <span
+            className={cn(
+              'text-xs font-medium px-2 py-0.5 rounded-full',
+              subColor.bg,
+              subColor.text
+            )}
+          >
             {bug.subCategory}
           </span>
         )}
