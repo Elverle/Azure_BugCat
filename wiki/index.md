@@ -32,6 +32,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 5   | FT-05 | Dashboard Principale: Tabella, Filtri e Raggruppamenti | Done   |
 | 6   | FT-06 | Pannello Dettaglio Bug (Drawer)                        | Done   |
 | 7   | FT-07 | Persistenza Dati e Gestione Sessione                   | Done   |
+| 8   | FT-08 | GenericProvider OpenAI-compatible e rimozione Copilot  | Done   |
 
 ## Sources
 
@@ -42,6 +43,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/sources/ft-05-dashboard]] — FT-05 dashboard: session-backed bug triage workspace with KPIs, filters, grouped views, and accessible collection controls (2026-04-30)
 - [[wiki/sources/ft-06-bug-detail-drawer]] — FT-06 bug drawer: filtered-list drill-down, secure open-external IPC, and click-outside exclusion guard (2026-04-30)
 - [[wiki/sources/ft-07-session-persistence]] — FT-07 persistence hardening: schema-versioned store bootstrap, reusable confirm dialog, session clear UX, and extracted date formatting (2026-05-01)
+- [[wiki/sources/ft-08-generic-provider]] — FT-08 generic provider: OpenAI-compatible fetch client, Generic settings UI, HTTPS base URL validation, and schema v2 migration from Copilot (2026-05-01)
 
 ## Entities
 
@@ -73,7 +75,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/entities/llm-provider-interface]] — LLMProvider interface and config types (FT-04)
 - [[wiki/entities/openai-provider]] — OpenAI SDK provider (gpt-4o) (FT-04)
 - [[wiki/entities/anthropic-provider]] — Anthropic SDK provider (claude-sonnet-4-20250514) (FT-04)
-- [[wiki/entities/copilot-provider]] — GitHub Copilot SDK provider (gpt-4.1) (FT-04)
+- [[wiki/entities/generic-provider]] — Generic OpenAI-compatible fetch provider with configurable base URL and model (FT-08)
 - [[wiki/entities/gemini-provider]] — Google GenAI provider (gemini-2.5-flash) (FT-04)
 - [[wiki/entities/llm-provider-factory]] — Factory function for LLM provider instantiation (FT-04)
 - [[wiki/entities/llm-service]] — Bug categorization orchestrator with retry and progress (FT-04)

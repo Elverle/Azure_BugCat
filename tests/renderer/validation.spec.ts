@@ -20,8 +20,7 @@ const validSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'pat-token',
-  categories: ['UI'],
-  copilotAuthStatus: 'unknown'
+  categories: ['UI']
 }
 
 describe('validation utils', () => {
@@ -39,9 +38,10 @@ describe('validation utils', () => {
     expect(validateIntRange(31, 5, 30, 'Chunk Size')).toBe('Chunk Size must be between 5 and 30')
   })
 
-  it('requires API keys only for non-copilot providers', () => {
+  it('requires API keys for all providers', () => {
     expect(validateApiKey('', 'openai')).toBe('API Key is required for this provider')
-    expect(validateApiKey('', 'github-copilot')).toBeNull()
+    expect(validateApiKey('', 'generic')).toBe('API Key is required for this provider')
+    expect(validateApiKey('sk-test', 'generic')).toBeNull()
   })
 
   it('validates the entire settings object coherently', () => {

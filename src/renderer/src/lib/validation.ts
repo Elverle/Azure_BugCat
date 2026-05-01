@@ -52,11 +52,33 @@ export function validateApiKey(
   value: string | undefined,
   provider: LLMProviderType
 ): string | null {
-  if (provider === 'github-copilot') {
+  if (!value || value.trim().length === 0) {
+    return 'API Key is required for this provider'
+  }
+  return null
+}
+
+export function validateBaseUrl(
+  value: string | undefined,
+  provider: LLMProviderType
+): string | null {
+  if (provider !== 'generic') {
     return null
   }
   if (!value || value.trim().length === 0) {
-    return 'API Key is required for this provider'
+    return 'Base URL is required for Generic provider'
+  }
+  let parsed: URL
+  try {
+    parsed = new URL(value)
+  } catch {
+    return 'Must be a valid URL'
+  }
+  if (parsed.protocol !== 'https:') {
+    const hostname = parsed.hostname
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return 'Base URL must use HTTPS (http allowed only for localhost)'
+    }
   }
   return null
 }
@@ -69,6 +91,7 @@ export function validateSettings(settings: AppSettings): Record<string, string |
     topN: validateIntRange(settings.topN, 1, 200, 'Top N'),
     chunkSize: validateIntRange(settings.chunkSize, 5, 30, 'Chunk Size'),
     apiKey: validateApiKey(settings.apiKey, settings.llmProvider),
+    baseUrl: validateBaseUrl(settings.baseUrl, settings.llmProvider),
     pat: validateRequired(settings.pat, 'Personal Access Token')
   }
 }

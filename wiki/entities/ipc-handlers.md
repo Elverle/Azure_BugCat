@@ -11,7 +11,8 @@ sources:
     '[[wiki/sources/ft-03-ado-fetch]]',
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-06-bug-detail-drawer]]',
-    '[[wiki/sources/ft-07-session-persistence]]'
+    '[[wiki/sources/ft-07-session-persistence]]',
+    '[[wiki/sources/ft-08-generic-provider]]'
   ]
 tags: [electron, ipc, main-process, shell]
 lang: en
@@ -27,24 +28,25 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 
 ## Registered Handlers
 
-| Channel               | Status         | Action                                                                                                                           |
-| --------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `ping`                | ✅ Implemented | Returns `'pong'`                                                                                                                 |
-| `settings:get`        | ✅ Implemented | Returns `store.get('settings')`                                                                                                  |
-| `settings:set`        | ✅ Implemented | Calls `store.set('settings', payload)`                                                                                           |
-| `session:get`         | ✅ Implemented | Returns `store.get('session')`                                                                                                   |
-| `session:clear`       | ✅ Implemented | Sets `session` to `null`                                                                                                         |
-| `ado:fetch-bugs`      | ✅ Implemented | Validates settings, calls `fetchBugsFromQuery()`, returns `BugItem[]`                                                            |
-| `ado:test-connection` | ✅ Implemented | Calls `testAdoConnection()`, returns `TestConnectionResult`                                                                      |
-| `llm:categorize`      | ✅ Implemented | Loads settings+session, calls `categorizeBugs()`, sends progressive `ChunkProgress` via `event.sender`, persists updated session |
-| `llm:test-connection` | ✅ Implemented | Validates apiKey/copilotAuth, calls `testLLMConnection()`, returns `TestConnectionResult`                                        |
-| `shell:open-external` | ✅ Implemented | Validates that the payload is a well-formed `https://` URL, then delegates to `shell.openExternal()`                             |
+| Channel               | Status         | Action                                                                                                                                    |
+| --------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `ping`                | ✅ Implemented | Returns `'pong'`                                                                                                                          |
+| `settings:get`        | ✅ Implemented | Returns `store.get('settings')`                                                                                                           |
+| `settings:set`        | ✅ Implemented | Calls `store.set('settings', payload)`                                                                                                    |
+| `session:get`         | ✅ Implemented | Returns `store.get('session')`                                                                                                            |
+| `session:clear`       | ✅ Implemented | Sets `session` to `null`                                                                                                                  |
+| `ado:fetch-bugs`      | ✅ Implemented | Validates settings, calls `fetchBugsFromQuery()`, returns `BugItem[]`                                                                     |
+| `ado:test-connection` | ✅ Implemented | Calls `testAdoConnection()`, returns `TestConnectionResult`                                                                               |
+| `llm:categorize`      | ✅ Implemented | Loads settings+session, calls `categorizeBugs()`, sends progressive `ChunkProgress` via `event.sender`, persists updated session          |
+| `llm:test-connection` | ✅ Implemented | Validates `apiKey`, calls `testLLMConnection()`, returns `TestConnectionResult`; generic-provider `baseUrl` rules are enforced downstream |
+| `shell:open-external` | ✅ Implemented | Validates that the payload is a well-formed `https://` URL, then delegates to `shell.openExternal()`                                      |
 
 ## Security Notes
 
 - Only whitelisted channels are exposed — no generic `store:get`/`store:set`.
 - `settings:set` accepts `unknown` — **no runtime validation** (technical debt).
 - The shell handler uses `new URL(url)` plus protocol enforcement so the renderer cannot open arbitrary schemes.
+- FT-08 removed the old Copilot-specific authentication branch from `llm:test-connection`; all providers now enter the same `testLLMConnection()` path once minimal required fields are present.
 
 ## Dependencies
 

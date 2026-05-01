@@ -4,7 +4,7 @@ type: entity
 subtype: service
 created: 2026-05-01
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-07-session-persistence]]']
+sources: ['[[wiki/sources/ft-07-session-persistence]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [electron-store, persistence, migration, typescript]
 lang: en
 ---
@@ -20,7 +20,7 @@ Main-process utility that upgrades persisted `electron-store` payloads to the cu
 ## Public API
 
 ```typescript
-export const CURRENT_SCHEMA_VERSION = 1
+export const CURRENT_SCHEMA_VERSION = 2
 
 export type Migration = {
   version: number
@@ -41,8 +41,8 @@ export function migrateStore(store: StoreAccess): void
 - Detects legacy stores by checking whether `schemaVersion` actually exists, using `store.has('schemaVersion')` when available.
 - Treats a missing `schemaVersion` key as version `0`, which allows pre-FT-07 stores to enter the migration pipeline.
 - Loads real persisted `settings` and `session` data before applying pending migrations, instead of migrating empty placeholders.
-- Applies pending migrations in ascending version order and persists `schemaVersion` after each successful step.
-- Writes migrated `settings` and `session` back to the store only after the pipeline completes.
+- Applies pending migrations in ascending version order, including FT-08's `github-copilot` → `openai` settings rewrite and `copilotAuthStatus` removal.
+- Writes migrated `settings` and `session` back to the store before bumping `schemaVersion`, so a partial write cannot advertise a schema that has not actually been persisted yet.
 - Falls back to `session = null` plus `schemaVersion = CURRENT_SCHEMA_VERSION` if a migration throws, keeping the app bootable even if cached session data is invalid.
 
 ## Dependencies

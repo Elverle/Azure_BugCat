@@ -3,8 +3,8 @@ title: 'useSettings Hook'
 type: entity
 subtype: hook
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-02-settings]]']
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [react, hook, state-management, settings, ipc]
 lang: en
 ---
@@ -79,11 +79,17 @@ const DEFAULT_SETTINGS: AppSettings = {
   chunkSize: 15,
   llmProvider: 'openai',
   apiKey: '',
+  baseUrl: '',
+  llmModel: '',
   pat: '',
-  categories: [],
-  copilotAuthStatus: 'unknown'
+  categories: []
 }
 ```
+
+## FT-08 Notes
+
+- `useSettings` now treats generic-provider fields as part of the normal form state rather than branching on a Copilot-only authentication mode.
+- The hook preserves `baseUrl` and `llmModel` values when users switch providers, because it stores the full `AppSettings` object and only changes the targeted field.
 
 ## Dependencies
 

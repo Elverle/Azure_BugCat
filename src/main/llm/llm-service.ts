@@ -65,6 +65,8 @@ export async function categorizeBugs(
 ): Promise<CategorizedBug[]> {
   const provider: LLMProvider = createLLMProvider(settings.llmProvider, {
     apiKey: settings.apiKey,
+    baseUrl: settings.baseUrl,
+    model: settings.llmModel,
     timeout: 60000
   })
 
@@ -133,6 +135,8 @@ function applyCategorization(bugs: BugItem[], results: LLMCategorizeResult[]): C
 export async function testLLMConnection(settings: AppSettings): Promise<void> {
   const provider = createLLMProvider(settings.llmProvider, {
     apiKey: settings.apiKey,
+    baseUrl: settings.baseUrl,
+    model: settings.llmModel,
     timeout: 60000
   })
   await provider.testConnection()

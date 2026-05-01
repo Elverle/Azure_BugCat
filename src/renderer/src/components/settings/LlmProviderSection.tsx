@@ -19,7 +19,8 @@ interface LlmProviderSectionProps {
 const API_KEY_LABELS: Record<string, string> = {
   openai: 'OpenAI API Key',
   anthropic: 'Anthropic API Key',
-  gemini: 'Gemini API Key'
+  gemini: 'Gemini API Key',
+  generic: 'API Key'
 }
 
 export function LlmProviderSection({
@@ -32,16 +33,6 @@ export function LlmProviderSection({
   testLoading
 }: LlmProviderSectionProps): React.JSX.Element {
   const [showApiKey, setShowApiKey] = useState(false)
-
-  const copilotStatus = settings.copilotAuthStatus ?? 'unknown'
-
-  const statusBadge: Record<string, { className: string; label: string }> = {
-    authenticated: { className: 'bg-green-100 text-green-800', label: 'Authenticated' },
-    unauthenticated: { className: 'bg-red-100 text-red-800', label: 'Not Authenticated' },
-    unknown: { className: 'bg-gray-100 text-gray-600', label: 'Unknown' }
-  }
-
-  const badge = statusBadge[copilotStatus] ?? statusBadge.unknown
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -61,7 +52,7 @@ export function LlmProviderSection({
           >
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic Claude</option>
-            <option value="github-copilot">GitHub Copilot</option>
+            <option value="generic">Generico</option>
             <option value="gemini">Gemini</option>
           </Select>
           {touched.llmProvider && errors.llmProvider && (
@@ -69,45 +60,58 @@ export function LlmProviderSection({
           )}
         </div>
 
-        {/* Conditional: API key or Copilot status */}
-        {settings.llmProvider !== 'github-copilot' ? (
-          <div>
-            <Label htmlFor="apiKey">{API_KEY_LABELS[settings.llmProvider] ?? 'API Key'}</Label>
-            <div className="relative">
-              <Input
-                id="apiKey"
-                type={showApiKey ? 'text' : 'password'}
-                value={settings.apiKey ?? ''}
-                onChange={(e) => onFieldChange('apiKey', e.target.value)}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowApiKey((prev) => !prev)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                tabIndex={-1}
-              >
-                {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {touched.apiKey && errors.apiKey && (
-              <p className="text-xs text-red-500 mt-1">{errors.apiKey}</p>
-            )}
+        {/* API Key */}
+        <div>
+          <Label htmlFor="apiKey">{API_KEY_LABELS[settings.llmProvider] ?? 'API Key'}</Label>
+          <div className="relative">
+            <Input
+              id="apiKey"
+              type={showApiKey ? 'text' : 'password'}
+              value={settings.apiKey ?? ''}
+              onChange={(e) => onFieldChange('apiKey', e.target.value)}
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowApiKey((prev) => !prev)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              tabIndex={-1}
+            >
+              {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>
           </div>
-        ) : (
-          <div className="space-y-2">
-            <Label>Authentication Status</Label>
+          {touched.apiKey && errors.apiKey && (
+            <p className="text-xs text-red-500 mt-1">{errors.apiKey}</p>
+          )}
+        </div>
+
+        {/* Generic provider fields: Base URL and Model */}
+        {settings.llmProvider === 'generic' && (
+          <>
             <div>
-              <span
-                className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${badge.className}`}
-              >
-                {badge.label}
-              </span>
+              <Label htmlFor="baseUrl">Base URL</Label>
+              <Input
+                id="baseUrl"
+                type="text"
+                placeholder="https://api.example.com/v1"
+                value={settings.baseUrl ?? ''}
+                onChange={(e) => onFieldChange('baseUrl', e.target.value)}
+              />
+              {touched.baseUrl && errors.baseUrl && (
+                <p className="text-xs text-red-500 mt-1">{errors.baseUrl}</p>
+              )}
             </div>
-            <p className="text-xs text-gray-500">
-              GitHub Copilot uses your GitHub session. No API key needed.
-            </p>
-          </div>
+            <div>
+              <Label htmlFor="llmModel">Model</Label>
+              <Input
+                id="llmModel"
+                type="text"
+                placeholder="gpt-4o"
+                value={settings.llmModel ?? ''}
+                onChange={(e) => onFieldChange('llmModel', e.target.value)}
+              />
+            </div>
+          </>
         )}
 
         {/* Chunk Size */}

@@ -3,8 +3,8 @@ title: 'Validation Utilities'
 type: entity
 subtype: library
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-02-settings]]']
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [typescript, validation, pure-functions]
 lang: en
 ---
@@ -19,13 +19,14 @@ Pure validation functions for all settings fields. No React dependencies — can
 
 ## Validators
 
-| Function                                       | Field(s)                           | Rule                                                                                   |
-| ---------------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------------- |
-| `validateOrgUrl(url)`                          | `orgUrl`                           | Required; must match `https://dev.azure.com/{org}` or `https://{org}.visualstudio.com` |
-| `validateRequired(value, fieldName)`           | `projectName`, `pat`               | Non-empty after trim                                                                   |
-| `validateUUID(value)`                          | `queryId`                          | Required; must be valid UUID format                                                    |
-| `validateIntRange(value, min, max, fieldName)` | `topN` (1–200), `chunkSize` (5–30) | Must be integer within range                                                           |
-| `validateApiKey(value, provider)`              | `apiKey`                           | Required unless provider is `github-copilot`                                           |
+| Function                                       | Field(s)                           | Rule                                                                                       |
+| ---------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| `validateOrgUrl(url)`                          | `orgUrl`                           | Required; must match `https://dev.azure.com/{org}` or `https://{org}.visualstudio.com`     |
+| `validateRequired(value, fieldName)`           | `projectName`, `pat`               | Non-empty after trim                                                                       |
+| `validateUUID(value)`                          | `queryId`                          | Required; must be valid UUID format                                                        |
+| `validateIntRange(value, min, max, fieldName)` | `topN` (1–200), `chunkSize` (5–30) | Must be integer within range                                                               |
+| `validateApiKey(value, provider)`              | `apiKey`                           | Required for all current providers                                                         |
+| `validateBaseUrl(value, provider)`             | `baseUrl`                          | Required only for `generic`; must be a valid URL and use HTTPS, except localhost/127.0.0.1 |
 
 ## Aggregate Functions
 
@@ -40,6 +41,10 @@ Pure validation functions for all settings fields. No React dependencies — can
 const UUID_REGEX = /^[0-9a-fA-F]{8}-...-[0-9a-fA-F]{12}$/
 const ADO_ORG_URL_REGEX = /^https:\/\/(dev\.azure\.com\/[^/\s]+|[^/\s]+\.visualstudio\.com)\/?$/
 ```
+
+## FT-08 Notes
+
+- Renderer validation mirrors the main-process enforcement for generic provider URLs as a UX affordance, but the authoritative security check still lives in [[wiki/entities/generic-provider]].
 
 ## See also
 

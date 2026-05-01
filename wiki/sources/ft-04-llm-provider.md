@@ -2,7 +2,7 @@
 title: 'FT-04 — LLM Provider Abstraction e Categorizzazione'
 type: source
 created: 2026-04-30
-updated: 2026-04-30
+updated: 2026-05-01
 sources: []
 tags: [llm, openai, anthropic, copilot, gemini, categorization, main-process]
 lang: en
@@ -10,7 +10,7 @@ lang: en
 
 ## Summary
 
-Full implementation of the LLM provider layer in the Electron Main Process. Introduces a polymorphic `LLMProvider` interface with four concrete providers (OpenAI, Anthropic, GitHub Copilot, Gemini), a factory for instantiation, chunking for batch processing, response validation with markdown fence stripping, progressive IPC updates via `event.sender`, retry with exponential backoff, and test connection flow.
+Initial implementation of the LLM provider layer in the Electron Main Process. Introduces a polymorphic `LLMProvider` interface with four concrete providers (OpenAI, Anthropic, GitHub Copilot, Gemini), a factory for instantiation, chunking for batch processing, response validation with markdown fence stripping, progressive IPC updates via `event.sender`, retry with exponential backoff, and test connection flow. FT-08 later replaced the Copilot implementation with [[wiki/entities/generic-provider]].
 
 ## Files Created
 
@@ -42,7 +42,7 @@ Full implementation of the LLM provider layer in the Electron Main Process. Intr
 4. **Retry with backoff** — On rate-limit errors, retries up to 3 times with delays `[2s, 4s, 8s]`.
 5. **Response validation** — Strips markdown fences (```json), parses JSON, validates schema, and builds fallback results for missing bugs.
 6. **Error taxonomy** — Typed `AppError` codes: `LLM_AUTH_ERROR`, `LLM_RATE_LIMIT`, `LLM_TIMEOUT`, `LLM_PARSE_ERROR`, `UNKNOWN_ERROR`.
-7. **Copilot SDK** — Uses `approveAll` permission handler (intentional security trade-off for automated tool use).
+7. **Historical Copilot SDK note** — FT-04 used `approveAll` permission handling; FT-08 removed this path entirely by deleting the Copilot SDK dependency.
 8. **Tech debt** — `throwAppError`/`isAppError` duplicated across providers (DRY violation noted for next sprint).
 
 ## Architecture

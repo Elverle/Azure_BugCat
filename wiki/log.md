@@ -1,15 +1,16 @@
 # Wiki Operation Log
 
-| Date       | Action                     | Author         | Notes                                                                                                                |
-| ---------- | -------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                       |
-| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                          |
-| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.                      |
-| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.                                |
-| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity.                    |
-| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.                        |
-| 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index. |
-| 2026-05-01 | scan FT-07                 | GitHub Copilot | Scanned FT-07 session persistence. Created 1 source, 3 entities, 2 concepts, 1 topic. Updated 8 existing pages.      |
+| Date       | Action                     | Author         | Notes                                                                                                                                 |
+| ---------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                                        |
+| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                                           |
+| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.                                       |
+| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.                                                 |
+| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity.                                     |
+| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.                                         |
+| 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index.                  |
+| 2026-05-01 | scan FT-07                 | GitHub Copilot | Scanned FT-07 session persistence. Created 1 source, 3 entities, 2 concepts, 1 topic. Updated 8 existing pages.                       |
+| 2026-05-01 | scan FT-08                 | GitHub Copilot | Scanned FT-08 generic provider. Created 1 source, 1 entity. Updated LLM/settings/migration pages, index, and historical Copilot docs. |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -184,3 +185,32 @@ Pages updated:
 - [[wiki/topics/renderer-ui]] — documented reusable dialog + shared date utility and Settings danger zone
 - [[wiki/index.md]]
 
+## [2026-05-01] scan | FT-08 — GenericProvider OpenAI-Compatible e Rimozione Copilot
+
+Scanned FT-08 feature: replaced the GitHub Copilot SDK provider with a generic OpenAI-compatible HTTP adapter, extended settings with `baseUrl` and `llmModel`, added URL validation at both renderer and main-process boundaries, and introduced schema v2 migration to normalize legacy provider settings.
+
+Pages created:
+
+- [[wiki/sources/ft-08-generic-provider]]
+- [[wiki/entities/generic-provider]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/llm-provider-interface]]
+- [[wiki/entities/llm-provider-factory]]
+- [[wiki/entities/llm-service]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/validation-utils]]
+- [[wiki/entities/llm-provider-section]]
+- [[wiki/entities/use-settings-hook]]
+- [[wiki/entities/store-migration]]
+- [[wiki/entities/electron-store]]
+- [[wiki/entities/copilot-provider]]
+- [[wiki/concepts/llm-provider-abstraction]]
+- [[wiki/concepts/schema-versioned-store-migration]]
+- [[wiki/concepts/settings-persistence-flow]]
+- [[wiki/topics/llm-categorization-pipeline]]
+- [[wiki/sources/ft-02-settings]]
+- [[wiki/sources/ft-04-llm-provider]]

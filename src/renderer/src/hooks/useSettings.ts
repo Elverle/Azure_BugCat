@@ -10,9 +10,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   chunkSize: 15,
   llmProvider: 'openai',
   apiKey: '',
+  baseUrl: '',
+  llmModel: '',
   pat: '',
-  categories: [],
-  copilotAuthStatus: 'unknown'
+  categories: []
 }
 
 type ResultMessage = { type: 'success' | 'error'; message: string }

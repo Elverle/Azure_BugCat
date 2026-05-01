@@ -4,7 +4,12 @@ type: entity
 subtype: service
 created: 2026-04-29
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-07-session-persistence]]']
+sources:
+  [
+    '[[wiki/sources/ft-01-scaffold]]',
+    '[[wiki/sources/ft-07-session-persistence]]',
+    '[[wiki/sources/ft-08-generic-provider]]'
+  ]
 tags: [electron-store, encryption, persistence, migration]
 lang: en
 ---
@@ -48,7 +53,11 @@ The encryption key is resolved once at module load time.
 - `schemaVersion` is **not** declared in the defaults object.
 - This omission is intentional: FT-07 relies on `store.has('schemaVersion')` to distinguish legacy stores from stores that already have an explicit schema version.
 - Startup migration runs in `app.whenReady()` before IPC handlers are registered.
-- Current schema is tracked by [[wiki/entities/store-migration]] via `CURRENT_SCHEMA_VERSION = 1`.
+- Current schema is tracked by [[wiki/entities/store-migration]] via `CURRENT_SCHEMA_VERSION = 2`.
+
+## FT-08 Notes
+
+- Generic-provider fields such as `baseUrl` and `llmModel` are optional settings keys; they are not seeded in store defaults but are persisted once the renderer saves them.
 
 ## Store File
 

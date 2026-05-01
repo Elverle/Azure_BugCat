@@ -43,8 +43,7 @@ const baseSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'pat-token',
-  categories: [],
-  copilotAuthStatus: 'unknown'
+  categories: []
 }
 
 describe('registerIPCHandlers', () => {
@@ -81,7 +80,7 @@ describe('registerIPCHandlers', () => {
     expect(result).toEqual({ success: true, message: 'ok' })
   })
 
-  it('returns provider-specific validation feedback for LLM test connection overrides', async () => {
+  it('returns validation feedback for LLM test connection without API key', async () => {
     const resultWithoutKey = await handlers.get(IPC_CHANNELS.LLM_TEST_CONNECTION)?.(
       {},
       {
@@ -89,21 +88,8 @@ describe('registerIPCHandlers', () => {
         apiKey: ''
       }
     )
-    const resultCopilot = await handlers.get(IPC_CHANNELS.LLM_TEST_CONNECTION)?.(
-      {},
-      {
-        ...baseSettings,
-        llmProvider: 'github-copilot',
-        apiKey: '',
-        copilotAuthStatus: 'unauthenticated'
-      }
-    )
 
     expect(resultWithoutKey).toEqual({ success: false, message: 'API Key mancante' })
-    expect(resultCopilot).toEqual({
-      success: false,
-      message: 'Autenticazione GitHub Copilot richiesta'
-    })
   })
 
   it('reads persisted settings for bug fetching and throws if they are missing', async () => {
@@ -154,7 +140,15 @@ describe('registerIPCHandlers', () => {
   it('SESSION_GET returns stored session', async () => {
     const mockSession = {
       fetchedAt: '2026-05-01T00:00:00.000Z',
-      bugs: [{ id: 42, macroCategory: 'UI', subCategory: 'Layout', categoryReason: 'test', categorizedAt: '2026-05-01T00:00:00.000Z' }]
+      bugs: [
+        {
+          id: 42,
+          macroCategory: 'UI',
+          subCategory: 'Layout',
+          categoryReason: 'test',
+          categorizedAt: '2026-05-01T00:00:00.000Z'
+        }
+      ]
     }
     storeGet.mockReturnValueOnce(mockSession)
 

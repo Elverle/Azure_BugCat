@@ -2,8 +2,8 @@
 title: 'LLM Categorization Pipeline'
 type: topic
 created: 2026-04-30
-updated: 2026-04-30
-sources: ['[[wiki/sources/ft-04-llm-provider]]']
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [llm, categorization, pipeline, ipc, main-process]
 lang: en
 ---
@@ -48,7 +48,7 @@ End-to-end pipeline for categorizing Azure DevOps bugs via LLM. Runs entirely in
 | IPC entry point | [[wiki/entities/ipc-handlers]]                                                                                                                 | Loads state, calls service, persists result |
 | Orchestrator    | [[wiki/entities/llm-service]]                                                                                                                  | Coordinates chunking, retry, progress       |
 | Factory         | [[wiki/entities/llm-provider-factory]]                                                                                                         | Instantiates correct provider               |
-| Providers       | [[wiki/entities/openai-provider]], [[wiki/entities/anthropic-provider]], [[wiki/entities/copilot-provider]], [[wiki/entities/gemini-provider]] | SDK-specific LLM communication              |
+| Providers       | [[wiki/entities/openai-provider]], [[wiki/entities/anthropic-provider]], [[wiki/entities/generic-provider]], [[wiki/entities/gemini-provider]] | LLM communication adapters for each backend |
 | Prompts         | [[wiki/entities/llm-prompts]]                                                                                                                  | System/user prompt construction             |
 | Chunking        | [[wiki/entities/chunking-utility]]                                                                                                             | Batch splitting                             |
 | Validation      | [[wiki/entities/response-validator]]                                                                                                           | JSON parse + schema check + fallback        |
@@ -72,9 +72,10 @@ Separate lightweight flow for validating LLM credentials:
 
 ```
 IPC (llm:test-connection)
-  ├─ Check apiKey (or copilotAuthStatus for GitHub Copilot)
+  ├─ Check apiKey
   ├─ createLLMProvider(type, config)
   ├─ provider.testConnection() → sends "Test connection" prompt
+  ├─ GenericProvider additionally validates `baseUrl` and URL scheme in the main process
   └─ Returns TestConnectionResult { success, message }
 ```
 

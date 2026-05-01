@@ -1,4 +1,4 @@
-export const CURRENT_SCHEMA_VERSION = 1
+export const CURRENT_SCHEMA_VERSION = 2
 
 export type Migration = {
   version: number
@@ -9,6 +9,19 @@ export const migrations: Migration[] = [
   {
     version: 1,
     up: (data) => data
+  },
+  {
+    version: 2,
+    up: (data) => {
+      if (data.settings && typeof data.settings === 'object') {
+        const settings = data.settings as Record<string, unknown>
+        if (settings.llmProvider === 'github-copilot') {
+          settings.llmProvider = 'openai'
+        }
+        delete settings.copilotAuthStatus
+      }
+      return data
+    }
   }
 ]
 
@@ -38,11 +51,11 @@ export function migrateStore(store: StoreAccess): void {
     }
     for (const migration of pending) {
       data = migration.up(data)
-      store.set('schemaVersion', migration.version)
     }
-    // Persist migrated data back
+    // Persist migrated data before bumping schema version (atomic ordering)
     if (data.settings !== undefined) store.set('settings', data.settings)
     if (data.session !== undefined) store.set('session', data.session)
+    store.set('schemaVersion', CURRENT_SCHEMA_VERSION)
   } catch (error) {
     console.error('Store migration failed:', error)
     store.set('session', null)

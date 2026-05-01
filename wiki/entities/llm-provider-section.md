@@ -3,15 +3,15 @@ title: 'LLM Provider Section'
 type: entity
 subtype: component
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-02-settings]]']
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [react, component, settings, llm]
 lang: en
 ---
 
 ## Description
 
-Settings card for LLM provider configuration. Includes provider select dropdown, conditional API key field (for OpenAI/Anthropic/Gemini) or Copilot auth status badge (for GitHub Copilot), chunk size input, and Test Connection button.
+Settings card for LLM provider configuration. Includes provider select dropdown, API key field with dynamic label, generic-provider-only Base URL and Model inputs, chunk size input, and Test Connection button.
 
 ## Location
 
@@ -33,32 +33,25 @@ interface LlmProviderSectionProps {
 
 ## Conditional Rendering
 
-When `llmProvider !== 'github-copilot'`:
+The API key field is always shown:
 
 - Shows API key input with show/hide toggle
-- Label dynamically changes: "OpenAI API Key", "Anthropic API Key", "Gemini API Key"
+- Label dynamically changes: "OpenAI API Key", "Anthropic API Key", "Gemini API Key", or generic "API Key"
 
-When `llmProvider === 'github-copilot'`:
+When `llmProvider === 'generic'`:
 
-- Shows authentication status badge (green/red/gray pill)
-- Informational text: "GitHub Copilot uses your GitHub session. No API key needed."
+- Shows `Base URL` input with an OpenAI-compatible endpoint placeholder
+- Shows optional `Model` input so the user can override the default `gpt-4o`
+- Renders inline `errors.baseUrl` feedback when validation fails
 
 ## Provider Options
 
-| Value            | Label            |
-| ---------------- | ---------------- |
-| `openai`         | OpenAI           |
-| `anthropic`      | Anthropic Claude |
-| `github-copilot` | GitHub Copilot   |
-| `gemini`         | Gemini           |
-
-## Copilot Auth Status Badges
-
-| Status            | Badge                    |
-| ----------------- | ------------------------ |
-| `authenticated`   | Green: "Authenticated"   |
-| `unauthenticated` | Red: "Not Authenticated" |
-| `unknown`         | Gray: "Unknown"          |
+| Value       | Label            |
+| ----------- | ---------------- |
+| `openai`    | OpenAI           |
+| `anthropic` | Anthropic Claude |
+| `generic`   | Generico         |
+| `gemini`    | Gemini           |
 
 ## Dependencies
 

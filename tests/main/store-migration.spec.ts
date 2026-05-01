@@ -13,13 +13,14 @@ describe('store-migration', () => {
   })
 
   describe('exports', () => {
-    it('should export CURRENT_SCHEMA_VERSION as 1', () => {
-      expect(CURRENT_SCHEMA_VERSION).toBe(1)
+    it('should export CURRENT_SCHEMA_VERSION as 2', () => {
+      expect(CURRENT_SCHEMA_VERSION).toBe(2)
     })
 
-    it('should export migrations array with one entry', () => {
-      expect(migrations).toHaveLength(1)
+    it('should export migrations array with two entries', () => {
+      expect(migrations).toHaveLength(2)
       expect(migrations[0].version).toBe(1)
+      expect(migrations[1].version).toBe(2)
     })
   })
 
@@ -31,7 +32,7 @@ describe('store-migration', () => {
       migrateStore(store)
 
       expect(store.has).toHaveBeenCalledWith('schemaVersion')
-      expect(store.set).toHaveBeenCalledWith('schemaVersion', 1)
+      expect(store.set).toHaveBeenCalledWith('schemaVersion', CURRENT_SCHEMA_VERSION)
     })
 
     it('should not run migration when already at current version', () => {
@@ -70,10 +71,56 @@ describe('store-migration', () => {
 
       migrateStore(store)
 
-      // Version 0→1 is a no-op, so data should be persisted as-is
-      expect(store.set).toHaveBeenCalledWith('schemaVersion', 1)
+      // Data persisted before schema version bump
       expect(store.set).toHaveBeenCalledWith('settings', mockSettings)
       expect(store.set).toHaveBeenCalledWith('session', mockSession)
+      expect(store.set).toHaveBeenCalledWith('schemaVersion', CURRENT_SCHEMA_VERSION)
+    })
+
+    it('migration v2 converts github-copilot to openai and removes copilotAuthStatus', () => {
+      const mockSettings = {
+        llmProvider: 'github-copilot',
+        copilotAuthStatus: 'authenticated',
+        apiKey: ''
+      }
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 1
+        if (key === 'settings') return mockSettings
+        if (key === 'session') return null
+        return undefined
+      })
+
+      migrateStore(store)
+
+      expect(store.set).toHaveBeenCalledWith(
+        'settings',
+        expect.objectContaining({
+          llmProvider: 'openai'
+        })
+      )
+      const settingsCall = (store.set as any).mock.calls.find((c: unknown[]) => c[0] === 'settings')
+      expect(settingsCall[1]).not.toHaveProperty('copilotAuthStatus')
+    })
+
+    it('migration v2 leaves non-copilot providers unchanged', () => {
+      const mockSettings = { llmProvider: 'anthropic', apiKey: 'key' }
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 1
+        if (key === 'settings') return mockSettings
+        if (key === 'session') return null
+        return undefined
+      })
+
+      migrateStore(store)
+
+      expect(store.set).toHaveBeenCalledWith(
+        'settings',
+        expect.objectContaining({
+          llmProvider: 'anthropic'
+        })
+      )
     })
 
     it('should reset session and set schemaVersion when migration throws', () => {

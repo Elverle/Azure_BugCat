@@ -2,7 +2,7 @@
 // Shared Types — Bug Categorizer
 // ============================================
 
-export type LLMProviderType = 'openai' | 'anthropic' | 'github-copilot' | 'gemini'
+export type LLMProviderType = 'openai' | 'anthropic' | 'generic' | 'gemini'
 
 export type ErrorCode =
   | 'ADO_AUTH_ERROR'
@@ -44,9 +44,10 @@ export interface AppSettings {
   chunkSize: number
   llmProvider: LLMProviderType
   apiKey?: string
+  baseUrl?: string
+  llmModel?: string
   pat: string
   categories: string[]
-  copilotAuthStatus?: 'authenticated' | 'unauthenticated' | 'unknown'
 }
 
 export interface SessionData {
