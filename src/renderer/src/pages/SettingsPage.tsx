@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
-import { Shield, Loader2, CheckCircle2, XCircle, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Shield, Loader2, CheckCircle2, XCircle, X, AlertTriangle } from 'lucide-react'
 import { useSettings } from '@renderer/hooks/useSettings'
 import { AdoConnectionSection } from '@renderer/components/settings/AdoConnectionSection'
 import { LlmProviderSection } from '@renderer/components/settings/LlmProviderSection'
 import { CategoriesSection } from '@renderer/components/settings/CategoriesSection'
 import { Button } from '@renderer/components/ui/button'
+import { ConfirmDialog } from '@renderer/components/ui/confirm-dialog'
 import { cn } from '@renderer/lib/utils'
 
 export function SettingsPage() {
@@ -31,13 +32,38 @@ export function SettingsPage() {
     textToCategories
   } = useSettings()
 
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [clearResult, setClearResult] = useState<{
+    type: 'success' | 'error'
+    message: string
+  } | null>(null)
+
   // Auto-dismiss success saveResult after 3 seconds
   useEffect(() => {
     if (saveResult?.type === 'success') {
-      const timer = setTimeout(() => clearSaveResult(), 3000)
+      const timer = setTimeout(() => clearSaveResult(), 10000)
       return () => clearTimeout(timer)
     }
   }, [saveResult, clearSaveResult])
+
+  // Auto-dismiss clearResult after 3 seconds
+  useEffect(() => {
+    if (clearResult?.type === 'success') {
+      const timer = setTimeout(() => setClearResult(null), 10000)
+      return () => clearTimeout(timer)
+    }
+  }, [clearResult])
+
+  async function handleClearSession(): Promise<void> {
+    try {
+      await window.electronAPI.clearSession()
+      setClearResult({ type: 'success', message: 'Dati sessione eliminati con successo.' })
+    } catch {
+      setClearResult({ type: 'error', message: 'Errore durante la pulizia dei dati sessione.' })
+    } finally {
+      setConfirmOpen(false)
+    }
+  }
 
   // Loading state
   if (loading) {
@@ -81,7 +107,11 @@ export function SettingsPage() {
           )}
           <span className="flex-1">{saveResult.message}</span>
           {saveResult.type === 'error' && (
-            <button onClick={clearSaveResult} className="text-red-600 hover:text-red-800">
+            <button
+              onClick={clearSaveResult}
+              aria-label="Chiudi messaggio di errore"
+              className="text-red-600 hover:text-red-800"
+            >
               <X className="w-4 h-4" />
             </button>
           )}
@@ -124,6 +154,63 @@ export function SettingsPage() {
           Save Settings
         </Button>
       </div>
+
+      {/* Danger zone */}
+      {clearResult && (
+        <div
+          className={cn(
+            'rounded-lg p-3 text-sm flex items-center gap-2',
+            clearResult.type === 'success'
+              ? 'bg-green-50 border border-green-200 text-green-800'
+              : 'bg-red-50 border border-red-200 text-red-800'
+          )}
+        >
+          {clearResult.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          ) : (
+            <XCircle className="w-4 h-4 shrink-0" />
+          )}
+          <span className="flex-1">{clearResult.message}</span>
+          {clearResult.type === 'error' && (
+            <button
+              onClick={() => setClearResult(null)}
+              aria-label="Chiudi messaggio di errore"
+              className="text-red-600 hover:text-red-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="border border-red-300 rounded-lg p-4 bg-red-50/50">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-base font-semibold text-red-800">Zona pericolosa</h3>
+            <p className="text-sm text-red-700 mt-1">
+              Questa azione elimina tutti i dati della sessione corrente, inclusi bug scaricati e
+              risultati di categorizzazione. L&apos;operazione non è reversibile.
+            </p>
+            <div className="mt-3">
+              <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
+                Pulisci dati sessione
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Conferma pulizia dati sessione"
+        description="Tutti i bug scaricati e i risultati di categorizzazione verranno eliminati. Questa operazione non è reversibile. Vuoi procedere?"
+        confirmLabel="Pulisci dati"
+        cancelLabel="Annulla"
+        variant="destructive"
+        onConfirm={handleClearSession}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   )
 }

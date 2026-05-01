@@ -3,14 +3,15 @@ title: 'IPC Handlers'
 type: entity
 subtype: service
 created: 2026-04-29
-updated: 2026-04-30
+updated: 2026-05-01
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
     '[[wiki/sources/ft-02-settings]]',
     '[[wiki/sources/ft-03-ado-fetch]]',
     '[[wiki/sources/ft-04-llm-provider]]',
-    '[[wiki/sources/ft-06-bug-detail-drawer]]'
+    '[[wiki/sources/ft-06-bug-detail-drawer]]',
+    '[[wiki/sources/ft-07-session-persistence]]'
   ]
 tags: [electron, ipc, main-process, shell]
 lang: en
@@ -18,7 +19,7 @@ lang: en
 
 ## Description
 
-Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channel to a main-process operation. Called once from `app.whenReady()`.
+Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channel to a main-process operation. Called once from `app.whenReady()`, after store migration has already completed.
 
 ## Location
 
@@ -58,5 +59,6 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - [[wiki/entities/preload-bridge]]
 - [[wiki/entities/open-external-ipc]]
 - [[wiki/concepts/ipc-security-model]]
+- [[wiki/topics/session-persistence-lifecycle]]
 - [[wiki/topics/electron-architecture]]
 - [[wiki/topics/llm-categorization-pipeline]]

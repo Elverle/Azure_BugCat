@@ -3,15 +3,15 @@ title: 'Electron Store (encrypted)'
 type: entity
 subtype: service
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]']
-tags: [electron-store, encryption, persistence]
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-07-session-persistence]]']
+tags: [electron-store, encryption, persistence, migration]
 lang: en
 ---
 
 ## Description
 
-Persistent configuration store backed by `electron-store` v11 with encryption. Stores app settings (ADO connection, LLM config, categories) and session data (cached bug lists).
+Persistent configuration store backed by `electron-store` v11 with encryption. Stores app settings (ADO connection, LLM config, categories) and session data (cached bug lists), while schema upgrades are managed explicitly through [[wiki/entities/store-migration]].
 
 ## Location
 
@@ -43,6 +43,13 @@ The encryption key is resolved once at module load time.
 }
 ```
 
+## Schema Versioning
+
+- `schemaVersion` is **not** declared in the defaults object.
+- This omission is intentional: FT-07 relies on `store.has('schemaVersion')` to distinguish legacy stores from stores that already have an explicit schema version.
+- Startup migration runs in `app.whenReady()` before IPC handlers are registered.
+- Current schema is tracked by [[wiki/entities/store-migration]] via `CURRENT_SCHEMA_VERSION = 1`.
+
 ## Store File
 
 Name: `bug-categorizer-config.json` (encrypted on disk), located in Electron's `userData` directory.
@@ -55,6 +62,9 @@ Name: `bug-categorizer-config.json` (encrypted on disk), located in Electron's `
 
 ## See also
 
+- [[wiki/entities/store-migration]]
 - [[wiki/entities/ipc-handlers]] — reads/writes via IPC
 - [[wiki/concepts/ipc-security-model]]
+- [[wiki/concepts/schema-versioned-store-migration]]
 - [[wiki/topics/electron-architecture]]
+- [[wiki/topics/session-persistence-lifecycle]]
