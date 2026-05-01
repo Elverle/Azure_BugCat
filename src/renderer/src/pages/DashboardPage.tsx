@@ -30,6 +30,14 @@ import type { AppSettings, CategorizedBug } from '@shared/types'
 
 type ViewMode = 'table' | 'card' | 'similarity'
 
+const DEFAULT_DRAWER_WIDTH = 400
+const MIN_DRAWER_WIDTH = 400
+const MAX_DRAWER_WIDTH = 760
+
+function clampDrawerWidth(width: number): number {
+  return Math.min(MAX_DRAWER_WIDTH, Math.max(MIN_DRAWER_WIDTH, width))
+}
+
 export function DashboardPage(): JSX.Element {
   const { bugs, loading, progress, sessionInfo, fetchBugs, categorizeBugs } = useDashboard()
 
@@ -39,6 +47,7 @@ export function DashboardPage(): JSX.Element {
   const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [searchText, setSearchText] = useState('')
+  const [drawerWidth, setDrawerWidth] = useState(DEFAULT_DRAWER_WIDTH)
   const [adoSettings, setAdoSettings] = useState<{ orgUrl: string; projectName: string }>({
     orgUrl: '',
     projectName: ''
@@ -217,10 +226,8 @@ export function DashboardPage(): JSX.Element {
   return (
     <>
       <div
-        className={cn(
-          'flex-1 overflow-y-auto p-6 transition-all duration-200',
-          drawerOpen && 'pr-[400px]'
-        )}
+        className="flex-1 overflow-y-auto p-6 transition-all duration-200"
+        style={drawerOpen ? { paddingRight: `${drawerWidth}px` } : undefined}
       >
         <DashboardHeader
           onFetch={fetchBugs}
@@ -349,6 +356,10 @@ export function DashboardPage(): JSX.Element {
       <BugDetailDrawer
         bug={selectedBug}
         isOpen={drawerOpen}
+        width={drawerWidth}
+        minWidth={MIN_DRAWER_WIDTH}
+        maxWidth={MAX_DRAWER_WIDTH}
+        onResize={(nextWidth) => setDrawerWidth(clampDrawerWidth(nextWidth))}
         onClose={closeDrawer}
         onPrev={goToPrev}
         onNext={goToNext}
