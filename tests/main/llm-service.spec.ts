@@ -75,6 +75,11 @@ describe('llm-service', () => {
       expect(result[1].macroCategory).toBe('Backend')
       expect(result[2].macroCategory).toBe('UI')
       expect(progressCalls).toHaveLength(2)
+      expect(mockChat).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        { responseSchema: 'categorization' }
+      )
     })
 
     it('retries on rate limit error', async () => {

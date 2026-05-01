@@ -12,7 +12,7 @@ describe('prompts', () => {
       const prompt = buildSystemPrompt([])
       expect(prompt).toContain('expert software quality analyst')
       expect(prompt).toContain('Return ONLY valid JSON')
-      expect(prompt).toContain('"bugId": number')
+      expect(prompt).toContain('bugId (number)')
     })
 
     it('includes semantic analysis instructions', () => {
@@ -56,7 +56,7 @@ describe('prompts', () => {
         { id: 2, title: 'Bug 2', description: 'Description 2', tags: [] }
       ])
       expect(message).toContain('Analyze each bug below and assign the most appropriate category')
-      expect(message).toContain('Use title and description as the primary signals')
+      expect(message).toContain('Use tag and title as the primary signals')
       const json = message.replace(/^[^\[]*/, '')
       const parsed = JSON.parse(json)
       expect(parsed).toHaveLength(2)
@@ -87,8 +87,8 @@ describe('prompts', () => {
       const prompt = buildSimilarBugsSystemPrompt()
       expect(prompt).toContain('similar or duplicates')
       expect(prompt).toContain('similarityScore')
-      expect(prompt).toContain('"groups"')
-      expect(prompt).toContain('"bugIds"')
+      expect(prompt).toContain('bugIds')
+      expect(prompt).toContain('reason (string)')
     })
 
     it('includes scoring criteria', () => {

@@ -11,6 +11,7 @@
 | 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index.                  |
 | 2026-05-01 | scan FT-07                 | GitHub Copilot | Scanned FT-07 session persistence. Created 1 source, 3 entities, 2 concepts, 1 topic. Updated 8 existing pages.                       |
 | 2026-05-01 | scan FT-08                 | GitHub Copilot | Scanned FT-08 generic provider. Created 1 source, 1 entity. Updated LLM/settings/migration pages, index, and historical Copilot docs. |
+| 2026-05-01 | scan FT-09                 | GitHub Copilot | Scanned FT-09 structured output. Created 1 source, 1 entity, 1 concept. Updated LLM provider, prompt, validator, topic, index, and log pages. |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -214,3 +215,28 @@ Pages updated:
 - [[wiki/topics/llm-categorization-pipeline]]
 - [[wiki/sources/ft-02-settings]]
 - [[wiki/sources/ft-04-llm-provider]]
+
+## [2026-05-01] scan | FT-09 - Structured Output JSON Schema per Tutti i Provider LLM
+
+Scanned FT-09 feature: introduced shared JSON Schema definitions for categorization and similar-bugs output, extended the `LLMProvider.chat()` contract with schema-aware `ChatOptions`, mapped that logical schema to each provider's native structured-output API, simplified prompts because structure is now enforced at transport level, and standardized temperature to `0.1` across all providers.
+
+Pages created:
+
+- [[wiki/sources/ft-09-structured-output]]
+- [[wiki/entities/llm-schemas]]
+- [[wiki/concepts/provider-native-structured-output]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/log.md]]
+- [[wiki/entities/llm-provider-interface]]
+- [[wiki/entities/llm-service]]
+- [[wiki/entities/llm-prompts]]
+- [[wiki/entities/response-validator]]
+- [[wiki/entities/openai-provider]]
+- [[wiki/entities/anthropic-provider]]
+- [[wiki/entities/gemini-provider]]
+- [[wiki/entities/generic-provider]]
+- [[wiki/concepts/llm-provider-abstraction]]
+- [[wiki/topics/llm-categorization-pipeline]]

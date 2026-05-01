@@ -6,7 +6,7 @@ import {
   ChunkProgress,
   LLMCategorizeResult
 } from '../../shared/types'
-import { LLMProvider } from './types'
+import { LLMProvider, ChatOptions } from './types'
 import { createLLMProvider } from './provider-factory'
 import { buildSystemPrompt, buildUserMessage } from './prompts'
 import { splitIntoChunks } from './chunking'
@@ -97,13 +97,14 @@ function buildChunkDiagnostics(
 async function chatWithRetry(
   provider: LLMProvider,
   systemPrompt: string,
-  userMessage: string
+  userMessage: string,
+  options?: ChatOptions
 ): Promise<string> {
   let lastError: unknown
 
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     try {
-      return await provider.chat(systemPrompt, userMessage)
+      return await provider.chat(systemPrompt, userMessage, options)
     } catch (error: unknown) {
       lastError = error
       if (isAbortLikeError(error)) {
@@ -155,7 +156,9 @@ export async function categorizeBugs(
 
     try {
       const userMessage = buildUserMessage(chunk)
-      const raw = await chatWithRetry(provider, systemPrompt, userMessage)
+      const raw = await chatWithRetry(provider, systemPrompt, userMessage, {
+        responseSchema: 'categorization'
+      })
       chunkResults = validateLLMResponse(raw, chunk)
     } catch (error: unknown) {
       const normalizedError = isAbortLikeError(error)
