@@ -63,7 +63,7 @@ export class GenericProvider implements LLMProvider {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage }
           ],
-          temperature: 0.2
+          temperature: 0.1
         }),
         signal: controller.signal
       })

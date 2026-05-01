@@ -94,4 +94,56 @@ describe('response-validator', () => {
     expect(results).toHaveLength(1)
     expect(results[0].macroCategory).toBe('Backend')
   })
+
+  it('extracts JSON when the model adds extra prose around the payload', () => {
+    const raw = [
+      'Here is the categorization result:',
+      JSON.stringify({
+        results: [
+          {
+            bugId: 1,
+            macroCategory: 'Validazioni',
+            subCategory: 'Costo management',
+            categoryReason: 'The title explicitly mentions final validations and cost error.'
+          }
+        ]
+      }),
+      'Done.'
+    ].join('\n')
+
+    const results = validateLLMResponse(raw, [makeBug(1)])
+
+    expect(results).toEqual([
+      {
+        bugId: 1,
+        macroCategory: 'Validazioni',
+        subCategory: 'Costo management',
+        categoryReason: 'The title explicitly mentions final validations and cost error.'
+      }
+    ])
+  })
+
+  it('accepts a top-level array with common alternative field names', () => {
+    const raw = JSON.stringify([
+      {
+        id: '1',
+        category: 'Validazioni',
+        subcategory: 'Controlli finali',
+        reason:
+          'The title contains "Validazioni finali" and the description points to a validation problem.'
+      }
+    ])
+
+    const results = validateLLMResponse(raw, [makeBug(1)])
+
+    expect(results).toEqual([
+      {
+        bugId: 1,
+        macroCategory: 'Validazioni',
+        subCategory: 'Controlli finali',
+        categoryReason:
+          'The title contains "Validazioni finali" and the description points to a validation problem.'
+      }
+    ])
+  })
 })

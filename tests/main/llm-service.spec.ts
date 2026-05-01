@@ -131,6 +131,19 @@ describe('llm-service', () => {
         code: 'LLM_TIMEOUT'
       })
     })
+
+    it('normalizes abort-like provider errors to timeout', async () => {
+      mockChat.mockRejectedValueOnce({
+        name: 'AbortError',
+        message: 'This operation was aborted'
+      })
+
+      const bugs = [makeBug(1)]
+
+      await expect(categorizeBugs(baseSettings, bugs)).rejects.toMatchObject({
+        code: 'LLM_TIMEOUT'
+      })
+    })
   })
 
   describe('testLLMConnection', () => {
