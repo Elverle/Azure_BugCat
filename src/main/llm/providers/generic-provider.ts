@@ -1,4 +1,5 @@
-import { LLMProvider, LLMProviderConfig } from '../types'
+import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
+import { getSchema } from '../schemas'
 import { AppError } from '../../../shared/types'
 
 function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
@@ -42,7 +43,7 @@ export class GenericProvider implements LLMProvider {
     }
   }
 
-  async chat(systemPrompt: string, userMessage: string): Promise<string> {
+  async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
     const baseUrl = this.config.baseUrl!.replace(/\/+$/, '')
     const url = `${baseUrl}/chat/completions`
     const timeout = this.config.timeout ?? 60000
@@ -63,7 +64,20 @@ export class GenericProvider implements LLMProvider {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage }
           ],
-          temperature: 0.1
+          temperature: 0.1,
+          ...(options?.responseSchema && {
+            response_format: {
+              type: 'json_schema',
+              json_schema: {
+                name:
+                  options.responseSchema === 'categorization'
+                    ? 'bug_categorization'
+                    : 'similar_bugs_detection',
+                strict: true,
+                schema: getSchema(options.responseSchema)
+              }
+            }
+          })
         }),
         signal: controller.signal
       })

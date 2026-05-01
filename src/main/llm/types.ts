@@ -1,4 +1,7 @@
 import { BugItem, LLMCategorizeResult } from '../../shared/types'
+import { SchemaType } from './schemas'
+
+export type { SchemaType }
 
 export interface LLMProviderConfig {
   apiKey?: string
@@ -7,9 +10,13 @@ export interface LLMProviderConfig {
   timeout?: number
 }
 
+export interface ChatOptions {
+  responseSchema?: SchemaType
+}
+
 export interface LLMProvider {
   readonly name: string
-  chat(systemPrompt: string, userMessage: string): Promise<string>
+  chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string>
   testConnection(): Promise<void>
 }
 

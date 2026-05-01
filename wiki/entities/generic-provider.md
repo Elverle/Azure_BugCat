@@ -4,7 +4,7 @@ type: entity
 subtype: service
 created: 2026-05-01
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-08-generic-provider]]']
+sources: ['[[wiki/sources/ft-08-generic-provider]]', '[[wiki/sources/ft-09-structured-output]]']
 tags: [llm, provider, openai-compatible, fetch]
 lang: en
 ---
@@ -28,17 +28,21 @@ LLM provider implementation for any OpenAI-compatible HTTP endpoint. Unlike the 
 
 1. Validates `apiKey` and `baseUrl` at construction time.
 2. Enforces URL scheme in the main process: `https:` is required, except `http:` is allowed for `localhost` and `127.0.0.1`.
-3. Sends standard OpenAI-compatible payloads with `model`, `messages`, and `temperature: 0.2`.
+3. Sends OpenAI-compatible payloads with `model`, `messages`, `temperature: 0.1`, and optional `response_format` when `responseSchema` is requested.
 4. Parses `choices[0].message.content` from the JSON response.
 5. Exposes `testConnection()` by reusing the same chat path with a lightweight prompt.
 
+## Structured Output
+
+Uses the same `response_format.json_schema` contract as [[wiki/entities/openai-provider]], but emits it over plain HTTP instead of an SDK wrapper.
+
 ## Error Mapping
 
-- `401` / `403` → `LLM_AUTH_ERROR`
-- `429` → `LLM_RATE_LIMIT`
-- `AbortError` → `LLM_TIMEOUT`
-- Non-JSON or empty response body → `LLM_PARSE_ERROR`
-- Other failures → `UNKNOWN_ERROR`
+- `401` / `403` -> `LLM_AUTH_ERROR`
+- `429` -> `LLM_RATE_LIMIT`
+- `AbortError` -> `LLM_TIMEOUT`
+- Non-JSON or empty response body -> `LLM_PARSE_ERROR`
+- Other failures -> `UNKNOWN_ERROR`
 
 ## Security Notes
 
@@ -48,7 +52,8 @@ LLM provider implementation for any OpenAI-compatible HTTP endpoint. Unlike the 
 ## Dependencies
 
 - [[wiki/entities/llm-provider-interface]]
-- [[wiki/entities/shared-types]] — `AppError`
+- [[wiki/entities/llm-schemas]]
+- [[wiki/entities/shared-types]] - `AppError`
 - native `fetch`, `URL`, `AbortController`
 
 ## See also
@@ -57,4 +62,5 @@ LLM provider implementation for any OpenAI-compatible HTTP endpoint. Unlike the 
 - [[wiki/entities/llm-service]]
 - [[wiki/entities/validation-utils]]
 - [[wiki/concepts/llm-provider-abstraction]]
+- [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

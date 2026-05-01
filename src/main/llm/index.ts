@@ -8,4 +8,5 @@ export {
 } from './prompts'
 export { splitIntoChunks } from './chunking'
 export { validateLLMResponse } from './response-validator'
-export type { LLMProvider, LLMProviderConfig, ChunkInput, ChunkResult } from './types'
+export { CATEGORIZATION_SCHEMA, SIMILAR_BUGS_SCHEMA, getSchema } from './schemas'
+export type { LLMProvider, LLMProviderConfig, ChunkInput, ChunkResult, SchemaType, ChatOptions } from './types'

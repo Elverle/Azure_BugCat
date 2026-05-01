@@ -3,7 +3,12 @@ title: 'LLM Provider Abstraction'
 type: concept
 created: 2026-04-30
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-08-generic-provider]]']
+sources:
+  [
+    '[[wiki/sources/ft-04-llm-provider]]',
+    '[[wiki/sources/ft-08-generic-provider]]',
+    '[[wiki/sources/ft-09-structured-output]]'
+  ]
 tags: [llm, design-pattern, factory-pattern, strategy-pattern]
 lang: en
 ---
@@ -14,50 +19,56 @@ A polymorphic provider abstraction allowing the application to switch between mu
 
 ## Pattern
 
-Combines **Strategy Pattern** (runtime-swappable behavior via `LLMProvider` interface) with a **Simple Factory** (`createLLMProvider`) for instantiation. No DI framework — just a switch statement mapping type strings to concrete classes.
+Combines **Strategy Pattern** (runtime-swappable behavior via `LLMProvider` interface) with a **Simple Factory** (`createLLMProvider`) for instantiation. No DI framework, just a switch statement mapping provider identifiers to concrete classes.
 
 ## Interface Contract
 
 ```typescript
 interface LLMProvider {
   readonly name: string
-  chat(systemPrompt: string, userMessage: string): Promise<string>
+  chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string>
   testConnection(): Promise<void>
 }
 ```
 
 All providers:
 
-- Accept system + user message, return raw string
-- Implement 60s timeout via `AbortController`
-- Map SDK-specific errors to a unified `AppError` taxonomy
-- Validate required configuration at construction
+- accept system + user message and return a raw string,
+- implement a 60 s timeout via `AbortController`,
+- map provider-specific failures to the shared `AppError` taxonomy,
+- validate required configuration at construction,
+- optionally interpret `ChatOptions.responseSchema` using provider-native structured-output features.
 
 ## Implementation in This Project
 
-```
-LLMProviderType (settings) → createLLMProvider() → LLMProvider instance
-                                    ↓
-         OpenAIProvider | AnthropicProvider | GenericProvider | GeminiProvider
+```text
+LLMProviderType (settings) -> createLLMProvider() -> LLMProvider instance
+                                      |
+                                      +-> OpenAIProvider
+                                      +-> AnthropicProvider
+                                      +-> GenericProvider
+                                      +-> GeminiProvider
 ```
 
-Each provider presents the same interface to `llm-service.ts`; FT-08 shows that the abstraction is not limited to SDK-backed implementations because `GenericProvider` uses raw `fetch()`.
+FT-08 proved the abstraction works across SDK and raw-HTTP adapters. FT-09 extends that same abstraction with schema-aware output intent without leaking vendor syntax into `llm-service.ts`.
 
 ## Trade-offs
 
-| Advantage                             | Disadvantage                                                                             |
-| ------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Easy to add new providers             | `throwAppError`/`isAppError` duplicated in each provider (DRY violation)                 |
-| Runtime switching from settings       | No shared base class for common timeout/error logic                                      |
-| Clean separation of transport details | Provider-specific validation still lives in concrete classes (`baseUrl`, SDK auth, etc.) |
+| Advantage                                          | Disadvantage                                                                  |
+| -------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Easy to add new providers                          | `throwAppError` / `isAppError` remain duplicated across providers             |
+| Runtime switching from settings                    | No shared base class for common timeout or error helpers                      |
+| Clean separation of transport details              | Provider-specific schema translation still lives in concrete classes          |
+| Structured output stays behind a neutral interface | The common return type is still `string`, so validation remains a second pass |
 
 ## Extensibility
 
 To add a new provider:
 
-1. Create `src/main/llm/providers/new-provider.ts` implementing `LLMProvider`
-2. Add case to `provider-factory.ts` switch
-3. Add type to `LLMProviderType` union in `shared/types.ts`
+1. Create `src/main/llm/providers/new-provider.ts` implementing `LLMProvider`.
+2. Add a case to `provider-factory.ts`.
+3. Add the new type to `LLMProviderType` in `shared/types.ts`.
+4. If the provider supports structured output, map `ChatOptions.responseSchema` to its native request format.
 
 ## See also
 
@@ -67,4 +78,5 @@ To add a new provider:
 - [[wiki/entities/anthropic-provider]]
 - [[wiki/entities/generic-provider]]
 - [[wiki/entities/gemini-provider]]
+- [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

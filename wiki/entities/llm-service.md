@@ -4,14 +4,19 @@ type: entity
 subtype: service
 created: 2026-04-30
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-08-generic-provider]]']
+sources:
+  [
+    '[[wiki/sources/ft-04-llm-provider]]',
+    '[[wiki/sources/ft-08-generic-provider]]',
+    '[[wiki/sources/ft-09-structured-output]]'
+  ]
 tags: [llm, main-process, categorization, orchestration]
 lang: en
 ---
 
 ## Description
 
-Top-level orchestration service for LLM-based bug categorization. Coordinates provider instantiation, prompt building, chunking, retry logic, response validation, and progressive result delivery.
+Top-level orchestration service for LLM-based bug categorization. Coordinates provider instantiation, prompt building, chunking, retry logic, schema-aware provider calls, response validation, and progressive result delivery.
 
 ## Location
 
@@ -26,45 +31,48 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 
 ## Internal Functions
 
-| Function              | Purpose                                                                                        |
-| --------------------- | ---------------------------------------------------------------------------------------------- |
-| `chatWithRetry`       | Wraps `provider.chat()` with up to 3 retries on rate-limit, exponential backoff `[2s, 4s, 8s]` |
-| `applyCategorization` | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by bugId             |
-| `sleep`               | Promise-based delay utility                                                                    |
+| Function              | Purpose                                                                                                                             |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `chatWithRetry`       | Wraps `provider.chat()` with up to 3 retries on rate-limit, exponential backoff `[2s, 4s, 8s]`, and forwards optional `ChatOptions` |
+| `applyCategorization` | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId`                                                |
+| `sleep`               | Promise-based delay utility                                                                                                         |
 
 ## Behavior
 
-1. Creates provider via `createLLMProvider(settings.llmProvider, { apiKey, baseUrl, model, timeout })`
-2. Builds system prompt from `settings.categories`
-3. Splits bugs into chunks of `settings.chunkSize`
+1. Creates provider via `createLLMProvider(settings.llmProvider, { apiKey, baseUrl, model, timeout })`.
+2. Builds system prompt from `settings.categories`.
+3. Splits bugs into chunks of `settings.chunkSize`.
 4. For each chunk:
-   - Builds user message (JSON payload of id/title/description)
-   - Calls LLM with retry on rate-limit
-   - Validates and parses response
-   - On unrecoverable chunk error: marks all bugs as "Non categorizzato"
-   - Invokes `onProgress` callback with chunk results
-5. Returns full `CategorizedBug[]`
+   - Builds a user message with id, title, description, and tags.
+   - Calls the provider through `chatWithRetry(..., { responseSchema: 'categorization' })`.
+   - Validates and parses the raw response.
+   - On non-blocking chunk failure, marks that chunk as `Non categorizzato` and continues.
+   - Invokes `onProgress` with the categorized chunk.
+5. Returns the merged `CategorizedBug[]` with a fresh `categorizedAt` timestamp.
 
 ## Error Handling
 
-- `LLM_AUTH_ERROR` and `LLM_TIMEOUT` → re-thrown immediately (abort all)
-- `LLM_RATE_LIMIT` → retried with exponential backoff
-- Other chunk errors → graceful degradation (fallback categories)
+- `LLM_AUTH_ERROR` and `LLM_TIMEOUT` -> re-thrown immediately and abort the whole categorization run.
+- `LLM_RATE_LIMIT` -> retried with exponential backoff.
+- Other chunk errors -> graceful degradation with fallback categories.
+- Abort-like provider errors are normalized to `LLM_TIMEOUT` diagnostics.
 
-## FT-08 Notes
+## FT-09 Notes
 
-- Generic-provider requests now receive `settings.baseUrl` and `settings.llmModel` from the orchestration layer instead of relying on provider-local defaults only.
-- The retry behavior is unchanged; FT-08 only swaps one provider implementation and its config surface, not the chunking or fallback semantics.
+- The service now specifies output intent once through `ChatOptions.responseSchema` instead of embedding provider-specific JSON Schema parameters.
+- Structured output reduces parse risk, but `validateLLMResponse()` remains mandatory because providers can still return incomplete or empty payloads.
+- FT-09 does not change chunking or retry semantics; it hardens the provider call boundary.
 
 ## Dependencies
 
-- [[wiki/entities/llm-provider-factory]] — `createLLMProvider`
-- [[wiki/entities/llm-prompts]] — `buildSystemPrompt`, `buildUserMessage`
-- [[wiki/entities/chunking-utility]] — `splitIntoChunks`
-- [[wiki/entities/response-validator]] — `validateLLMResponse`
+- [[wiki/entities/llm-provider-factory]] - `createLLMProvider`
+- [[wiki/entities/llm-prompts]] - `buildSystemPrompt`, `buildUserMessage`
+- [[wiki/entities/chunking-utility]] - `splitIntoChunks`
+- [[wiki/entities/response-validator]] - `validateLLMResponse`
 
 ## See also
 
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/concepts/chunk-retry-pattern]]
+- [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

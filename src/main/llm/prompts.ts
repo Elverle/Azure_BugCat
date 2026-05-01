@@ -33,7 +33,7 @@ export function buildSystemPrompt(categories: string[]): string {
     'Output format:',
     'Return ONLY valid JSON, no markdown fences, no preamble, no explanation outside the JSON.',
     'Return exactly one result for each input bug.',
-    'Schema: { "results": [{ "bugId": number, "macroCategory": string, "subCategory": string, "categoryReason": string }] }'
+    'Each result must include: bugId (number), macroCategory (string), subCategory (string), categoryReason (string).'
   ].join('\n')
 
   if (categories.length > 0) {
@@ -93,7 +93,7 @@ export function buildSimilarBugsSystemPrompt(): string {
     '',
     '## Output Format',
     'Return ONLY valid JSON, no markdown fences, no preamble.',
-    'Schema: { "groups": [{ "similarityScore": number, "reason": string, "bugIds": number[] }] }',
+    'Each group must include: similarityScore (number, 0.0-1.0), reason (string), bugIds (number array with 2+ IDs).',
     '',
     'Each group contains 2 or more bugs that are similar to each other.',
     'Order groups by similarityScore descending.',

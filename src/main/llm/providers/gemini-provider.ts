@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
-import { LLMProvider, LLMProviderConfig } from '../types'
+import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
+import { getSchema } from '../schemas'
 import { AppError } from '../../../shared/types'
 
 const REQUEST_TIMEOUT = 60000
@@ -20,7 +21,7 @@ export class GeminiProvider implements LLMProvider {
     this.client = new GoogleGenAI({ apiKey: config.apiKey })
   }
 
-  async chat(systemPrompt: string, userMessage: string): Promise<string> {
+  async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
@@ -30,7 +31,12 @@ export class GeminiProvider implements LLMProvider {
         contents: userMessage,
         config: {
           systemInstruction: systemPrompt,
-          abortSignal: controller.signal
+          abortSignal: controller.signal,
+          temperature: 0.1,
+          ...(options?.responseSchema && {
+            responseMimeType: 'application/json',
+            responseSchema: getSchema(options.responseSchema)
+          })
         }
       })
 

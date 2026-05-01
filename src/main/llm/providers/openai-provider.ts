@@ -1,5 +1,6 @@
 import OpenAI from 'openai'
-import { LLMProvider, LLMProviderConfig } from '../types'
+import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
+import { getSchema } from '../schemas'
 import { AppError } from '../../../shared/types'
 
 const REQUEST_TIMEOUT = 60000
@@ -20,7 +21,7 @@ export class OpenAIProvider implements LLMProvider {
     this.client = new OpenAI({ apiKey: config.apiKey })
   }
 
-  async chat(systemPrompt: string, userMessage: string): Promise<string> {
+  async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
@@ -32,7 +33,20 @@ export class OpenAIProvider implements LLMProvider {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userMessage }
           ],
-          temperature: 0.2
+          temperature: 0.1,
+          ...(options?.responseSchema && {
+            response_format: {
+              type: 'json_schema' as const,
+              json_schema: {
+                name:
+                  options.responseSchema === 'categorization'
+                    ? 'bug_categorization'
+                    : 'similar_bugs_detection',
+                strict: true,
+                schema: getSchema(options.responseSchema)
+              }
+            }
+          })
         },
         { signal: controller.signal }
       )

@@ -3,7 +3,12 @@ title: 'LLM Categorization Pipeline'
 type: topic
 created: 2026-04-30
 updated: 2026-05-01
-sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-08-generic-provider]]']
+sources:
+  [
+    '[[wiki/sources/ft-04-llm-provider]]',
+    '[[wiki/sources/ft-08-generic-provider]]',
+    '[[wiki/sources/ft-09-structured-output]]'
+  ]
 tags: [llm, categorization, pipeline, ipc, main-process]
 lang: en
 ---
@@ -14,69 +19,67 @@ End-to-end pipeline for categorizing Azure DevOps bugs via LLM. Runs entirely in
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│ RENDERER                                                            │
-│  invoke('llm:categorize') ──────────┐                               │
-│  on('llm:categorize-progress') ◄────┼────── progressive chunks      │
-└─────────────────────────────────────┼───────────────────────────────┘
-                                      │
-┌─────────────────────────────────────┼───────────────────────────────┐
-│ MAIN PROCESS                        ▼                               │
-│                                                                     │
-│  IPC Handler                                                        │
-│    ├─ Load settings from store                                      │
-│    ├─ Load bugs from session                                        │
-│    ├─ categorizeBugs(settings, bugs, onProgress)                    │
-│    │    ├─ createLLMProvider(type, config)                           │
-│    │    ├─ buildSystemPrompt(categories)                             │
-│    │    ├─ splitIntoChunks(bugs, chunkSize)                          │
-│    │    └─ for each chunk:                                           │
-│    │         ├─ buildUserMessage(chunk)                              │
-│    │         ├─ chatWithRetry → provider.chat()                      │
-│    │         ├─ validateLLMResponse(raw, chunk)                      │
-│    │         └─ onProgress → event.sender.send(progress)             │
-│    ├─ Update session with categorized bugs                           │
-│    └─ Return CategorizedBug[]                                       │
-└─────────────────────────────────────────────────────────────────────┘
+```text
+RENDERER
+  invoke('llm:categorize') ------------------------+
+  on('llm:categorize-progress') <--- chunk updates |
+                                                   |
+MAIN PROCESS                                       |
+  IPC handler                                      |
+    -> load settings + session bugs                |
+    -> categorizeBugs(settings, bugs, onProgress)  |
+         -> createLLMProvider(type, config)        |
+         -> buildSystemPrompt(categories)          |
+         -> splitIntoChunks(bugs, chunkSize)       |
+         -> for each chunk:                        |
+              -> buildUserMessage(chunk)           |
+              -> chatWithRetry(..., { responseSchema: 'categorization' })
+                   -> provider.chat(..., options)
+                   -> provider-native structured output
+              -> validateLLMResponse(raw, chunk)
+              -> onProgress(event.sender.send)
+    -> persist categorized session state
+    -> return CategorizedBug[]
 ```
 
 ## Components
 
-| Component       | Entity                                                                                                                                         | Role                                        |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| IPC entry point | [[wiki/entities/ipc-handlers]]                                                                                                                 | Loads state, calls service, persists result |
-| Orchestrator    | [[wiki/entities/llm-service]]                                                                                                                  | Coordinates chunking, retry, progress       |
-| Factory         | [[wiki/entities/llm-provider-factory]]                                                                                                         | Instantiates correct provider               |
-| Providers       | [[wiki/entities/openai-provider]], [[wiki/entities/anthropic-provider]], [[wiki/entities/generic-provider]], [[wiki/entities/gemini-provider]] | LLM communication adapters for each backend |
-| Prompts         | [[wiki/entities/llm-prompts]]                                                                                                                  | System/user prompt construction             |
-| Chunking        | [[wiki/entities/chunking-utility]]                                                                                                             | Batch splitting                             |
-| Validation      | [[wiki/entities/response-validator]]                                                                                                           | JSON parse + schema check + fallback        |
+| Component       | Entity                                                                                                                                         | Role                                                               |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| IPC entry point | [[wiki/entities/ipc-handlers]]                                                                                                                 | Loads state, calls service, persists results                       |
+| Orchestrator    | [[wiki/entities/llm-service]]                                                                                                                  | Coordinates chunking, retry, schema-aware provider calls, progress |
+| Factory         | [[wiki/entities/llm-provider-factory]]                                                                                                         | Instantiates correct provider                                      |
+| Schema registry | [[wiki/entities/llm-schemas]]                                                                                                                  | Shared logical output contracts                                    |
+| Providers       | [[wiki/entities/openai-provider]], [[wiki/entities/anthropic-provider]], [[wiki/entities/generic-provider]], [[wiki/entities/gemini-provider]] | LLM communication adapters for each backend                        |
+| Prompts         | [[wiki/entities/llm-prompts]]                                                                                                                  | Task instructions and input serialization                          |
+| Chunking        | [[wiki/entities/chunking-utility]]                                                                                                             | Batch splitting                                                    |
+| Validation      | [[wiki/entities/response-validator]]                                                                                                           | JSON parse, completeness check, and fallback                       |
 
 ## Data Flow
 
-1. **Input**: `BugItem[]` from session store (fetched in FT-03)
-2. **Processing**: Each chunk → JSON prompt → LLM → JSON response → validated results
-3. **Output**: `CategorizedBug[]` (BugItem + macroCategory + subCategory + categoryReason + categorizedAt)
-4. **Side effects**: Session updated in store with `categorizedAt` timestamp
+1. **Input**: `BugItem[]` from session store.
+2. **Processing**: each chunk -> prompt guidance + schema hint -> provider-native structured output request -> raw JSON string -> validated results.
+3. **Output**: `CategorizedBug[]` (`BugItem` plus `macroCategory`, `subCategory`, `categoryReason`, `categorizedAt`).
+4. **Side effects**: session updated in store with `categorizedAt` timestamp.
 
 ## Patterns Used
 
-- [[wiki/concepts/llm-provider-abstraction]] — Runtime provider switching
-- [[wiki/concepts/chunk-retry-pattern]] — Resilient batch processing
-- [[wiki/concepts/ipc-security-model]] — Whitelisted channels, no direct store access from renderer
+- [[wiki/concepts/llm-provider-abstraction]] - runtime provider switching
+- [[wiki/concepts/provider-native-structured-output]] - one logical schema contract translated per provider
+- [[wiki/concepts/chunk-retry-pattern]] - resilient batch processing
+- [[wiki/concepts/ipc-security-model]] - whitelisted channels, no direct store access from renderer
 
 ## Test Connection Flow
 
 Separate lightweight flow for validating LLM credentials:
 
-```
+```text
 IPC (llm:test-connection)
-  ├─ Check apiKey
-  ├─ createLLMProvider(type, config)
-  ├─ provider.testConnection() → sends "Test connection" prompt
-  ├─ GenericProvider additionally validates `baseUrl` and URL scheme in the main process
-  └─ Returns TestConnectionResult { success, message }
+  -> check apiKey
+  -> createLLMProvider(type, config)
+  -> provider.testConnection() using a lightweight prompt
+  -> GenericProvider also validates baseUrl and URL scheme
+  -> returns TestConnectionResult { success, message }
 ```
 
 ## See also
@@ -84,3 +87,4 @@ IPC (llm:test-connection)
 - [[wiki/topics/electron-architecture]]
 - [[wiki/entities/electron-store]]
 - [[wiki/sources/ft-04-llm-provider]]
+- [[wiki/sources/ft-09-structured-output]]
