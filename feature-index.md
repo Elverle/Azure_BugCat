@@ -8,3 +8,4 @@
 | 4   | FT-04      | LLM Provider Abstraction e Categorizzazione            | Complete |
 | 5   | FT-05      | Dashboard Principale: Tabella, Filtri e Raggruppamenti | Complete |
 | 6   | FT-06      | Pannello Dettaglio Bug (Drawer)                        | Complete |
+| 7   | FT-07      | Persistenza Dati e Gestione Sessione                   | Complete |

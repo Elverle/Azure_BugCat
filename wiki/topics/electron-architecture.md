@@ -55,51 +55,118 @@ src/
         ├── main.tsx      # React entry
         ├── App.tsx       # HashRouter + routes
         ├── assets/       # CSS (Tailwind + Inter)
-        ├── lib/          # Utilities (cn)
-        ├── components/   # UI + layout components
-        └── pages/        # Route pages
-```
+        ---
+        title: 'Electron Architecture'
+        type: topic
+        created: 2026-04-29
+        updated: 2026-05-01
+        sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-07-session-persistence]]']
+        tags: [electron, architecture, ipc, security]
+        lang: en
+        ---
 
-## Components
+        ## Overview
 
-| Component                               | Page                     |
-| --------------------------------------- | ------------------------ |
-| [[wiki/entities/electron-main-process]] | Main process entry       |
-| [[wiki/entities/electron-store]]        | Encrypted persistence    |
-| [[wiki/entities/ipc-handlers]]          | IPC handler registration |
-| [[wiki/entities/preload-bridge]]        | Context bridge           |
-| [[wiki/entities/ipc-channels]]          | Channel constants        |
-| [[wiki/entities/shared-types]]          | Domain model             |
+        The Bug Categorizer is an Electron desktop app with a strict three-process architecture: Main, Preload, and Renderer. The design prioritizes security (sandbox, context isolation), type safety (shared IPC channel constants, typed bridge), and now explicit persistence bootstrapping through store migration before app services come online.
 
-## Key Concepts
+        ## Architecture Diagram
 
-| Concept                               | Page                         |
-| ------------------------------------- | ---------------------------- |
-| [[wiki/concepts/ipc-security-model]]  | Security layers and CSP      |
-| [[wiki/concepts/electron-vite-build]] | Build pipeline and packaging |
+        ```
+        ┌──────────────────────────────────────────────────┐
+        │                   Renderer                        │
+        │        React 18 + TypeScript + Tailwind           │
+        │  window.electronAPI.* (typed, whitelisted)        │
+        │                                                   │
+        │  Routes: / (Dashboard) | /settings (Settings)     │
+        │  Router: HashRouter (file:// compatible)          │
+        ├──────────────────────────────────────────────────┤
+        │                   Preload                         │
+        │        contextBridge.exposeInMainWorld            │
+        │  ipcRenderer.invoke() → typed channels only       │
+        ├──────────────────────────────────────────────────┤
+        │                    Main                           │
+        │        Node.js + Electron APIs                    │
+        │  migrateStore(store)                              │
+        │    → ipcMain.handle() registration                │
+        │    → window creation                              │
+        │  electron-store (encrypted) for persistence       │
+        └──────────────────────────────────────────────────┘
+        ```
 
-## Data Flow
+        ## Source Structure
 
-### Settings read (renderer → main → store)
+        ```
+        src/
+        ├── main/
+        │   ├── index.ts            # App entry, migration bootstrap, window creation
+        │   ├── store.ts            # Encrypted electron-store
+        │   ├── store-migration.ts  # Schema-versioned migration pipeline
+        │   └── ipc-handlers.ts     # IPC handler registration
+        ├── preload/
+        │   ├── index.ts            # contextBridge with typed API
+        │   └── index.d.ts          # Window.electronAPI declarations
+        └── renderer/
+            ├── index.html          # HTML entry with CSP
+            └── src/
+                ├── main.tsx        # React entry
+                ├── App.tsx         # HashRouter + routes
+                ├── assets/         # CSS (Tailwind + Inter)
+                ├── lib/            # Utilities (`cn`, `formatDate`)
+                ├── components/     # UI + layout components, including ConfirmDialog
+                └── pages/          # Route pages
+        ```
 
-1. `window.electronAPI.getSettings()` — renderer calls bridge
-2. Preload: `ipcRenderer.invoke('settings:get')` — sends to main
-3. Main: `store.get('settings')` — reads from encrypted store
-4. Result flows back through the same chain
+        ## Components
 
-### Settings write (renderer → main → store)
+        | Component                               | Page                     |
+        | --------------------------------------- | ------------------------ |
+        | [[wiki/entities/electron-main-process]] | Main process entry       |
+        | [[wiki/entities/electron-store]]        | Encrypted persistence    |
+        | [[wiki/entities/store-migration]]       | Startup schema upgrades  |
+        | [[wiki/entities/ipc-handlers]]          | IPC handler registration |
+        | [[wiki/entities/preload-bridge]]        | Context bridge           |
+        | [[wiki/entities/ipc-channels]]          | Channel constants        |
+        | [[wiki/entities/shared-types]]          | Domain model             |
 
-1. `window.electronAPI.setSettings(data)` — renderer calls bridge
-2. Preload: `ipcRenderer.invoke('settings:set', data)` — sends to main
-3. Main: `store.set('settings', data)` — writes to encrypted store
+        ## Key Concepts
 
-## Future (planned)
+        | Concept                                          | Page                                      |
+        | ------------------------------------------------ | ----------------------------------------- |
+        | [[wiki/concepts/ipc-security-model]]             | Security layers and CSP                   |
+        | [[wiki/concepts/electron-vite-build]]            | Build pipeline and packaging              |
+        | [[wiki/concepts/schema-versioned-store-migration]] | Startup persistence compatibility model |
 
-- **FT-02**: Settings page UI
-- **FT-03**: Azure DevOps integration (`ado:fetch-bugs`, `ado:test-connection`)
-- **FT-04**: LLM categorization (`llm:categorize`, `llm:test-connection`, progress events)
-- **FT-05**: Dashboard page with bug triage UI
+        ## Data Flow
 
-## See also
+        ### App bootstrap
 
-- [[wiki/topics/renderer-ui]]
+        1. `app.whenReady()` resolves.
+        2. Main process runs `migrateStore(store)`.
+        3. IPC handlers are registered only after the store is at the current schema.
+        4. The browser window is created and loads the renderer.
+
+        ### Settings read (renderer → main → store)
+
+        1. `window.electronAPI.getSettings()` — renderer calls bridge
+        2. Preload: `ipcRenderer.invoke('settings:get')` — sends to main
+        3. Main: `store.get('settings')` — reads from encrypted store
+        4. Result flows back through the same chain
+
+        ### Settings write (renderer → main → store)
+
+        1. `window.electronAPI.setSettings(data)` — renderer calls bridge
+        2. Preload: `ipcRenderer.invoke('settings:set', data)` — sends to main
+        3. Main: `store.set('settings', data)` — writes to encrypted store
+
+        ## Feature Milestones
+
+        - **FT-02**: Settings page UI and persistence workflow
+        - **FT-03**: Azure DevOps integration (`ado:fetch-bugs`, `ado:test-connection`)
+        - **FT-04**: LLM categorization (`llm:categorize`, `llm:test-connection`, progress events)
+        - **FT-05**: Dashboard page with bug triage UI
+        - **FT-07**: Schema-versioned store migration and guarded session reset UX
+
+        ## See also
+
+        - [[wiki/topics/renderer-ui]]
+        - [[wiki/topics/session-persistence-lifecycle]]

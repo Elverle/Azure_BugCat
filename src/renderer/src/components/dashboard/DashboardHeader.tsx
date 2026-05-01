@@ -1,5 +1,6 @@
 import { RotateCw, Loader2 } from 'lucide-react'
 import type { ChunkProgress } from '@shared/types'
+import { formatDate } from '@renderer/lib/date-utils'
 
 interface DashboardHeaderProps {
   onFetch: () => void
@@ -7,16 +8,6 @@ interface DashboardHeaderProps {
   loading: boolean
   sessionInfo: { fetchedAt: string | null; categorizedAt: string | null }
   progress: ChunkProgress | null
-}
-
-function formatDate(isoString: string): string {
-  return new Date(isoString).toLocaleString('it-IT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
 }
 
 export function DashboardHeader({

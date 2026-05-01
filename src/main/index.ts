@@ -2,6 +2,8 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { registerIPCHandlers } from './ipc-handlers'
+import { store } from './store'
+import { migrateStore } from './store-migration'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -42,6 +44,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  migrateStore(store)
   registerIPCHandlers()
   createWindow()
 

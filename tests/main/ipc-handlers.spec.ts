@@ -144,4 +144,23 @@ describe('registerIPCHandlers', () => {
       })
     ])
   })
+
+  it('SESSION_CLEAR sets session to null', async () => {
+    await handlers.get(IPC_CHANNELS.SESSION_CLEAR)?.()
+
+    expect(storeSet).toHaveBeenCalledWith('session', null)
+  })
+
+  it('SESSION_GET returns stored session', async () => {
+    const mockSession = {
+      fetchedAt: '2026-05-01T00:00:00.000Z',
+      bugs: [{ id: 42, macroCategory: 'UI', subCategory: 'Layout', categoryReason: 'test', categorizedAt: '2026-05-01T00:00:00.000Z' }]
+    }
+    storeGet.mockReturnValueOnce(mockSession)
+
+    const result = await handlers.get(IPC_CHANNELS.SESSION_GET)?.()
+
+    expect(storeGet).toHaveBeenCalledWith('session')
+    expect(result).toEqual(mockSession)
+  })
 })

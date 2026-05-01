@@ -9,6 +9,7 @@
 | 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity.                    |
 | 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.                        |
 | 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index. |
+| 2026-05-01 | scan FT-07                 | GitHub Copilot | Scanned FT-07 session persistence. Created 1 source, 3 entities, 2 concepts, 1 topic. Updated 8 existing pages.      |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -157,3 +158,29 @@ Pages updated:
 - [[wiki/concepts/accessible-collection-controls]] — extended accessibility pattern to row/card drill-down and drawer controls
 - [[wiki/topics/dashboard-bug-exploration]] — added persistent drawer interaction model and secure external navigation flow
 - [[wiki/index.md]]
+
+## [2026-05-01] scan | FT-07 — Persistenza Dati e Gestione Sessione
+
+Scanned FT-07 feature: schema-versioned `electron-store` bootstrap, reusable confirmation dialog with focus trap/focus restore, Settings danger zone for clearing session data, extracted date formatting utility, and targeted tests for migration + clear-session behavior.
+
+Pages created:
+
+- [[wiki/sources/ft-07-session-persistence]]
+- [[wiki/entities/store-migration]]
+- [[wiki/entities/confirm-dialog]]
+- [[wiki/entities/date-format-utility]]
+- [[wiki/concepts/schema-versioned-store-migration]]
+- [[wiki/concepts/accessible-confirmation-dialog]]
+- [[wiki/topics/session-persistence-lifecycle]]
+
+Pages updated:
+
+- [[wiki/entities/electron-store]] — documented schemaVersion handling and startup migration relationship
+- [[wiki/entities/ipc-handlers]] — linked FT-07 source and session-clear consumer flow
+- [[wiki/entities/settings-page]] — added danger zone, confirmation dialog, and clear-session feedback behavior
+- [[wiki/entities/dashboard-header]] — timestamp rendering now uses the shared `formatDate()` utility
+- [[wiki/concepts/settings-persistence-flow]] — expanded to cover startup migration plus session read/clear flow
+- [[wiki/topics/electron-architecture]] — boot sequence now includes `migrateStore(store)` and FT-07 milestone
+- [[wiki/topics/renderer-ui]] — documented reusable dialog + shared date utility and Settings danger zone
+- [[wiki/index.md]]
+

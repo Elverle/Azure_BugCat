@@ -3,8 +3,8 @@ title: 'Dashboard Header'
 type: entity
 subtype: component
 created: 2026-04-30
-updated: 2026-04-30
-sources: ['[[wiki/sources/ft-05-dashboard]]']
+updated: 2026-05-01
+sources: ['[[wiki/sources/ft-05-dashboard]]', '[[wiki/sources/ft-07-session-persistence]]']
 tags: [react, component, dashboard, actions]
 lang: en
 ---
@@ -31,7 +31,8 @@ interface DashboardHeaderProps {
 
 ## Behavior
 
-- Formats timestamps with `toLocaleString('it-IT')` for the dashboard subtitle.
+- Formats session timestamps through [[wiki/entities/date-format-utility]] instead of inlining locale logic inside the component.
+- Shows `Dati aggiornati il ...` plus an optional `Categorizzati il ...` suffix when session metadata exists.
 - Shows `Nessun dato caricato` when no session exists yet.
 - `Fetch Bugs` shows a spinner while any dashboard action is loading.
 - `Categorize` swaps its label to `Categorizing X/Y` while `ChunkProgress` updates arrive.
@@ -41,9 +42,11 @@ interface DashboardHeaderProps {
 
 - [[wiki/entities/use-dashboard-hook]]
 - [[wiki/entities/shared-types]] — `ChunkProgress`
+- [[wiki/entities/date-format-utility]] — timestamp formatting
 
 ## See also
 
 - [[wiki/entities/dashboard-page]]
 - [[wiki/topics/dashboard-bug-exploration]]
+- [[wiki/topics/session-persistence-lifecycle]]
 - [[wiki/topics/llm-categorization-pipeline]]
