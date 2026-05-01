@@ -23,6 +23,13 @@ const API_KEY_LABELS: Record<string, string> = {
   generic: 'API Key'
 }
 
+const MODEL_PLACEHOLDERS: Record<string, string> = {
+  openai: 'gpt-4.1-mini',
+  anthropic: 'claude-sonnet-4.6',
+  gemini: 'gemini-2.5-flash',
+  generic: 'gpt-4.1-mini'
+}
+
 export function LlmProviderSection({
   settings,
   errors,
@@ -85,34 +92,33 @@ export function LlmProviderSection({
           )}
         </div>
 
-        {/* Generic provider fields: Base URL and Model */}
+        {/* Generic-only field */}
         {settings.llmProvider === 'generic' && (
-          <>
-            <div>
-              <Label htmlFor="baseUrl">Base URL</Label>
-              <Input
-                id="baseUrl"
-                type="text"
-                placeholder="https://api.example.com/v1"
-                value={settings.baseUrl ?? ''}
-                onChange={(e) => onFieldChange('baseUrl', e.target.value)}
-              />
-              {touched.baseUrl && errors.baseUrl && (
-                <p className="text-xs text-red-500 mt-1">{errors.baseUrl}</p>
-              )}
-            </div>
-            <div>
-              <Label htmlFor="llmModel">Model</Label>
-              <Input
-                id="llmModel"
-                type="text"
-                placeholder="gpt-4o"
-                value={settings.llmModel ?? ''}
-                onChange={(e) => onFieldChange('llmModel', e.target.value)}
-              />
-            </div>
-          </>
+          <div>
+            <Label htmlFor="baseUrl">Base URL</Label>
+            <Input
+              id="baseUrl"
+              type="text"
+              placeholder="https://api.example.com/v1"
+              value={settings.baseUrl ?? ''}
+              onChange={(e) => onFieldChange('baseUrl', e.target.value)}
+            />
+            {touched.baseUrl && errors.baseUrl && (
+              <p className="text-xs text-red-500 mt-1">{errors.baseUrl}</p>
+            )}
+          </div>
         )}
+
+        <div>
+          <Label htmlFor="llmModel">Model</Label>
+          <Input
+            id="llmModel"
+            type="text"
+            placeholder={MODEL_PLACEHOLDERS[settings.llmProvider] ?? 'gpt-4o'}
+            value={settings.llmModel ?? ''}
+            onChange={(e) => onFieldChange('llmModel', e.target.value)}
+          />
+        </div>
 
         {/* Chunk Size */}
         <div>
