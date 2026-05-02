@@ -23,6 +23,7 @@ export interface BugItem {
   assignee: string | null
   areaPath: string
   description: string
+  descriptionHtml?: string
   priority: number
   createdDate: string
   updatedDate: string

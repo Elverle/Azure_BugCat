@@ -17,6 +17,16 @@ function isAppError(error: unknown): error is AppError {
   )
 }
 
+function isLikelyHtmlResponse(response: Response, bodyText: string): boolean {
+  const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
+  if (contentType.includes('text/html') || contentType.includes('application/xhtml+xml')) {
+    return true
+  }
+
+  const trimmed = bodyText.trimStart().toLowerCase()
+  return trimmed.startsWith('<!doctype html') || trimmed.startsWith('<html')
+}
+
 export class GenericProvider implements LLMProvider {
   readonly name = 'generic'
 
@@ -82,6 +92,8 @@ export class GenericProvider implements LLMProvider {
         signal: controller.signal
       })
 
+      const bodyText = await response.text()
+
       if (!response.ok) {
         const status = response.status
         if (status === 401 || status === 403) {
@@ -98,8 +110,15 @@ export class GenericProvider implements LLMProvider {
 
       let json: { choices?: { message?: { content?: string } }[] }
       try {
-        json = await response.json()
+        json = JSON.parse(bodyText) as { choices?: { message?: { content?: string } }[] }
       } catch {
+        if (isLikelyHtmlResponse(response, bodyText)) {
+          throwAppError(
+            'LLM_PARSE_ERROR',
+            `Base URL del provider generico probabilmente errato: ${url} ha restituito HTML invece di JSON. Verifica che il baseUrl punti alla root API compatibile OpenAI e non a una pagina web.`
+          )
+        }
+
         throwAppError('LLM_PARSE_ERROR', 'Risposta non-JSON dal provider generico')
       }
       const content = json.choices?.[0]?.message?.content

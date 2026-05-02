@@ -3,6 +3,11 @@ import { X, ChevronLeft, ChevronRight, Bot, ExternalLink } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
 import { getStatusBadgeClasses } from '@renderer/lib/badge-colors'
+import {
+  resolveAdoAttachmentImages,
+  sanitizeBugDescriptionHtml,
+  stripAdoAttachmentImages
+} from '@renderer/lib/sanitize-bug-description-html'
 
 interface BugDetailDrawerProps {
   bug: CategorizedBug | null
@@ -38,10 +43,58 @@ export default function BugDetailDrawer({
   const drawerRef = useRef<HTMLDivElement>(null)
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null)
   const [descriptionExpanded, setDescriptionExpanded] = useState(false)
+  const [resolvedDescriptionHtml, setResolvedDescriptionHtml] = useState<string>('')
+  const sanitizedDescriptionHtml = sanitizeBugDescriptionHtml(bug?.descriptionHtml)
+  const pendingDescriptionHtml = stripAdoAttachmentImages(sanitizedDescriptionHtml)
+  const hasAdoAttachmentImages = sanitizedDescriptionHtml !== pendingDescriptionHtml
+  const descriptionHtml = hasAdoAttachmentImages
+    ? resolvedDescriptionHtml || pendingDescriptionHtml
+    : sanitizedDescriptionHtml
+  const hasDescriptionContent = Boolean(descriptionHtml || bug?.description)
 
   useEffect(() => {
     setDescriptionExpanded(false)
   }, [bug?.id])
+
+  useEffect(() => {
+    let disposed = false
+
+    if (!hasAdoAttachmentImages) {
+      setResolvedDescriptionHtml('')
+      return () => {
+        disposed = true
+      }
+    }
+
+    async function resolveDescriptionHtml(): Promise<void> {
+      if (!sanitizedDescriptionHtml) {
+        if (!disposed) {
+          setResolvedDescriptionHtml('')
+        }
+        return
+      }
+
+      try {
+        const html = await resolveAdoAttachmentImages(
+          sanitizedDescriptionHtml,
+          window.electronAPI.fetchAdoAttachmentDataUrl
+        )
+        if (!disposed) {
+          setResolvedDescriptionHtml(html)
+        }
+      } catch {
+        if (!disposed) {
+          setResolvedDescriptionHtml(pendingDescriptionHtml)
+        }
+      }
+    }
+
+    void resolveDescriptionHtml()
+
+    return () => {
+      disposed = true
+    }
+  }, [bug?.id, hasAdoAttachmentImages, pendingDescriptionHtml, sanitizedDescriptionHtml])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
@@ -248,14 +301,17 @@ export default function BugDetailDrawer({
                     {descriptionExpanded ? 'Riduci descrizione' : 'Espandi descrizione'}
                   </button>
                 </div>
-                {bug.description ? (
+                {hasDescriptionContent ? (
                   <div
                     className={cn(
-                      'prose prose-sm max-w-none text-gray-800 bg-gray-50 p-4 rounded-lg border border-gray-100 whitespace-pre-line transition-all duration-200',
+                      'prose prose-sm max-w-none text-gray-800 bg-gray-50 p-4 rounded-lg border border-gray-100 transition-all duration-200 prose-img:my-4 prose-img:max-w-full prose-img:rounded-md prose-img:border prose-img:border-gray-200 prose-a:text-blue-600',
                       descriptionExpanded ? 'overflow-visible' : 'max-h-64 overflow-y-auto'
                     )}
+                    {...(descriptionHtml
+                      ? { dangerouslySetInnerHTML: { __html: descriptionHtml } }
+                      : {})}
                   >
-                    {bug.description}
+                    {descriptionHtml ? null : bug.description}
                   </div>
                 ) : (
                   <div className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-100">

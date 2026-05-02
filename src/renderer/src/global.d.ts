@@ -1,0 +1,24 @@
+import type { AppSettings } from '@shared/types'
+
+declare global {
+  interface Window {
+    electronAPI: {
+      ping: () => Promise<unknown>
+      getSettings: () => Promise<unknown>
+      setSettings: (settings: unknown) => Promise<unknown>
+      fetchBugs: () => Promise<unknown>
+      testAdoConnection: (settings: AppSettings) => Promise<unknown>
+      fetchAdoAttachmentDataUrl: (url: string) => Promise<string>
+      categorizeBugs: () => Promise<unknown>
+      testLlmConnection: (settings: AppSettings) => Promise<unknown>
+      onCategorizeProgress: (callback: (data: unknown) => void) => () => void
+      findSimilarBugs: () => Promise<unknown>
+      onFindSimilarProgress: (callback: (data: unknown) => void) => () => void
+      getSession: () => Promise<unknown>
+      clearSession: () => Promise<unknown>
+      openExternal: (url: string) => Promise<unknown>
+    }
+  }
+}
+
+export {}

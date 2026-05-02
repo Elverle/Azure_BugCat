@@ -76,6 +76,7 @@ describe('ado-service', () => {
       title: 'Bug 1',
       assignee: 'Mario Rossi',
       description: 'Hello world',
+      descriptionHtml: '<p>Hello <strong>world</strong></p>',
       tags: ['ui', 'regression']
     })
   })
@@ -180,11 +181,13 @@ describe('ado-service', () => {
     expect(bugs[0]).toMatchObject({
       assignee: 'Mario Rossi',
       description: '',
+      descriptionHtml: '',
       tags: []
     })
     expect(bugs[1]).toMatchObject({
       assignee: null,
       description: '',
+      descriptionHtml: '<p><strong></strong></p>',
       tags: []
     })
   })

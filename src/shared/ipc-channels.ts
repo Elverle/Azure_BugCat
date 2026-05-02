@@ -13,6 +13,7 @@ export const IPC_CHANNELS = {
   // Azure DevOps
   ADO_FETCH_BUGS: 'ado:fetch-bugs',
   ADO_TEST_CONNECTION: 'ado:test-connection',
+  ADO_FETCH_ATTACHMENT_DATA_URL: 'ado:fetch-attachment-data-url',
 
   // LLM
   LLM_CATEGORIZE: 'llm:categorize',

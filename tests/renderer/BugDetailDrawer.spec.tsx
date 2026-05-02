@@ -1,9 +1,17 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug } from '@shared/types'
 import BugDetailDrawer from '@renderer/components/dashboard/BugDetailDrawer'
+
+Object.defineProperty(window, 'electronAPI', {
+  configurable: true,
+  writable: true,
+  value: {
+    fetchAdoAttachmentDataUrl: vi.fn(async (url: string) => `data:image/png;base64,${btoa(url)}`)
+  }
+})
 
 function makeBug(overrides: Partial<CategorizedBug> = {}): CategorizedBug {
   return {
@@ -13,6 +21,8 @@ function makeBug(overrides: Partial<CategorizedBug> = {}): CategorizedBug {
     assignee: 'Laura K.',
     areaPath: 'ECommerce\\Frontend\\Auth',
     description: 'Users report redirect loop on Safari when using Microsoft Account login.',
+    descriptionHtml:
+      '<p>Users report redirect loop on Safari when using Microsoft Account login.</p>',
     priority: 2,
     createdDate: '2026-01-15T10:00:00Z',
     updatedDate: '2026-01-20T14:30:00Z',
@@ -42,6 +52,12 @@ const defaultProps = {
 }
 
 describe('BugDetailDrawer', () => {
+  beforeEach(() => {
+    window.electronAPI.fetchAdoAttachmentDataUrl = vi.fn(
+      async (url: string) => `data:image/png;base64,${btoa(url)}`
+    )
+  })
+
   it('renders all fields for a categorized bug', () => {
     render(<BugDetailDrawer {...defaultProps} />)
 
@@ -66,7 +82,7 @@ describe('BugDetailDrawer', () => {
   })
 
   it('shows "Nessuna descrizione disponibile" for empty description', () => {
-    const noDesc = makeBug({ description: '' })
+    const noDesc = makeBug({ description: '', descriptionHtml: '' })
     render(<BugDetailDrawer {...defaultProps} bug={noDesc} />)
 
     expect(screen.getByText('Nessuna descrizione disponibile')).toBeInTheDocument()
@@ -148,15 +164,91 @@ describe('BugDetailDrawer', () => {
     render(<BugDetailDrawer {...defaultProps} />)
 
     const toggleButton = screen.getByRole('button', { name: 'Espandi descrizione' })
-    const description = screen.getByText(
-      'Users report redirect loop on Safari when using Microsoft Account login.'
-    )
+    const description = screen
+      .getByText('Users report redirect loop on Safari when using Microsoft Account login.')
+      .closest('div[class*="prose"]')
 
-    expect(description.className).toContain('max-h-64')
+    expect(description).not.toBeNull()
+    expect(description?.className).toContain('max-h-64')
     fireEvent.click(toggleButton)
 
     expect(screen.getByRole('button', { name: 'Riduci descrizione' })).toBeInTheDocument()
-    expect(description.className).not.toContain('max-h-64')
+    expect(description?.className).not.toContain('max-h-64')
+  })
+
+  it('renders images from the HTML description', async () => {
+    render(
+      <BugDetailDrawer
+        {...defaultProps}
+        bug={makeBug({
+          description: 'Passaggi riprodotti con screenshot allegato.',
+          descriptionHtml:
+            '<p>Passaggi riprodotti con screenshot allegato.</p><img src="https://dev.azure.com/example/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Screenshot errore" />'
+        })}
+      />
+    )
+
+    await waitFor(() => {
+      const image = screen.getByRole('img', { name: 'Screenshot errore' })
+      expect(image.getAttribute('src')).toMatch(/^data:image\/png;base64,/) 
+    })
+    expect(window.electronAPI.fetchAdoAttachmentDataUrl).toHaveBeenCalledWith(
+      'https://dev.azure.com/example/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/screenshot-id?fileName=image.png'
+    )
+  })
+
+  it('strips unsafe content from the HTML description', () => {
+    const { container } = render(
+      <BugDetailDrawer
+        {...defaultProps}
+        bug={makeBug({
+          description: 'Descrizione con markup HTML.',
+          descriptionHtml:
+            '<p>Descrizione con markup HTML.</p><script>window.__xss = true</script><img src="javascript:alert(1)" alt="Blocked" />'
+        })}
+      />
+    )
+
+    expect(screen.getByText('Descrizione con markup HTML.')).toBeInTheDocument()
+    expect(container.querySelector('script')).toBeNull()
+    expect(container.querySelector('img')).toBeNull()
+  })
+
+  it('renders HTML-only descriptions when plain text is empty', async () => {
+    render(
+      <BugDetailDrawer
+        {...defaultProps}
+        bug={makeBug({
+          description: '',
+          descriptionHtml:
+            '<p><img src="https://dev.azure.com/example/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Only screenshot" /></p>'
+        })}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole('img', { name: 'Only screenshot' })).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Nessuna descrizione disponibile')).not.toBeInTheDocument()
+  })
+
+  it('does not show ADO image alt text while the authenticated image is being resolved', () => {
+    window.electronAPI.fetchAdoAttachmentDataUrl = vi.fn(
+      () => new Promise<string>(() => undefined)
+    )
+
+    render(
+      <BugDetailDrawer
+        {...defaultProps}
+        bug={makeBug({
+          description: 'Descrizione con attachment.',
+          descriptionHtml:
+            '<p>Descrizione con attachment.</p><img src="https://dev.azure.com/example/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Image" />'
+        })}
+      />
+    )
+
+    expect(screen.queryByText('Image')).not.toBeInTheDocument()
   })
 
   it('renders tags correctly', () => {

@@ -25,6 +25,7 @@ function buildConfig(settings: AppSettings): AdoConnectionConfig {
 
 function mapWorkItemToBug(item: WorkItemRaw): BugItem {
   const fields = item.fields
+  const descriptionHtml = (fields['System.Description'] as string | null | undefined) ?? ''
 
   const assignedTo = fields['System.AssignedTo'] as
     | { displayName?: string }
@@ -46,7 +47,8 @@ function mapWorkItemToBug(item: WorkItemRaw): BugItem {
     state: (fields['System.State'] as string) ?? '',
     assignee,
     areaPath: (fields['System.AreaPath'] as string) ?? '',
-    description: htmlToText(fields['System.Description'] as string | null | undefined),
+    description: htmlToText(descriptionHtml),
+    descriptionHtml,
     priority: (fields['Microsoft.VSTS.Common.Priority'] as number) ?? 0,
     createdDate: (fields['System.CreatedDate'] as string) ?? '',
     updatedDate: (fields['System.ChangedDate'] as string) ?? '',

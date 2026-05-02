@@ -14,6 +14,8 @@ const electronAPI = {
   fetchBugs: () => ipcRenderer.invoke(IPC_CHANNELS.ADO_FETCH_BUGS),
   testAdoConnection: (settings: AppSettings) =>
     ipcRenderer.invoke(IPC_CHANNELS.ADO_TEST_CONNECTION, settings),
+  fetchAdoAttachmentDataUrl: (url: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.ADO_FETCH_ATTACHMENT_DATA_URL, url),
 
   // LLM
   categorizeBugs: () => ipcRenderer.invoke(IPC_CHANNELS.LLM_CATEGORIZE),
