@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { fetchWiqlQuery, fetchWorkItemsBatch } from '@main/ado/ado-client'
+import { fetchAdoAttachmentDataUrl, fetchWiqlQuery, fetchWorkItemsBatch } from '@main/ado/ado-client'
 import type { AdoConnectionConfig } from '@main/ado/types'
 
 const config: AdoConnectionConfig = {
@@ -93,6 +93,46 @@ describe('ado-client', () => {
     ).rejects.toMatchObject({
       code: 'ADO_AUTH_ERROR',
       message: 'URL organizzazione non valido: deve iniziare con https://'
+    })
+  })
+
+  it('downloads ADO attachments with PAT auth and converts them to data urls', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: {
+        get: vi.fn().mockReturnValue('image/png')
+      },
+      arrayBuffer: async () => Uint8Array.from([137, 80, 78, 71]).buffer
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await fetchAdoAttachmentDataUrl(
+      config,
+      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+    )
+
+    expect(result).toBe(`data:image/png;base64,${Buffer.from([137, 80, 78, 71]).toString('base64')}`)
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png',
+      expect.objectContaining({
+        method: 'GET',
+        headers: expect.objectContaining({
+          Authorization: `Basic ${Buffer.from(':secret-pat').toString('base64')}`,
+          Accept: '*/*'
+        })
+      })
+    )
+  })
+
+  it('rejects attachment urls outside the configured ADO organization', async () => {
+    await expect(
+      fetchAdoAttachmentDataUrl(
+        config,
+        'https://example.com/_apis/wit/attachments/image-id?fileName=image.png'
+      )
+    ).rejects.toMatchObject({
+      code: 'ADO_NOT_FOUND',
+      message: 'URL attachment Azure DevOps non valido'
     })
   })
 })

@@ -1,18 +1,32 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AppSettings } from '@shared/types'
-import { IPC_CHANNELS } from '@shared/ipc-channels'
+import type { AppSettings } from '../../src/shared/types'
+import { IPC_CHANNELS } from '../../src/shared/ipc-channels'
 
-const { handlers, ipcMainHandle, storeGet, storeSet, fetchBugsFromQuery, testAdoConnection } =
-  vi.hoisted(() => ({
-    handlers: new Map<string, (...args: unknown[]) => unknown>(),
-    ipcMainHandle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
-      handlers.set(channel, handler)
-    }),
-    storeGet: vi.fn(),
-    storeSet: vi.fn(),
-    fetchBugsFromQuery: vi.fn(),
-    testAdoConnection: vi.fn()
-  }))
+const {
+  handlers,
+  ipcMainHandle,
+  storeGet,
+  storeSet,
+  fetchBugsFromQuery,
+  testAdoConnection,
+  fetchAdoAttachmentDataUrl,
+  categorizeBugs,
+  testLLMConnection,
+  findSimilarBugs
+} = vi.hoisted(() => ({
+  handlers: new Map<string, (...args: unknown[]) => unknown>(),
+  ipcMainHandle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
+    handlers.set(channel, handler)
+  }),
+  storeGet: vi.fn(),
+  storeSet: vi.fn(),
+  fetchBugsFromQuery: vi.fn(),
+  testAdoConnection: vi.fn(),
+  fetchAdoAttachmentDataUrl: vi.fn(),
+  categorizeBugs: vi.fn(),
+  testLLMConnection: vi.fn(),
+  findSimilarBugs: vi.fn()
+}))
 
 vi.mock('electron', () => ({
   ipcMain: {
@@ -32,7 +46,17 @@ vi.mock('@main/ado/ado-service', () => ({
   testAdoConnection
 }))
 
-import { registerIPCHandlers } from '@main/ipc-handlers'
+vi.mock('@main/ado/ado-client', () => ({
+  fetchAdoAttachmentDataUrl
+}))
+
+vi.mock('@main/llm', () => ({
+  categorizeBugs,
+  testLLMConnection,
+  findSimilarBugs
+}))
+
+import { registerIPCHandlers } from '../../src/main/ipc-handlers'
 
 const baseSettings: AppSettings = {
   orgUrl: 'https://dev.azure.com/gversino',
@@ -54,6 +78,10 @@ describe('registerIPCHandlers', () => {
     storeSet.mockReset()
     fetchBugsFromQuery.mockReset()
     testAdoConnection.mockReset()
+    fetchAdoAttachmentDataUrl.mockReset()
+    categorizeBugs.mockReset()
+    testLLMConnection.mockReset()
+    findSimilarBugs.mockReset()
     registerIPCHandlers()
   })
 
@@ -65,9 +93,29 @@ describe('registerIPCHandlers', () => {
       expect.any(Function)
     )
     expect(ipcMainHandle).toHaveBeenCalledWith(
+      IPC_CHANNELS.ADO_FETCH_ATTACHMENT_DATA_URL,
+      expect.any(Function)
+    )
+    expect(ipcMainHandle).toHaveBeenCalledWith(
       IPC_CHANNELS.LLM_TEST_CONNECTION,
       expect.any(Function)
     )
+  })
+
+  it('fetches ADO attachments through the main process using persisted settings', async () => {
+    storeGet.mockReturnValueOnce(baseSettings)
+    fetchAdoAttachmentDataUrl.mockResolvedValue('data:image/png;base64,AAA=')
+
+    const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_ATTACHMENT_DATA_URL)?.(
+      {},
+      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+    )
+
+    expect(fetchAdoAttachmentDataUrl).toHaveBeenCalledWith(
+      baseSettings,
+      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+    )
+    expect(result).toBe('data:image/png;base64,AAA=')
   })
 
   it('uses the override settings for the ADO test connection flow', async () => {

@@ -3,6 +3,7 @@ import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { store } from './store'
 import { AppSettings, BugItem, SessionData, TestConnectionResult } from '../shared/types'
 import { fetchBugsFromQuery, testAdoConnection } from './ado/ado-service'
+import { fetchAdoAttachmentDataUrl } from './ado/ado-client'
 import { categorizeBugs, testLLMConnection, findSimilarBugs } from './llm'
 
 export function registerIPCHandlers(): void {
@@ -58,6 +59,16 @@ export function registerIPCHandlers(): void {
       return testAdoConnection(settings)
     }
   )
+  ipcMain.handle(IPC_CHANNELS.ADO_FETCH_ATTACHMENT_DATA_URL, async (_event, url: unknown) => {
+    if (typeof url !== 'string' || !url.trim()) {
+      throw { code: 'ADO_NOT_FOUND', message: 'URL attachment mancante' }
+    }
+
+    const settings = store.get('settings') as AppSettings | null
+    if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
+
+    return fetchAdoAttachmentDataUrl(settings, url)
+  })
 
   // LLM
   ipcMain.handle(IPC_CHANNELS.LLM_CATEGORIZE, async (event: IpcMainInvokeEvent) => {

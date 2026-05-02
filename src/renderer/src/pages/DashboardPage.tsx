@@ -274,7 +274,7 @@ export function DashboardPage(): JSX.Element {
               )}
             >
               <Sparkles className="w-4 h-4 mr-2 inline" />
-              Similarità
+              Similarità (Beta)
             </button>
           </nav>
         </div>

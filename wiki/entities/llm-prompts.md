@@ -4,12 +4,7 @@ type: entity
 subtype: service
 created: 2026-04-30
 updated: 2026-05-01
-sources:
-	[
-		'[[wiki/sources/ft-04-llm-provider]]',
-		'[[wiki/sources/ft-09-structured-output]]',
-		'[[wiki/sources/ft-10-ai-cluster-similarity]]'
-	]
+sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-09-structured-output]]']
 tags: [llm, prompts, categorization, similar-bugs]
 lang: en
 ---
@@ -52,16 +47,9 @@ Builder functions for the system prompts and user messages sent to LLM providers
 - `FE/BE`: boundary or contract issues where evidence clearly spans both layers.
 - `Non determinabile`: evidence is insufficient to assign the bug confidently to FE, BE, or FE/BE.
 
-## Similar-Bug Prompt Role
-
-- `buildSimilarBugsSystemPrompt()` defines the duplicate/similarity task for bugs that already share a `macroCategory`.
-- `buildSimilarBugsUserMessage()` serializes only the bugs from the current category, which keeps the prompt focused and aligned with [[wiki/concepts/macro-category-scoped-similarity-analysis]].
-- FT-10 is the first end-to-end feature to consume this prompt pair through a user-facing page.
-
 ## See also
 
 - [[wiki/entities/llm-service]]
-- [[wiki/entities/similarity-service]]
 - [[wiki/entities/llm-schemas]]
 - [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

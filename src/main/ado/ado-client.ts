@@ -10,6 +10,32 @@ function buildBaseUrl(orgUrl: string, projectName: string): string {
   return `${normalized}/${encodeURIComponent(projectName)}`
 }
 
+function normalizeOrgUrl(orgUrl: string): string {
+  return orgUrl.endsWith('/') ? orgUrl.slice(0, -1) : orgUrl
+}
+
+function validateHttpsOrgUrl(orgUrl: string): void {
+  if (!orgUrl.startsWith('https://')) {
+    throwAppError('ADO_AUTH_ERROR', 'URL organizzazione non valido: deve iniziare con https://')
+  }
+}
+
+function isAllowedAttachmentUrl(orgUrl: string, attachmentUrl: string): boolean {
+  try {
+    const org = new URL(normalizeOrgUrl(orgUrl))
+    const attachment = new URL(attachmentUrl)
+
+    return (
+      attachment.protocol === 'https:' &&
+      attachment.origin === org.origin &&
+      attachment.pathname.startsWith(`${org.pathname}/`) &&
+      attachment.pathname.includes('/_apis/wit/attachments/')
+    )
+  } catch {
+    return false
+  }
+}
+
 function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
   const err: AppError = { code, message, ...(details !== undefined && { details }) }
   throw err
@@ -36,9 +62,7 @@ function isAppError(error: unknown): error is AppError {
 }
 
 export async function fetchWiqlQuery(config: AdoConnectionConfig): Promise<WiqlResponse> {
-  if (!config.orgUrl.startsWith('https://')) {
-    throwAppError('ADO_AUTH_ERROR', 'URL organizzazione non valido: deve iniziare con https://')
-  }
+  validateHttpsOrgUrl(config.orgUrl)
 
   const baseUrl = buildBaseUrl(config.orgUrl, config.projectName)
   const url = `${baseUrl}/_apis/wit/wiql/${encodeURIComponent(config.queryId)}?api-version=7.0`
@@ -79,9 +103,7 @@ export async function fetchWorkItemsBatch(
   config: AdoConnectionConfig,
   ids: number[]
 ): Promise<WorkItemRaw[]> {
-  if (!config.orgUrl.startsWith('https://')) {
-    throwAppError('ADO_AUTH_ERROR', 'URL organizzazione non valido: deve iniziare con https://')
-  }
+  validateHttpsOrgUrl(config.orgUrl)
 
   const baseUrl = buildBaseUrl(config.orgUrl, config.projectName)
   const idsCsv = ids.join(',')
@@ -107,6 +129,50 @@ export async function fetchWorkItemsBatch(
 
     const data = (await response.json()) as { value: WorkItemRaw[] }
     return data.value
+  } catch (error: unknown) {
+    if (isAppError(error)) throw error
+    if (error instanceof Error && error.name === 'AbortError') {
+      throwAppError('ADO_TIMEOUT', 'Timeout nella connessione ad Azure DevOps')
+    }
+    throwAppError(
+      'ADO_TIMEOUT',
+      `Errore di rete: ${error instanceof Error ? error.message : 'sconosciuto'}`
+    )
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+export async function fetchAdoAttachmentDataUrl(
+  config: AdoConnectionConfig,
+  attachmentUrl: string
+): Promise<string> {
+  validateHttpsOrgUrl(config.orgUrl)
+
+  if (!isAllowedAttachmentUrl(config.orgUrl, attachmentUrl)) {
+    throwAppError('ADO_NOT_FOUND', 'URL attachment Azure DevOps non valido')
+  }
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 30000)
+
+  try {
+    const response = await fetch(attachmentUrl, {
+      method: 'GET',
+      headers: {
+        Authorization: buildAuthHeader(config.pat),
+        Accept: '*/*'
+      },
+      signal: controller.signal
+    })
+
+    if (!response.ok) {
+      mapResponseError(response.status, response.statusText)
+    }
+
+    const contentType = response.headers.get('content-type') || 'image/png'
+    const buffer = Buffer.from(await response.arrayBuffer())
+    return `data:${contentType};base64,${buffer.toString('base64')}`
   } catch (error: unknown) {
     if (isAppError(error)) throw error
     if (error instanceof Error && error.name === 'AbortError') {
