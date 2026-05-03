@@ -37,6 +37,8 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 10  | FT-10 | AI Cluster - Similar Bug Detection                     | Done   |
 | 11  | FT-11 | OpenRouter SDK Provider                                | Done   |
 
+Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
+
 ## Sources
 
 - [[wiki/sources/ft-01-scaffold]] — FT-01 scaffold: electron-vite, React 18, IPC architecture, encrypted store (2026-04-29)
