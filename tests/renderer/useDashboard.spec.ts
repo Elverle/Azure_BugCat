@@ -237,5 +237,4 @@ describe('useDashboard', () => {
 
     expect(cleanup).toHaveBeenCalled()
   })
-
 })

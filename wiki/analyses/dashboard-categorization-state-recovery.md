@@ -3,11 +3,7 @@ title: 'Analysis: Dashboard categorization state recovery'
 type: analysis
 created: 2026-05-03
 updated: 2026-05-03
-sources:
-  [
-    '[[wiki/sources/ft-05-dashboard]]',
-    '[[wiki/analyses/cancel-categorization-flow]]'
-  ]
+sources: ['[[wiki/sources/ft-05-dashboard]]', '[[wiki/analyses/cancel-categorization-flow]]']
 tags: [analysis, dashboard, ipc, cancellation, remount, error-handling]
 lang: en
 ---

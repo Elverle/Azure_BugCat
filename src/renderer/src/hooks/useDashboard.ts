@@ -256,10 +256,7 @@ export function useDashboard(): UseDashboardReturn {
   }, [currentCategorizationUiState.isCategorizing, loadSession, loading])
 
   const cancelCategorization = useCallback(async () => {
-    if (
-      !currentCategorizationUiState.isCategorizing ||
-      currentCategorizationUiState.isCancelling
-    ) {
+    if (!currentCategorizationUiState.isCategorizing || currentCategorizationUiState.isCancelling) {
       return
     }
 
