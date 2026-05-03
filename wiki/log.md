@@ -2,6 +2,7 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                   |
 | ---------- | -------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-03 | update feature index       | GitHub Copilot | Updated `feature-index.md` to track the latest non-feature deliveries with explicit `min-##` / `fix-##` IDs and linked the convention from the wiki index.                           |
 | 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                                                                                          |
 | 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                                                                                             |
 | 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.                                                                                         |
@@ -40,6 +41,14 @@ Pages updated:
 - [[wiki/entities/dashboard-page]]
 - [[wiki/topics/llm-categorization-pipeline]]
 - [[wiki/topics/dashboard-bug-exploration]]
+
+## [2026-05-03] update | Feature index convention and recent minor/fix history
+
+Aligned the repository trackers so `feature-index.md` now records not only major features but also minor improvements and fixes with explicit `min-##` / `fix-##` IDs. Added the latest three non-feature deliveries from git history and linked the convention from the wiki index for easier context recovery.
+
+Pages updated:
+
+- [[wiki/index.md]]
 
 ## [2026-05-03] analysis | Cancellable categorization flow
 
