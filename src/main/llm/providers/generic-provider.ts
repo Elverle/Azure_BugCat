@@ -2,6 +2,7 @@ import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
 import { getSchema } from '../schemas'
 import {
   assertApiKey,
+  createRequestTimeout,
   getProviderTimeout,
   getStructuredOutputMetadata,
   isAppError,
@@ -48,10 +49,9 @@ export class GenericProvider implements LLMProvider {
     const baseUrl = this.config.baseUrl!.replace(/\/+$/, '')
     const url = `${baseUrl}/chat/completions`
     const timeout = getProviderTimeout(this.config)
-    const responseSchemaMetadata = getStructuredOutputMetadata(options?.responseSchema)
-
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), timeout)
+    const responseSchema = options?.responseSchema
+    const responseSchemaMetadata = getStructuredOutputMetadata(responseSchema)
+    const requestTimeout = createRequestTimeout(timeout, options?.signal)
 
     try {
       const response = await fetch(url, {
@@ -73,12 +73,12 @@ export class GenericProvider implements LLMProvider {
               json_schema: {
                 name: responseSchemaMetadata.schemaName,
                 strict: true,
-                schema: getSchema(options.responseSchema!)
+                schema: getSchema(responseSchema!)
               }
             }
           })
         }),
-        signal: controller.signal
+        signal: requestTimeout.signal
       })
 
       const bodyText = await response.text()
@@ -120,6 +120,9 @@ export class GenericProvider implements LLMProvider {
     } catch (error: unknown) {
       if (isAppError(error)) throw error
       if (error instanceof Error && error.name === 'AbortError') {
+        if (!requestTimeout.didTimeout()) {
+          throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
+        }
         throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta al provider generico')
       }
       throwAppError(
@@ -127,7 +130,7 @@ export class GenericProvider implements LLMProvider {
         `Errore provider generico: ${error instanceof Error ? error.message : 'sconosciuto'}`
       )
     } finally {
-      clearTimeout(timer)
+      requestTimeout.dispose()
     }
   }
 

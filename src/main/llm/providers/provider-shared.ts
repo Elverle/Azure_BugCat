@@ -33,16 +33,42 @@ export function getProviderTimeout(config: LLMProviderConfig): number {
   return config.timeout ?? DEFAULT_PROVIDER_TIMEOUT_MS
 }
 
-export function createRequestTimeout(timeoutMs: number): {
+export function createRequestTimeout(
+  timeoutMs: number,
+  externalSignal?: AbortSignal
+): {
   signal: AbortSignal
   dispose: () => void
+  didTimeout: () => boolean
 } {
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  let timedOut = false
+  const abortFromExternalSignal = (): void => {
+    if (!controller.signal.aborted) {
+      controller.abort(externalSignal?.reason)
+    }
+  }
+
+  const timeout = setTimeout(() => {
+    timedOut = true
+    controller.abort(new Error('timeout'))
+  }, timeoutMs)
+
+  if (externalSignal) {
+    if (externalSignal.aborted) {
+      abortFromExternalSignal()
+    } else {
+      externalSignal.addEventListener('abort', abortFromExternalSignal, { once: true })
+    }
+  }
 
   return {
     signal: controller.signal,
-    dispose: () => clearTimeout(timeout)
+    dispose: () => {
+      clearTimeout(timeout)
+      externalSignal?.removeEventListener('abort', abortFromExternalSignal)
+    },
+    didTimeout: () => timedOut
   }
 }
 

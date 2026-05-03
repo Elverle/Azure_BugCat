@@ -4,7 +4,7 @@ type: entity
 subtype: service
 created: 2026-05-03
 updated: 2026-05-03
-sources: ['[[wiki/analyses/llm-provider-cleanup]]']
+sources: ['[[wiki/analyses/llm-provider-cleanup]]', '[[wiki/analyses/cancel-categorization-flow]]']
 tags: [llm, provider, utilities, timeout, schema]
 lang: en
 ---
@@ -24,7 +24,7 @@ Shared helper module for SDK-backed and HTTP-backed LLM providers. It centralize
 - `throwAppError()` / `isAppError()` - shared helpers for the common AppError taxonomy
 - `assertApiKey()` - construction-time API-key validation helper
 - `getProviderTimeout()` - resolves `config.timeout ?? 60000`
-- `createRequestTimeout()` - creates `AbortController` state plus a cleanup function
+- `createRequestTimeout()` - creates merged timeout plus optional external-cancel `AbortController` state, cleanup, and `didTimeout()` introspection
 - `getStructuredOutputMetadata()` - maps logical schemas to shared schema names and Anthropic tool metadata
 
 ## Design Notes
@@ -32,6 +32,7 @@ Shared helper module for SDK-backed and HTTP-backed LLM providers. It centralize
 - The project still avoids an inheritance-heavy provider base class.
 - Shared mechanics are composed through plain functions instead of a common abstract provider.
 - Provider-specific error decoding and response extraction remain in the concrete adapters.
+- The timeout helper now combines two abort sources: the provider timeout budget and an upstream workflow `AbortSignal`. Concrete providers use `didTimeout()` to map user cancellation to `OPERATION_CANCELLED` and real elapsed budgets to `LLM_TIMEOUT`.
 
 ## Used By
 

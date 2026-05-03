@@ -35,6 +35,48 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function buildCancellationError(): AppError {
+  return {
+    code: 'OPERATION_CANCELLED',
+    message: 'Categorizzazione annullata'
+  }
+}
+
+function throwIfCancelled(signal?: AbortSignal): void {
+  if (signal?.aborted) {
+    throw buildCancellationError()
+  }
+}
+
+function sleepWithAbort(ms: number, signal?: AbortSignal): Promise<void> {
+  if (!signal) {
+    return sleep(ms)
+  }
+
+  if (signal.aborted) {
+    return Promise.reject(buildCancellationError())
+  }
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      cleanup()
+      resolve()
+    }, ms)
+
+    const onAbort = (): void => {
+      cleanup()
+      reject(buildCancellationError())
+    }
+
+    const cleanup = (): void => {
+      clearTimeout(timeout)
+      signal.removeEventListener('abort', onAbort)
+    }
+
+    signal.addEventListener('abort', onAbort, { once: true })
+  })
+}
+
 function isAbortLikeError(error: unknown): boolean {
   if (error instanceof Error && error.name === 'AbortError') {
     return true
@@ -105,10 +147,17 @@ export async function chatWithRetry(
 
   for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     try {
+      throwIfCancelled(options?.signal)
       return await provider.chat(systemPrompt, userMessage, options)
     } catch (error: unknown) {
       lastError = error
+      if (isAppError(error) && error.code === 'OPERATION_CANCELLED') {
+        throw error
+      }
       if (isAbortLikeError(error)) {
+        if (options?.signal?.aborted) {
+          throw buildCancellationError()
+        }
         throwAppError('LLM_TIMEOUT', `Timeout nella richiesta al provider ${provider.name}`, {
           provider: provider.name,
           attempt: attempt + 1,
@@ -120,7 +169,7 @@ export async function chatWithRetry(
         console.warn(
           `[LLM] Rate limit hit for ${provider.name}, retrying in ${RETRY_DELAYS[attempt]}ms (attempt ${attempt + 1}/${RETRY_DELAYS.length})`
         )
-        await sleep(RETRY_DELAYS[attempt])
+        await sleepWithAbort(RETRY_DELAYS[attempt], options?.signal)
         continue
       }
       throw error
@@ -137,7 +186,8 @@ export interface ProgressCallback {
 export async function categorizeBugs(
   settings: AppSettings,
   bugs: BugItem[],
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  signal?: AbortSignal
 ): Promise<CategorizedBug[]> {
   const provider: LLMProvider = createLLMProvider(settings.llmProvider, {
     apiKey: settings.apiKey,
@@ -152,26 +202,35 @@ export async function categorizeBugs(
   let completed = 0
 
   for (const [chunkIndex, chunk] of chunks.entries()) {
+    throwIfCancelled(signal)
+
     let chunkResults: LLMCategorizeResult[]
     const chunkDiagnostics = buildChunkDiagnostics(provider.name, chunk, chunkIndex, chunks.length)
 
     try {
       const userMessage = buildUserMessage(chunk)
       const raw = await chatWithRetry(provider, systemPrompt, userMessage, {
-        responseSchema: 'categorization'
+        responseSchema: 'categorization',
+        signal
       })
       chunkResults = validateLLMResponse(raw, chunk)
     } catch (error: unknown) {
       const normalizedError = isAbortLikeError(error)
-        ? ({
-            code: 'LLM_TIMEOUT',
-            message: `Timeout nella richiesta al provider ${provider.name}`,
-            details: {
-              provider: provider.name,
-              originalError: buildErrorDiagnostics(error)
-            }
-          } satisfies AppError)
+        ? signal?.aborted
+          ? buildCancellationError()
+          : ({
+              code: 'LLM_TIMEOUT',
+              message: `Timeout nella richiesta al provider ${provider.name}`,
+              details: {
+                provider: provider.name,
+                originalError: buildErrorDiagnostics(error)
+              }
+            } satisfies AppError)
         : error
+
+      if (isAppError(normalizedError) && normalizedError.code === 'OPERATION_CANCELLED') {
+        throw normalizedError
+      }
 
       if (isAppError(normalizedError) && isBlockingLLMError(normalizedError)) {
         console.error('[LLM] Chunk failed with blocking error', {

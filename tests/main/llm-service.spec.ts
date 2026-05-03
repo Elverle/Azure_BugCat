@@ -165,6 +165,27 @@ describe('llm-service', () => {
         code: 'LLM_TIMEOUT'
       })
     })
+
+    it('stops before the next chunk when cancellation is requested', async () => {
+      const controller = new AbortController()
+
+      mockChat.mockImplementationOnce(async () => {
+        controller.abort()
+        return JSON.stringify({
+          results: [{ bugId: 1, macroCategory: 'UI', subCategory: 'X', categoryReason: 'Y' }]
+        })
+      })
+
+      const bugs = [makeBug(1), makeBug(2)]
+      const settings = { ...baseSettings, chunkSize: 1 }
+
+      await expect(
+        categorizeBugs(settings, bugs, undefined, controller.signal)
+      ).rejects.toMatchObject({
+        code: 'OPERATION_CANCELLED'
+      })
+      expect(mockChat).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('testLLMConnection', () => {

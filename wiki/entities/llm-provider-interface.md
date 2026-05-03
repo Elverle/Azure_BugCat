@@ -9,7 +9,8 @@ sources:
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
-    '[[wiki/analyses/llm-provider-cleanup]]'
+    '[[wiki/analyses/llm-provider-cleanup]]',
+    '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [llm, interface, types]
 lang: en
@@ -40,10 +41,11 @@ interface LLMProvider {
 ```typescript
 interface ChatOptions {
   responseSchema?: SchemaType
+  signal?: AbortSignal
 }
 ```
 
-This keeps the orchestration layer focused on output intent instead of vendor request syntax.
+This keeps the orchestration layer focused on output intent plus cooperative cancellation instead of vendor request syntax.
 
 ### LLMProviderConfig
 
@@ -56,7 +58,7 @@ interface LLMProviderConfig {
 }
 ```
 
-`timeout` is now honored consistently by all current providers through shared helper logic, instead of being fully enforced only by the generic fetch adapter.
+`timeout` is now honored consistently by all current providers through shared helper logic, and `ChatOptions.signal` lets the orchestrator propagate user-triggered cancellation without changing the provider interface itself.
 
 ### SchemaType
 

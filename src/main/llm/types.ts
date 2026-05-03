@@ -12,6 +12,7 @@ export interface LLMProviderConfig {
 
 export interface ChatOptions {
   responseSchema?: SchemaType
+  signal?: AbortSignal
 }
 
 export interface LLMProvider {

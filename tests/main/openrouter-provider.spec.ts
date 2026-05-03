@@ -332,18 +332,18 @@ describe('openrouter-provider', () => {
       })
     })
 
-    it('throws LLM_TIMEOUT for RequestTimeoutError', async () => {
+    it('throws OPERATION_CANCELLED for RequestTimeoutError', async () => {
       const err = new Error('Request timed out')
       err.name = 'RequestTimeoutError'
       mockSend.mockRejectedValue(err)
 
       const provider = new OpenRouterProvider({ apiKey: 'sk-or-test' })
       await expect(provider.chat('system', 'user')).rejects.toMatchObject({
-        code: 'LLM_TIMEOUT'
+        code: 'OPERATION_CANCELLED'
       })
     })
 
-    it('throws LLM_TIMEOUT for RequestAbortedError', async () => {
+    it('throws OPERATION_CANCELLED for RequestAbortedError', async () => {
       const err = new Error('Request aborted')
       err.name = 'RequestAbortedError'
       mockSend.mockRejectedValue(err)
@@ -358,7 +358,7 @@ describe('openrouter-provider', () => {
 
       const provider = new OpenRouterProvider({ apiKey: 'sk-or-test' })
       await expect(provider.chat('system', 'user')).rejects.toMatchObject({
-        code: 'LLM_TIMEOUT'
+        code: 'OPERATION_CANCELLED'
       })
     })
 

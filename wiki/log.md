@@ -18,6 +18,57 @@
 | 2026-05-03 | analysis FT-11             | GitHub Copilot | Added a dedicated analysis page for the OpenRouter `structured-output-routing-mismatch` failure mode and linked it from the wiki index.                                                 |
 | 2026-05-03 | cleanup wiki               | GitHub Copilot | Removed the obsolete historical Copilot provider page so the wiki no longer exposes a deleted provider as a current entity.                                                             |
 | 2026-05-03 | analysis LLM cleanup       | GitHub Copilot | Documented the shared LLM provider cleanup, added pages for the new helper modules, and updated provider/service docs to reflect aligned timeout, parsing, and blocking-error behavior. |
+| 2026-05-03 | analysis cancel flow       | GitHub Copilot | Documented abort-aware categorization cancellation, updated IPC/dashboard/provider pages, and recorded the all-or-nothing persistence rule for cancel.                                  |
+| 2026-05-03 | analysis dashboard state   | GitHub Copilot | Documented Dashboard remount recovery for active categorization, immediate cancelling feedback, and renderer-safe IPC error normalization.                                               |
+
+## [2026-05-03] analysis | Dashboard categorization state recovery
+
+Updated the wiki after the manual-test follow-up on cancellable categorization. The Dashboard now rehydrates an active run after route remounts through a dedicated status IPC, shows immediate `Cancelling...` feedback before the next chunk event, and receives readable renderer errors from `llm:categorize` instead of generic `[object Object]` invoke wrappers.
+
+Pages created:
+
+- [[wiki/analyses/dashboard-categorization-state-recovery]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/ipc-channels]]
+- [[wiki/entities/preload-bridge]]
+- [[wiki/entities/use-dashboard-hook]]
+- [[wiki/entities/dashboard-header]]
+- [[wiki/entities/dashboard-page]]
+- [[wiki/topics/llm-categorization-pipeline]]
+- [[wiki/topics/dashboard-bug-exploration]]
+
+## [2026-05-03] analysis | Cancellable categorization flow
+
+Updated the wiki after adding a user-triggered cancel path for long-running categorization runs. The new behavior propagates `AbortSignal` from renderer to providers, distinguishes cancellation from timeout, swaps the dashboard action to `Cancel` while work is in progress, and keeps session persistence all-or-nothing.
+
+Pages created:
+
+- [[wiki/analyses/cancel-categorization-flow]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/ipc-channels]]
+- [[wiki/entities/preload-bridge]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/llm-provider-interface]]
+- [[wiki/entities/provider-shared-utilities]]
+- [[wiki/entities/llm-service]]
+- [[wiki/entities/openai-provider]]
+- [[wiki/entities/anthropic-provider]]
+- [[wiki/entities/gemini-provider]]
+- [[wiki/entities/generic-provider]]
+- [[wiki/entities/openrouter-provider]]
+- [[wiki/entities/use-dashboard-hook]]
+- [[wiki/entities/dashboard-header]]
+- [[wiki/entities/dashboard-page]]
+- [[wiki/topics/llm-categorization-pipeline]]
+- [[wiki/topics/dashboard-bug-exploration]]
 
 ## [2026-05-03] analysis | LLM provider cleanup and wiki sync
 

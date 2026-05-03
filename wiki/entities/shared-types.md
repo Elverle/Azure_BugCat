@@ -3,14 +3,15 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-02
+updated: 2026-05-03
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
     '[[wiki/sources/ft-02-settings]]',
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
-    '[[wiki/sources/ft-11-openrouter-provider]]'
+    '[[wiki/sources/ft-11-openrouter-provider]]',
+    '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [typescript, types, shared, domain-model]
 lang: en
@@ -28,10 +29,10 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Core types
 
-| Type              | Purpose                                                                   |
-| ----------------- | ------------------------------------------------------------------------- |
-| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini' \| 'openrouter'` |
-| `ErrorCode`       | Union of known error codes (ADO*\*, LLM*\_, STORE\_\_, UNKNOWN\_\*)       |
+| Type              | Purpose                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini' \| 'openrouter'`                  |
+| `ErrorCode`       | Union of known error codes (ADO*\*, LLM*\_, `OPERATION_CANCELLED`, STORE\_\_, UNKNOWN\_\*) |
 
 ### Bug types
 
@@ -92,6 +93,11 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 
 - `LLMProviderType` now includes `openrouter`, extending the cross-process provider selector without changing the IPC payload shape.
 - `AppSettings.llmModel` remains the shared model override field for both SDK-backed providers and the generic OpenAI-compatible adapter.
+
+## Cancellation Notes
+
+- `ErrorCode` now includes `OPERATION_CANCELLED` so intentional user aborts can be distinguished from `LLM_TIMEOUT`.
+- The new error code crosses the same shared boundary as other `AppError` values, allowing main, preload, and renderer layers to agree on silent cancel behavior.
 
 ## See also
 

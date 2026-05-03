@@ -11,6 +11,7 @@ export type ErrorCode =
   | 'ADO_TIMEOUT'
   | 'LLM_AUTH_ERROR'
   | 'LLM_RATE_LIMIT'
+  | 'OPERATION_CANCELLED'
   | 'LLM_TIMEOUT'
   | 'LLM_PARSE_ERROR'
   | 'STORE_ERROR'

@@ -5,6 +5,7 @@
     "npm install": true,
     "npx vitest": true,
     "npm exec": true,
-    "npm run lint": true
+    "npm run lint": true,
+    "npm test": true
   }
 }

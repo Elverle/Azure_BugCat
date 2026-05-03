@@ -142,5 +142,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ## Analyses
 
+- [[wiki/analyses/dashboard-categorization-state-recovery]] — Dashboard categorization state now survives route remounts, reports immediate cancel feedback, and surfaces readable IPC errors (2026-05-03)
 - [[wiki/analyses/structured-output-routing-mismatch]] — OpenRouter routed a `json_schema` request to a backend that downgraded structured output support; categorization now stops and surfaces a modal error (2026-05-03)
 - [[wiki/analyses/llm-provider-cleanup]] — Shared provider helpers, shared blocking-error policy, unified tolerant JSON parsing, and direct adapter test coverage for every current LLM provider (2026-05-03)
+- [[wiki/analyses/cancel-categorization-flow]] — Categorization now supports user-triggered cancellation through abort-aware IPC and provider propagation, without persisting partial results (2026-05-03)

@@ -20,7 +20,7 @@ export class GeminiProvider implements LLMProvider {
   }
 
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
-    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config))
+    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config), options?.signal)
 
     try {
       const response = await this.client.models.generateContent({
@@ -56,6 +56,9 @@ export class GeminiProvider implements LLMProvider {
         throwAppError('LLM_AUTH_ERROR', 'Autenticazione non valida per gemini')
       }
       if (error instanceof Error && error.name === 'AbortError') {
+        if (!requestTimeout.didTimeout()) {
+          throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
+        }
         throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta a Gemini')
       }
       throwAppError('UNKNOWN_ERROR', `Errore Gemini: ${message}`)
