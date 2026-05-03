@@ -128,6 +128,30 @@ describe('useDashboard', () => {
     expect(api.getSession).toHaveBeenCalledTimes(2)
     expect(result.current.loading).toBe(false)
     expect(result.current.progress).toBeNull()
+    expect(result.current.categorizeError).toBeNull()
+  })
+
+  it('stores categorize error when IPC categorization fails', async () => {
+    installElectronApiMock({
+      categorizeBugs: vi.fn().mockRejectedValue(new Error('Errore OpenRouter'))
+    })
+
+    const { result } = renderHook(() => useDashboard())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.categorizeBugs()
+    })
+
+    expect(result.current.categorizeError).toBe('Errore OpenRouter')
+    expect(result.current.progress).toBeNull()
+
+    act(() => {
+      result.current.clearCategorizeError()
+    })
+
+    expect(result.current.categorizeError).toBeNull()
   })
 
   it('tracks progress during categorization', async () => {
@@ -185,9 +209,9 @@ describe('useDashboard', () => {
     const cleanup = vi.fn()
     installElectronApiMock({
       onCategorizeProgress: vi.fn().mockReturnValue(cleanup),
-      categorizeBugs: vi.fn().mockImplementation(
-        () => new Promise<void>((resolve) => setTimeout(resolve, 100))
-      )
+      categorizeBugs: vi
+        .fn()
+        .mockImplementation(() => new Promise<void>((resolve) => setTimeout(resolve, 100)))
     })
 
     const { result, unmount } = renderHook(() => useDashboard())

@@ -75,11 +75,9 @@ describe('llm-service', () => {
       expect(result[1].macroCategory).toBe('Backend')
       expect(result[2].macroCategory).toBe('UI')
       expect(progressCalls).toHaveLength(2)
-      expect(mockChat).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(String),
-        { responseSchema: 'categorization' }
-      )
+      expect(mockChat).toHaveBeenCalledWith(expect.any(String), expect.any(String), {
+        responseSchema: 'categorization'
+      })
     })
 
     it('retries on rate limit error', async () => {
@@ -134,6 +132,24 @@ describe('llm-service', () => {
       const bugs = [makeBug(1)]
       await expect(categorizeBugs(baseSettings, bugs)).rejects.toMatchObject({
         code: 'LLM_TIMEOUT'
+      })
+    })
+
+    it('throws immediately on structured-output routing mismatch parse error', async () => {
+      const parseError = {
+        code: 'LLM_PARSE_ERROR',
+        message:
+          'OpenRouter ha instradato la richiesta verso un provider o modello che non supporta correttamente structured outputs con json_schema. Seleziona un modello compatibile oppure cambia routing/provider.',
+        details: {
+          reason: 'structured-output-routing-mismatch'
+        }
+      }
+      mockChat.mockRejectedValueOnce(parseError)
+
+      const bugs = [makeBug(1)]
+      await expect(categorizeBugs(baseSettings, bugs)).rejects.toMatchObject({
+        code: 'LLM_PARSE_ERROR',
+        details: { reason: 'structured-output-routing-mismatch' }
       })
     })
 

@@ -2,15 +2,15 @@
 title: 'electron-vite Build Configuration'
 type: concept
 created: 2026-04-29
-updated: 2026-04-29
-sources: ['[[wiki/sources/ft-01-scaffold]]']
+updated: 2026-05-02
+sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-11-openrouter-provider]]']
 tags: [electron-vite, vite, build, configuration]
 lang: en
 ---
 
 ## Overview
 
-The project uses `electron-vite` v2 to unify the build for all three Electron targets (main, preload, renderer) under a single config file.
+The project uses `electron-vite` with a single `defineConfig()` file to coordinate the three Electron targets (main, preload, renderer). The current configuration is intentionally small and only overrides the places where runtime packaging or renderer resolution needs project-specific behavior.
 
 ## Configuration
 
@@ -18,11 +18,13 @@ File: `electron.vite.config.ts`
 
 ### Main process
 
-- `externalizeDepsPlugin({ exclude: ['electron-store'] })` — bundles `electron-store` (ESM module) while externalizing other deps.
+- Uses `build.externalizeDeps.exclude` to bundle ESM/runtime-sensitive dependencies that should not remain external at runtime.
+- Current exclude list: `electron-store`, `@openrouter/sdk`.
+- This FT-11 change is required because the OpenRouter provider runs in the Electron main process and depends on the SDK being packaged consistently with the app bundle.
 
 ### Preload
 
-- `externalizeDepsPlugin()` — standard externalization.
+- No custom overrides right now; the preload target inherits electron-vite defaults.
 
 ### Renderer
 
@@ -58,3 +60,4 @@ Three-file split (`tsconfig.json` → references):
 ## See also
 
 - [[wiki/topics/electron-architecture]]
+- [[wiki/entities/openrouter-provider]]

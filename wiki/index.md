@@ -35,6 +35,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 8   | FT-08 | GenericProvider OpenAI-compatible e rimozione Copilot  | Done   |
 | 9   | FT-09 | Structured output JSON Schema per tutti i provider LLM | Done   |
 | 10  | FT-10 | AI Cluster - Similar Bug Detection                     | Done   |
+| 11  | FT-11 | OpenRouter SDK Provider                                | Done   |
 
 ## Sources
 
@@ -48,6 +49,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/sources/ft-08-generic-provider]] — FT-08 generic provider: OpenAI-compatible fetch client, Generic settings UI, HTTPS base URL validation, and schema v2 migration from Copilot (2026-05-01)
 - [[wiki/sources/ft-09-structured-output]] — FT-09 structured output: shared JSON Schemas, provider-native schema enforcement, simplified prompts, and temperature 0.1 standardization (2026-05-01)
 - [[wiki/sources/ft-10-ai-cluster-similarity]] — FT-10 AI Cluster: macroCategory-scoped similar-bug detection with progress IPC, session persistence, and drawer drill-down (2026-05-01)
+- [[wiki/sources/ft-11-openrouter-provider]] — FT-11 OpenRouter provider: official SDK adapter, json_schema structured output, routing-mismatch blocking error handling, and dashboard modal feedback (2026-05-03)
 
 ## Entities
 
@@ -82,6 +84,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/entities/anthropic-provider]] — Anthropic SDK provider (claude-sonnet-4-20250514) (FT-04)
 - [[wiki/entities/generic-provider]] — Generic OpenAI-compatible fetch provider with configurable base URL and model (FT-08)
 - [[wiki/entities/gemini-provider]] — Google GenAI provider (gemini-2.5-flash) (FT-04)
+- [[wiki/entities/openrouter-provider]] — OpenRouter SDK provider with json_schema structured output and native timeout handling (FT-11)
 - [[wiki/entities/llm-provider-factory]] — Factory function for LLM provider instantiation (FT-04)
 - [[wiki/entities/llm-service]] — Bug categorization orchestrator with retry and progress (FT-04)
 - [[wiki/entities/similarity-service]] — Macro-category similarity orchestrator with per-category progress and partial failures (FT-10)
@@ -136,4 +139,4 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ## Analyses
 
-_(none yet)_
+- [[wiki/analyses/structured-output-routing-mismatch]] — OpenRouter routed a `json_schema` request to a backend that downgraded structured output support; categorization now stops and surfaces a modal error (2026-05-03)

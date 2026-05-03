@@ -35,7 +35,7 @@ describe('LlmProviderSection', () => {
     expect(screen.getByLabelText('OpenAI API Key')).toHaveValue('secret-key')
     expect(screen.queryByLabelText('Base URL')).not.toBeInTheDocument()
     expect(screen.getByLabelText('Model')).toBeInTheDocument()
-    expect(screen.getByLabelText('Model')).toHaveAttribute('placeholder', 'gpt-4o')
+    expect(screen.getByLabelText('Model')).toHaveAttribute('placeholder', 'gpt-4.1-mini')
 
     fireEvent.change(screen.getByLabelText('Provider'), { target: { value: 'generic' } })
     expect(onFieldChange).toHaveBeenCalledWith('llmProvider', 'generic')
@@ -76,7 +76,7 @@ describe('LlmProviderSection', () => {
       />
     )
 
-    expect(screen.getByLabelText('Model')).toHaveAttribute('placeholder', 'gpt-4o')
+    expect(screen.getByLabelText('Model')).toHaveAttribute('placeholder', 'gpt-4.1-mini')
 
     rerender(
       <LlmProviderSection

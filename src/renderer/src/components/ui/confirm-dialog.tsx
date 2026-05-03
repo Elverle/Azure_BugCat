@@ -18,7 +18,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel = 'Conferma',
-  cancelLabel = 'Annulla',
+  cancelLabel,
   variant = 'default',
   onConfirm,
   onCancel
@@ -103,9 +103,11 @@ export function ConfirmDialog({
           {description}
         </p>
         <div className="mt-6 flex justify-end gap-3">
-          <Button ref={cancelRef} variant="outline" onClick={onCancel}>
-            {cancelLabel}
-          </Button>
+          {cancelLabel && (
+            <Button ref={cancelRef} variant="outline" onClick={onCancel}>
+              {cancelLabel}
+            </Button>
+          )}
           <Button
             variant={variant === 'destructive' ? 'destructive' : 'default'}
             onClick={onConfirm}

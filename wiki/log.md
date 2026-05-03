@@ -13,6 +13,9 @@
 | 2026-05-01 | scan FT-08                 | GitHub Copilot | Scanned FT-08 generic provider. Created 1 source, 1 entity. Updated LLM/settings/migration pages, index, and historical Copilot docs.          |
 | 2026-05-01 | scan FT-09                 | GitHub Copilot | Scanned FT-09 structured output. Created 1 source, 1 entity, 1 concept. Updated LLM provider, prompt, validator, topic, index, and log pages.  |
 | 2026-05-01 | scan FT-10                 | GitHub Copilot | Scanned FT-10 AI Cluster. Created 1 source, 5 entities, 1 concept, 1 topic. Updated LLM, IPC, renderer, drawer, session, index, and log pages. |
+| 2026-05-02 | scan FT-11                 | GitHub Copilot | Scanned FT-11 OpenRouter provider. Created 1 source, 1 entity. Updated LLM/build/topic pages, index, and log.                                  |
+| 2026-05-03 | update FT-11               | GitHub Copilot | Updated FT-11 docs for OpenRouter structured-output routing mismatch handling, blocking categorization behavior, and dashboard error modal UX. |
+| 2026-05-03 | analysis FT-11             | GitHub Copilot | Added a dedicated analysis page for the OpenRouter `structured-output-routing-mismatch` failure mode and linked it from the wiki index.        |
 
 ## [2026-04-29] scan | FT-01 — Scaffold Electron + Infrastruttura Base
 
@@ -102,9 +105,56 @@ Pages created:
 - [[wiki/entities/response-validator]]
 - [[wiki/entities/chunking-utility]]
 - [[wiki/entities/llm-prompts]]
+
+## [2026-05-02] scan | FT-11 - OpenRouter SDK Provider
+
+Scanned FT-11 feature: added an OpenRouter SDK-backed LLM provider with the SDK's nested `chatRequest` envelope, provider-native `json_schema` structured output, native `timeoutMs` handling, status-code-based error normalization, renderer settings registration, and main-process bundling through `electron.vite.config.ts`.
+
+Pages created:
+
+- [[wiki/sources/ft-11-openrouter-provider]]
+- [[wiki/entities/openrouter-provider]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/llm-provider-factory]]
+- [[wiki/entities/llm-provider-section]]
+- [[wiki/entities/shared-types]]
+- [[wiki/concepts/llm-provider-abstraction]]
+- [[wiki/concepts/provider-native-structured-output]]
+- [[wiki/concepts/electron-vite-build]]
+- [[wiki/topics/llm-categorization-pipeline]]
 - [[wiki/concepts/llm-provider-abstraction]]
 - [[wiki/concepts/chunk-retry-pattern]]
 - [[wiki/topics/llm-categorization-pipeline]]
+
+## [2026-05-03] update | FT-11 - OpenRouter blocking routing mismatch UX
+
+Updated FT-11 documentation after the OpenRouter follow-up hardening: structured-output routing mismatches are now treated as blocking categorization failures, `useDashboard()` exposes a renderer-facing `categorizeError`, `DashboardPage` opens a modal popup through `ConfirmDialog`, and the provider docs clarify the dedicated `structured-output-routing-mismatch` parse-error reason.
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/sources/ft-11-openrouter-provider]]
+- [[wiki/entities/openrouter-provider]]
+- [[wiki/entities/llm-service]]
+- [[wiki/entities/use-dashboard-hook]]
+- [[wiki/entities/dashboard-page]]
+- [[wiki/entities/confirm-dialog]]
+- [[wiki/topics/llm-categorization-pipeline]]
+
+## [2026-05-03] analysis | OpenRouter structured-output routing mismatch
+
+Added a dedicated analysis page for the OpenRouter failure mode where a valid `json_schema` request is routed to an upstream backend that downgrades the response format. The page captures symptoms, root cause, detection logic, product behavior, and mitigation guidance.
+
+Pages created:
+
+- [[wiki/analyses/structured-output-routing-mismatch]]
+
+Pages updated:
+
+- [[wiki/index.md]]
 
 Pages updated:
 

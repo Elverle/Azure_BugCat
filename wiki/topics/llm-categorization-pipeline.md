@@ -2,13 +2,14 @@
 title: 'LLM Categorization Pipeline'
 type: topic
 created: 2026-04-30
-updated: 2026-05-01
+updated: 2026-05-03
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
-    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]',
+    '[[wiki/sources/ft-11-openrouter-provider]]'
   ]
 tags: [llm, categorization, similarity, pipeline, ipc, main-process]
 lang: en
@@ -45,23 +46,23 @@ MAIN PROCESS                                       |
 
 ## Components
 
-| Component       | Entity                                                                                                                                         | Role                                                               |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| IPC entry point | [[wiki/entities/ipc-handlers]]                                                                                                                 | Loads state, calls service, persists results                       |
-| Orchestrator    | [[wiki/entities/llm-service]]                                                                                                                  | Coordinates chunking, retry, schema-aware provider calls, progress |
-| Factory         | [[wiki/entities/llm-provider-factory]]                                                                                                         | Instantiates correct provider                                      |
-| Schema registry | [[wiki/entities/llm-schemas]]                                                                                                                  | Shared logical output contracts                                    |
-| Providers       | [[wiki/entities/openai-provider]], [[wiki/entities/anthropic-provider]], [[wiki/entities/generic-provider]], [[wiki/entities/gemini-provider]] | LLM communication adapters for each backend                        |
-| Prompts         | [[wiki/entities/llm-prompts]]                                                                                                                  | Task instructions and input serialization                          |
-| Chunking        | [[wiki/entities/chunking-utility]]                                                                                                             | Batch splitting                                                    |
-| Validation      | [[wiki/entities/response-validator]]                                                                                                           | JSON parse, completeness check, and fallback                       |
+| Component       | Entity                                                                                                                                                                                | Role                                                               |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| IPC entry point | [[wiki/entities/ipc-handlers]]                                                                                                                                                        | Loads state, calls service, persists results                       |
+| Orchestrator    | [[wiki/entities/llm-service]]                                                                                                                                                         | Coordinates chunking, retry, schema-aware provider calls, progress |
+| Factory         | [[wiki/entities/llm-provider-factory]]                                                                                                                                                | Instantiates correct provider                                      |
+| Schema registry | [[wiki/entities/llm-schemas]]                                                                                                                                                         | Shared logical output contracts                                    |
+| Providers       | [[wiki/entities/openai-provider]], [[wiki/entities/anthropic-provider]], [[wiki/entities/generic-provider]], [[wiki/entities/gemini-provider]], [[wiki/entities/openrouter-provider]] | LLM communication adapters for each backend                        |
+| Prompts         | [[wiki/entities/llm-prompts]]                                                                                                                                                         | Task instructions and input serialization                          |
+| Chunking        | [[wiki/entities/chunking-utility]]                                                                                                                                                    | Batch splitting                                                    |
+| Validation      | [[wiki/entities/response-validator]]                                                                                                                                                  | JSON parse, completeness check, and fallback                       |
 
 ## Data Flow
 
 1. **Input**: `BugItem[]` from session store.
 2. **Processing**: each chunk -> prompt guidance + schema hint -> provider-native structured output request -> raw JSON string -> validated results.
 3. **Output**: `CategorizedBug[]` (`BugItem` plus `macroCategory`, `subCategory`, `categoryReason`, `categorizedAt`).
-4. **Side effects**: session updated in store with `categorizedAt` timestamp.
+4. **Side effects**: session updated in store with `categorizedAt` timestamp, unless a blocking provider error aborts the run before persistence.
 
 ## Patterns Used
 
@@ -82,6 +83,12 @@ IPC (llm:test-connection)
   -> GenericProvider also validates baseUrl and URL scheme
   -> returns TestConnectionResult { success, message }
 ```
+
+## FT-11 Extension
+
+OpenRouter becomes the fifth runtime-selectable backend in this pipeline. The surrounding flow is unchanged, but the concrete adapter now demonstrates that the abstraction can also absorb SDKs that require a nested `chatRequest` payload and provider-native timeout configuration.
+
+The same FT-11 slice also adds a new blocking failure mode: if OpenRouter routes a `json_schema` request to an upstream provider/model that downgrades structured output support, categorization now stops immediately and the renderer surfaces a modal error instead of silently marking the chunk as `Non categorizzato`.
 
 ## FT-10 Extension
 

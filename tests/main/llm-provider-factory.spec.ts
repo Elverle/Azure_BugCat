@@ -44,4 +44,13 @@ describe('provider-factory', () => {
   it('throws for Gemini without API key', () => {
     expect(() => createLLMProvider('gemini', { apiKey: '  ' })).toThrow()
   })
+
+  it('creates OpenRouter provider', () => {
+    const provider = createLLMProvider('openrouter', { apiKey: 'sk-or-test' })
+    expect(provider.name).toBe('openrouter')
+  })
+
+  it('throws for OpenRouter without API key', () => {
+    expect(() => createLLMProvider('openrouter', {})).toThrow()
+  })
 })

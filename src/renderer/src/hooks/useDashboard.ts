@@ -5,15 +5,18 @@ export interface UseDashboardReturn {
   bugs: CategorizedBug[]
   loading: boolean
   progress: ChunkProgress | null
+  categorizeError: string | null
   sessionInfo: { fetchedAt: string | null; categorizedAt: string | null }
   fetchBugs: () => Promise<void>
   categorizeBugs: () => Promise<void>
+  clearCategorizeError: () => void
 }
 
 export function useDashboard(): UseDashboardReturn {
   const [bugs, setBugs] = useState<CategorizedBug[]>([])
   const [loading, setLoading] = useState(true)
   const [progress, setProgress] = useState<ChunkProgress | null>(null)
+  const [categorizeError, setCategorizeError] = useState<string | null>(null)
   const [sessionInfo, setSessionInfo] = useState<{
     fetchedAt: string | null
     categorizedAt: string | null
@@ -79,6 +82,7 @@ export function useDashboard(): UseDashboardReturn {
   const categorizeBugs = useCallback(async () => {
     setLoading(true)
     setProgress(null)
+    setCategorizeError(null)
 
     // Subscribe to progress updates
     const cleanup = window.electronAPI.onCategorizeProgress((data) => {
@@ -89,6 +93,12 @@ export function useDashboard(): UseDashboardReturn {
     try {
       await window.electronAPI.categorizeBugs()
       await loadSession()
+    } catch (error: unknown) {
+      const message =
+        error !== null && typeof error === 'object' && 'message' in error
+          ? String((error as { message: unknown }).message)
+          : 'Errore durante la categorizzazione'
+      setCategorizeError(message)
     } finally {
       setLoading(false)
       setProgress(null)
@@ -103,8 +113,10 @@ export function useDashboard(): UseDashboardReturn {
     bugs,
     loading,
     progress,
+    categorizeError,
     sessionInfo,
     fetchBugs,
-    categorizeBugs
+    categorizeBugs,
+    clearCategorizeError: () => setCategorizeError(null)
   }
 }

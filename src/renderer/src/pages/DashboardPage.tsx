@@ -4,6 +4,7 @@ import { useDashboard } from '@renderer/hooks/useDashboard'
 import { useAiCluster } from '@renderer/hooks/useAiCluster'
 import { useBugDrawer } from '@renderer/hooks/useBugDrawer'
 import { DashboardHeader } from '@renderer/components/dashboard/DashboardHeader'
+import { ConfirmDialog } from '@renderer/components/ui/confirm-dialog'
 import { KpiCards } from '@renderer/components/dashboard/KpiCards'
 import { FilterBar } from '@renderer/components/dashboard/FilterBar'
 import { BugTable } from '@renderer/components/dashboard/BugTable'
@@ -39,7 +40,16 @@ function clampDrawerWidth(width: number): number {
 }
 
 export function DashboardPage(): JSX.Element {
-  const { bugs, loading, progress, sessionInfo, fetchBugs, categorizeBugs } = useDashboard()
+  const {
+    bugs,
+    loading,
+    progress,
+    categorizeError,
+    sessionInfo,
+    fetchBugs,
+    categorizeBugs,
+    clearCategorizeError
+  } = useDashboard()
 
   const [filterState, setFilterState] = useState<FilterState>(EMPTY_FILTER_STATE)
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE)
@@ -368,6 +378,15 @@ export function DashboardPage(): JSX.Element {
         onViewInAdo={handleViewInAdo}
         adoLinkEnabled={adoLinkEnabled}
       />
+
+      <ConfirmDialog
+        open={categorizeError !== null}
+        title="Errore categorizzazione"
+        description={categorizeError ?? ''}
+        confirmLabel="Chiudi"
+        onConfirm={clearCategorizeError}
+        onCancel={clearCategorizeError}
+      />
     </>
   )
 }
@@ -406,117 +425,119 @@ function DashboardSimilaritySection({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Similarità</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Trova bug potenzialmente duplicati o correlati all&apos;interno della stessa
-            macro-categoria.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          {results && !analyzing && (
-            <p className="text-xs text-gray-400">
-              Ultima analisi: {new Date(results.analyzedAt).toLocaleString('it-IT')}
+    <>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Similarità</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Trova bug potenzialmente duplicati o correlati all&apos;interno della stessa
+              macro-categoria.
             </p>
-          )}
+          </div>
 
-          <button
-            onClick={analyze}
-            disabled={analyzing}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-indigo-700 hover:to-purple-700 shadow-sm transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {analyzing ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Play className="w-4 h-4" />
+          <div className="flex items-center gap-4">
+            {results && !analyzing && (
+              <p className="text-xs text-gray-400">
+                Ultima analisi: {new Date(results.analyzedAt).toLocaleString('it-IT')}
+              </p>
             )}
-            {analyzing ? 'Analisi in corso...' : 'Analizza Similarità'}
-          </button>
-        </div>
-      </div>
 
-      {isStale && !analyzing && (
-        <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <AlertTriangle className="w-4 h-4 shrink-0" />
-          <span>
-            I risultati potrebbero essere obsoleti: la categorizzazione è stata aggiornata dopo
-            l&apos;ultima analisi.
-          </span>
+            <button
+              onClick={analyze}
+              disabled={analyzing}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-indigo-700 hover:to-purple-700 shadow-sm transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {analyzing ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4" />
+              )}
+              {analyzing ? 'Analisi in corso...' : 'Analizza Similarità'}
+            </button>
+          </div>
         </div>
-      )}
 
-      {error && !analyzing && (
-        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-          <XCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      {analyzing && progress && (
-        <div>
-          <div className="flex justify-between text-xs text-gray-500 mb-1">
-            <span>Analisi gruppo: {progress.currentGroup}</span>
+        {isStale && !analyzing && (
+          <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>
-              {progress.completed}/{progress.total}
+              I risultati potrebbero essere obsoleti: la categorizzazione è stata aggiornata dopo
+              l&apos;ultima analisi.
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div
-              className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(progress.completed / progress.total) * 100}%` }}
-            />
-          </div>
-        </div>
-      )}
+        )}
 
-      {results && !analyzing ? (
-        <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
-            <span className="font-medium">
-              {results.categories.reduce((sum, category) => sum + category.groups.length, 0)} gruppi
-              trovati
-            </span>
-            <span>·</span>
-            <span>
-              {
-                new Set(
-                  results.categories.flatMap((category) =>
-                    category.groups.flatMap((group) => group.bugIds)
-                  )
-                ).size
-              }{' '}
-              bug coinvolti
-            </span>
-            <span>·</span>
-            <span>{results.categories.length} categorie analizzate</span>
+        {error && !analyzing && (
+          <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            <XCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
           </div>
+        )}
 
-          <div className="space-y-4">
-            {results.categories.map((category) => (
-              <CategorySection
-                key={category.macroCategory}
-                category={category.macroCategory}
-                groups={category.groups}
-                bugs={bugs}
-                error={category.error}
-                onBugClick={onBugClick}
+        {analyzing && progress && (
+          <div>
+            <div className="flex justify-between text-xs text-gray-500 mb-1">
+              <span>Analisi gruppo: {progress.currentGroup}</span>
+              <span>
+                {progress.completed}/{progress.total}
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div
+                className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${(progress.completed / progress.total) * 100}%` }}
               />
-            ))}
+            </div>
           </div>
-        </div>
-      ) : !analyzing ? (
-        <div className="flex flex-col items-center justify-center h-48 text-center rounded-lg border border-dashed border-gray-200 bg-white">
-          <Sparkles className="w-10 h-10 text-gray-300 mb-3" />
-          <h3 className="text-base font-medium text-gray-600">Nessuna analisi eseguita</h3>
-          <p className="text-sm text-gray-400 mt-1 max-w-xl px-4">
-            Avvia l&apos;analisi per trovare bug simili che possono essere lavorati insieme o che
-            potrebbero descrivere lo stesso problema.
-          </p>
-        </div>
-      ) : null}
-    </div>
+        )}
+
+        {results && !analyzing ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+              <span className="font-medium">
+                {results.categories.reduce((sum, category) => sum + category.groups.length, 0)}{' '}
+                gruppi trovati
+              </span>
+              <span>·</span>
+              <span>
+                {
+                  new Set(
+                    results.categories.flatMap((category) =>
+                      category.groups.flatMap((group) => group.bugIds)
+                    )
+                  ).size
+                }{' '}
+                bug coinvolti
+              </span>
+              <span>·</span>
+              <span>{results.categories.length} categorie analizzate</span>
+            </div>
+
+            <div className="space-y-4">
+              {results.categories.map((category) => (
+                <CategorySection
+                  key={category.macroCategory}
+                  category={category.macroCategory}
+                  groups={category.groups}
+                  bugs={bugs}
+                  error={category.error}
+                  onBugClick={onBugClick}
+                />
+              ))}
+            </div>
+          </div>
+        ) : !analyzing ? (
+          <div className="flex flex-col items-center justify-center h-48 text-center rounded-lg border border-dashed border-gray-200 bg-white">
+            <Sparkles className="w-10 h-10 text-gray-300 mb-3" />
+            <h3 className="text-base font-medium text-gray-600">Nessuna analisi eseguita</h3>
+            <p className="text-sm text-gray-400 mt-1 max-w-xl px-4">
+              Avvia l&apos;analisi per trovare bug simili che possono essere lavorati insieme o che
+              potrebbero descrivere lo stesso problema.
+            </p>
+          </div>
+        ) : null}
+      </div>
+    </>
   )
 }

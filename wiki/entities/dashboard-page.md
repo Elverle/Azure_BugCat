@@ -3,8 +3,13 @@ title: 'Dashboard Page'
 type: entity
 subtype: component
 created: 2026-04-30
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-05-dashboard]]', '[[wiki/sources/ft-06-bug-detail-drawer]]']
+updated: 2026-05-03
+sources:
+	[
+		'[[wiki/sources/ft-05-dashboard]]',
+		'[[wiki/sources/ft-06-bug-detail-drawer]]',
+		'[[wiki/sources/ft-11-openrouter-provider]]'
+	]
 tags: [react, page, dashboard, triage, ui]
 lang: en
 ---
@@ -42,12 +47,14 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 - Embeds the FT-10 similarity workflow directly inside the `Similarità` tab, reusing [[wiki/entities/use-ai-cluster-hook]], [[wiki/entities/ai-cluster-category-section]], and [[wiki/entities/similarity-group-card]].
 - Loads `orgUrl` and `projectName` once from the preload bridge and composes the Azure DevOps work item URL for [[wiki/entities/open-external-ipc]].
 - Shows two empty states: no session data loaded at all, or no bugs matching the current filters.
+- Shows a modal error popup through [[wiki/entities/confirm-dialog]] when `useDashboard()` reports a blocking categorization failure, so provider/model incompatibility is visible to the user immediately.
 
 ## Dependencies
 
 - [[wiki/entities/use-dashboard-hook]]
 - [[wiki/entities/use-ai-cluster-hook]]
 - [[wiki/entities/dashboard-header]]
+- [[wiki/entities/confirm-dialog]]
 - [[wiki/entities/kpi-cards]]
 - [[wiki/entities/filter-bar]]
 - [[wiki/entities/bug-table]]

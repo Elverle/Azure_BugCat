@@ -3,13 +3,14 @@ title: 'LLM Service'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-05-01
+updated: 2026-05-03
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
-    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]',
+    '[[wiki/sources/ft-11-openrouter-provider]]'
   ]
 tags: [llm, main-process, categorization, orchestration, retry]
 lang: en
@@ -38,10 +39,11 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 
 ## Internal Functions
 
-| Function              | Purpose                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------ |
-| `applyCategorization` | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId` |
-| `sleep`               | Promise-based delay utility                                                          |
+| Function                        | Purpose                                                                              |
+| ------------------------------- | ------------------------------------------------------------------------------------ |
+| `applyCategorization`           | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId` |
+| `sleep`                         | Promise-based delay utility                                                          |
+| `isBlockingCategorizationError` | Centralizes which provider failures must abort the whole categorization run          |
 
 ## Behavior
 
@@ -59,9 +61,15 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 ## Error Handling
 
 - `LLM_AUTH_ERROR` and `LLM_TIMEOUT` -> re-thrown immediately and abort the whole categorization run.
+- `LLM_PARSE_ERROR` with `details.reason === 'structured-output-routing-mismatch'` -> also re-thrown immediately, because continuing with fallback chunk labels would hide a provider/model compatibility problem from the user.
 - `LLM_RATE_LIMIT` -> retried with exponential backoff.
 - Other chunk errors -> graceful degradation with fallback categories.
 - Abort-like provider errors are normalized to `LLM_TIMEOUT` diagnostics.
+
+## FT-11 Notes
+
+- OpenRouter introduced a new category of blocking parse failure: the request itself is valid, but provider/model routing can downgrade `json_schema` structured output and make the upstream response unusable.
+- The service now treats that parse error as a run-level stop condition instead of a per-chunk degradation path.
 
 ## FT-09 Notes
 
