@@ -3,8 +3,8 @@ title: 'Similarity Service'
 type: entity
 subtype: service
 created: 2026-05-01
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-10-ai-cluster-similarity]]']
+updated: 2026-05-03
+sources: ['[[wiki/sources/ft-10-ai-cluster-similarity]]', '[[wiki/analyses/llm-provider-cleanup]]']
 tags: [llm, similarity, main-process, orchestration]
 lang: en
 ---
@@ -30,21 +30,24 @@ Main-process orchestrator for the AI Cluster feature. It groups categorized bugs
 3. Groups remaining bugs by `macroCategory` and keeps only groups with at least 2 bugs.
 4. For each eligible category, builds the similar-bugs system prompt and category-scoped user payload.
 5. Reuses `chatWithRetry(..., { responseSchema: 'similar-bugs' })` so similarity runs inherit the same rate-limit retry semantics as categorization.
-6. Parses the response into `SimilarityGroup[]` and stores category-local errors instead of aborting the whole run.
+6. Parses the response into `SimilarityGroup[]` through the shared [[wiki/entities/llm-json-utilities]] parser and stores category-local errors only for non-blocking failures.
 7. Emits `SimilarityProgress { total, completed, currentGroup }` after each category finishes.
 8. Returns `{ categories, analyzedAt }` for session persistence.
 
 ## Response Validation
 
-The service keeps its own narrow parser because the output shape differs from categorization:
+The service keeps category-specific shape validation, but it no longer owns a separate raw JSON parser. It now reuses [[wiki/entities/llm-json-utilities]] to:
 
-- strips markdown fences when providers still wrap JSON in code blocks,
+- strip markdown fences when providers still wrap JSON in code blocks,
+- recover the first valid JSON payload when the model adds prose around it,
 - treats missing `groups` arrays as an empty result instead of a hard failure,
 - accepts only groups with `0 <= similarityScore <= 1`, string `reason`, and at least two numeric `bugIds`.
 
 ## Failure Model
 
-- Category-level parse/provider errors become `CategorySimilarityResult.error`.
+- [[wiki/entities/llm-error-policy]] is applied before category-local fallback.
+- Blocking auth, timeout, and structured-output routing mismatch errors are re-thrown and abort the whole similarity run.
+- Other category-level parse/provider errors become `CategorySimilarityResult.error`.
 - Successful categories in the same run are preserved.
 - Categories with fewer than 2 bugs are skipped entirely and do not produce progress entries.
 - Processing is sequential by design to reduce rate-limit pressure across providers.
@@ -54,6 +57,8 @@ The service keeps its own narrow parser because the output shape differs from ca
 - [[wiki/entities/llm-provider-factory]] - provider creation
 - [[wiki/entities/llm-prompts]] - similar-bug prompt builders
 - [[wiki/entities/llm-service]] - shared `chatWithRetry()` helper
+- [[wiki/entities/llm-error-policy]] - shared blocking error classification
+- [[wiki/entities/llm-json-utilities]] - tolerant JSON parsing shared with categorization
 - [[wiki/entities/llm-schemas]] - schema contract consumed by provider adapters
 
 ## See also

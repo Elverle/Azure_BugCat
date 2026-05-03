@@ -11,6 +11,7 @@ import { createLLMProvider } from './provider-factory'
 import { buildSystemPrompt, buildUserMessage } from './prompts'
 import { splitIntoChunks } from './chunking'
 import { validateLLMResponse } from './response-validator'
+import { isBlockingLLMError } from './error-policy'
 
 const RETRY_DELAYS = [2000, 4000, 8000]
 const MAX_TITLE_LOG_LENGTH = 120
@@ -94,18 +95,6 @@ function buildChunkDiagnostics(
   }
 }
 
-function isBlockingCategorizationError(error: AppError): boolean {
-  return (
-    error.code === 'LLM_AUTH_ERROR' ||
-    error.code === 'LLM_TIMEOUT' ||
-    (error.code === 'LLM_PARSE_ERROR' &&
-      error.details !== null &&
-      typeof error.details === 'object' &&
-      'reason' in error.details &&
-      (error.details as { reason?: unknown }).reason === 'structured-output-routing-mismatch')
-  )
-}
-
 export async function chatWithRetry(
   provider: LLMProvider,
   systemPrompt: string,
@@ -184,7 +173,7 @@ export async function categorizeBugs(
           } satisfies AppError)
         : error
 
-      if (isAppError(normalizedError) && isBlockingCategorizationError(normalizedError)) {
+      if (isAppError(normalizedError) && isBlockingLLMError(normalizedError)) {
         console.error('[LLM] Chunk failed with blocking error', {
           ...chunkDiagnostics,
           error: buildErrorDiagnostics(normalizedError)

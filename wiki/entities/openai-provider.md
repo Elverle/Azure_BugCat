@@ -3,8 +3,13 @@ title: 'OpenAI Provider'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-09-structured-output]]']
+updated: 2026-05-03
+sources:
+  [
+    '[[wiki/sources/ft-04-llm-provider]]',
+    '[[wiki/sources/ft-09-structured-output]]',
+    '[[wiki/analyses/llm-provider-cleanup]]'
+  ]
 tags: [llm, openai, provider]
 lang: en
 ---
@@ -22,7 +27,7 @@ LLM provider implementation for OpenAI. Uses the official `openai` SDK with `gpt
 - **API Key**: Required at construction time (throws `LLM_AUTH_ERROR` if missing)
 - **Model**: `config.model ?? 'gpt-4o'`
 - **Temperature**: `0.1`
-- **Timeout**: 60s via `AbortController`
+- **Timeout**: `config.timeout ?? 60000`, enforced through the shared request-timeout helper
 
 ## Structured Output
 
@@ -41,6 +46,15 @@ response_format: {
 
 The schema name is derived from the logical output type so the service can stay vendor-neutral.
 
+## Implementation Notes
+
+- Reuses [[wiki/entities/provider-shared-utilities]] for API-key validation, timeout creation, shared AppError helpers, and the common `testConnection()` probe strings.
+- Keeps provider-specific behavior limited to OpenAI request shape and SDK error mapping.
+
+## Validation
+
+`tests/main/openai-provider.spec.ts` covers constructor validation, request shape, structured output wiring, status-code mapping, empty responses, and timeout abortion.
+
 ## Error Mapping
 
 | SDK condition  | AppError code     |
@@ -55,5 +69,6 @@ The schema name is derived from the logical output type so the service can stay 
 
 - [[wiki/entities/llm-provider-factory]]
 - [[wiki/entities/llm-schemas]]
+- [[wiki/entities/provider-shared-utilities]]
 - [[wiki/concepts/llm-provider-abstraction]]
 - [[wiki/concepts/provider-native-structured-output]]

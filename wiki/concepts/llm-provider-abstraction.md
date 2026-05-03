@@ -2,13 +2,14 @@
 title: 'LLM Provider Abstraction'
 type: concept
 created: 2026-04-30
-updated: 2026-05-02
+updated: 2026-05-03
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
-    '[[wiki/sources/ft-11-openrouter-provider]]'
+    '[[wiki/sources/ft-11-openrouter-provider]]',
+    '[[wiki/analyses/llm-provider-cleanup]]'
   ]
 tags: [llm, design-pattern, factory-pattern, strategy-pattern]
 lang: en
@@ -35,7 +36,7 @@ interface LLMProvider {
 All providers:
 
 - accept system + user message and return a raw string,
-- implement an approximately 60 s timeout using either `AbortController` or a provider-native SDK request option,
+- honor `LLMProviderConfig.timeout` using either `AbortController` or a provider-native SDK request option,
 - map provider-specific failures to the shared `AppError` taxonomy,
 - validate required configuration at construction,
 - optionally interpret `ChatOptions.responseSchema` using provider-native structured-output features.
@@ -52,16 +53,16 @@ LLMProviderType (settings) -> createLLMProvider() -> LLMProvider instance
                                       +-> OpenRouterProvider
 ```
 
-FT-08 proved the abstraction works across SDK and raw-HTTP adapters. FT-09 extends that same abstraction with schema-aware output intent without leaking vendor syntax into `llm-service.ts`. FT-11 adds OpenRouter as another SDK-backed adapter with a nested request envelope and native timeout handling, without changing the orchestration contract.
+FT-08 proved the abstraction works across SDK and raw-HTTP adapters. FT-09 extends that same abstraction with schema-aware output intent without leaking vendor syntax into `llm-service.ts`. FT-11 adds OpenRouter as another SDK-backed adapter with a nested request envelope and native timeout handling, without changing the orchestration contract. The later cleanup pass extracted shared provider utilities, shared blocking-error policy, and shared tolerant JSON parsing without replacing the current strategy+factory structure.
 
 ## Trade-offs
 
-| Advantage                                          | Disadvantage                                                                  |
-| -------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Easy to add new providers                          | `throwAppError` / `isAppError` remain duplicated across providers             |
-| Runtime switching from settings                    | No shared base class for common timeout or error helpers                      |
-| Clean separation of transport details              | Provider-specific schema translation still lives in concrete classes          |
-| Structured output stays behind a neutral interface | The common return type is still `string`, so validation remains a second pass |
+| Advantage                                  | Disadvantage                                                                  |
+| ------------------------------------------ | ----------------------------------------------------------------------------- |
+| Easy to add new providers                  | Provider-specific schema translation still lives in concrete classes          |
+| Runtime switching from settings            | The common return type is still `string`, so validation remains a second pass |
+| Shared runtime helpers without inheritance | Some adapters still need provider-specific error-decoding strategies          |
+| Clean separation of transport details      | No registry or DI container for more dynamic provider extension               |
 
 ## Extensibility
 
@@ -76,6 +77,9 @@ To add a new provider:
 
 - [[wiki/entities/llm-provider-interface]]
 - [[wiki/entities/llm-provider-factory]]
+- [[wiki/entities/provider-shared-utilities]]
+- [[wiki/entities/llm-error-policy]]
+- [[wiki/entities/llm-json-utilities]]
 - [[wiki/entities/openai-provider]]
 - [[wiki/entities/anthropic-provider]]
 - [[wiki/entities/generic-provider]]

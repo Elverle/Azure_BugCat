@@ -3,8 +3,13 @@ title: 'Generic Provider'
 type: entity
 subtype: service
 created: 2026-05-01
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-08-generic-provider]]', '[[wiki/sources/ft-09-structured-output]]']
+updated: 2026-05-03
+sources:
+  [
+    '[[wiki/sources/ft-08-generic-provider]]',
+    '[[wiki/sources/ft-09-structured-output]]',
+    '[[wiki/analyses/llm-provider-cleanup]]'
+  ]
 tags: [llm, provider, openai-compatible, fetch]
 lang: en
 ---
@@ -34,7 +39,7 @@ LLM provider implementation for any OpenAI-compatible HTTP endpoint. Unlike the 
 
 ## Structured Output
 
-Uses the same `response_format.json_schema` contract as [[wiki/entities/openai-provider]], but emits it over plain HTTP instead of an SDK wrapper.
+Uses the same `response_format.json_schema` contract as [[wiki/entities/openai-provider]], but emits it over plain HTTP instead of an SDK wrapper. Schema-name metadata and test-connection prompt strings are now aligned with the SDK-backed providers through [[wiki/entities/provider-shared-utilities]].
 
 ## Error Mapping
 
@@ -53,6 +58,7 @@ Uses the same `response_format.json_schema` contract as [[wiki/entities/openai-p
 
 - [[wiki/entities/llm-provider-interface]]
 - [[wiki/entities/llm-schemas]]
+- [[wiki/entities/provider-shared-utilities]]
 - [[wiki/entities/shared-types]] - `AppError`
 - native `fetch`, `URL`, `AbortController`
 

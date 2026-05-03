@@ -1,15 +1,17 @@
 import { OpenRouter } from '@openrouter/sdk'
 import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
 import { getSchema } from '../schemas'
-import { AppError } from '../../../shared/types'
+import {
+  assertApiKey,
+  getProviderTimeout,
+  getStructuredOutputMetadata,
+  isAppError,
+  TEST_CONNECTION_SYSTEM_PROMPT,
+  TEST_CONNECTION_USER_MESSAGE,
+  throwAppError
+} from './provider-shared'
 
-const REQUEST_TIMEOUT = 60000
 const RESPONSE_BODY_PREVIEW_LIMIT = 4000
-
-function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
 
 function toPreview(value: string): string {
   return value.length > RESPONSE_BODY_PREVIEW_LIMIT
@@ -213,13 +215,11 @@ export class OpenRouterProvider implements LLMProvider {
   private client: OpenRouter
 
   constructor(private config: LLMProviderConfig) {
-    if (!config.apiKey?.trim()) {
-      throwAppError('LLM_AUTH_ERROR', 'API Key mancante per OpenRouter')
-    }
-    this.client = new OpenRouter({ apiKey: config.apiKey })
+    this.client = new OpenRouter({ apiKey: assertApiKey(config.apiKey, 'OpenRouter') })
   }
 
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
+    const responseSchemaMetadata = getStructuredOutputMetadata(options?.responseSchema)
     const chatRequest = {
       model: this.config.model ?? 'openai/gpt-4o',
       messages: [
@@ -228,19 +228,16 @@ export class OpenRouterProvider implements LLMProvider {
       ],
       temperature: 0.1,
       stream: false,
-      ...(options?.responseSchema && {
+      ...(responseSchemaMetadata && {
         provider: {
           requireParameters: true
         },
         responseFormat: {
           type: 'json_schema' as const,
           jsonSchema: {
-            name:
-              options.responseSchema === 'categorization'
-                ? 'bug_categorization'
-                : 'similar_bugs_detection',
+            name: responseSchemaMetadata.schemaName,
             strict: true,
-            schema: getSchema(options.responseSchema) as Record<string, unknown>
+            schema: getSchema(options.responseSchema!) as Record<string, unknown>
           }
         }
       })
@@ -254,7 +251,7 @@ export class OpenRouterProvider implements LLMProvider {
         {
           chatRequest
         },
-        { timeoutMs: REQUEST_TIMEOUT }
+        { timeoutMs: getProviderTimeout(this.config) }
       )
 
       const content = extractOpenRouterContent(response)
@@ -333,16 +330,6 @@ export class OpenRouterProvider implements LLMProvider {
   }
 
   async testConnection(): Promise<void> {
-    await this.chat('You are a test assistant. Respond with: {"status":"ok"}', 'Test connection')
+    await this.chat(TEST_CONNECTION_SYSTEM_PROMPT, TEST_CONNECTION_USER_MESSAGE)
   }
-}
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
 }

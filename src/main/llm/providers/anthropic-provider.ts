@@ -1,38 +1,30 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
 import { getSchema } from '../schemas'
-import { AppError } from '../../../shared/types'
-
-const REQUEST_TIMEOUT = 60000
-
-function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
+import {
+  assertApiKey,
+  createRequestTimeout,
+  getProviderTimeout,
+  getStructuredOutputMetadata,
+  isAppError,
+  TEST_CONNECTION_SYSTEM_PROMPT,
+  TEST_CONNECTION_USER_MESSAGE,
+  throwAppError
+} from './provider-shared'
 
 export class AnthropicProvider implements LLMProvider {
   readonly name = 'anthropic'
   private client: Anthropic
 
   constructor(private config: LLMProviderConfig) {
-    if (!config.apiKey?.trim()) {
-      throwAppError('LLM_AUTH_ERROR', 'API Key mancante per Anthropic')
-    }
-    this.client = new Anthropic({ apiKey: config.apiKey })
+    this.client = new Anthropic({ apiKey: assertApiKey(config.apiKey, 'Anthropic') })
   }
 
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+    const responseSchemaMetadata = getStructuredOutputMetadata(options?.responseSchema)
+    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config))
 
     try {
-      const toolName =
-        options?.responseSchema === 'categorization' ? 'salva_risultati_triage' : 'salva_bug_simili'
-      const toolDescription =
-        options?.responseSchema === 'categorization'
-          ? 'Salva i bug categorizzati'
-          : 'Salva i gruppi di bug simili'
-
       const response = await this.client.messages.create(
         {
           model: this.config.model ?? 'claude-sonnet-4.6',
@@ -40,20 +32,23 @@ export class AnthropicProvider implements LLMProvider {
           system: systemPrompt,
           messages: [{ role: 'user', content: userMessage }],
           temperature: 0.1,
-          ...(options?.responseSchema && {
+          ...(responseSchemaMetadata && {
             tools: [
               {
-                name: toolName,
-                description: toolDescription,
+                name: responseSchemaMetadata.anthropicToolName,
+                description: responseSchemaMetadata.anthropicToolDescription,
                 input_schema: getSchema(
-                  options.responseSchema
+                  options.responseSchema!
                 ) as unknown as Anthropic.Tool.InputSchema
               }
             ],
-            tool_choice: { type: 'tool' as const, name: toolName }
+            tool_choice: {
+              type: 'tool' as const,
+              name: responseSchemaMetadata.anthropicToolName
+            }
           })
         },
-        { signal: controller.signal }
+        { signal: requestTimeout.signal }
       )
 
       const toolUseBlock = response.content.find((block) => block.type === 'tool_use')
@@ -84,21 +79,11 @@ export class AnthropicProvider implements LLMProvider {
         `Errore Anthropic: ${error instanceof Error ? error.message : 'sconosciuto'}`
       )
     } finally {
-      clearTimeout(timeout)
+      requestTimeout.dispose()
     }
   }
 
   async testConnection(): Promise<void> {
-    await this.chat('You are a test assistant. Respond with: {"status":"ok"}', 'Test connection')
+    await this.chat(TEST_CONNECTION_SYSTEM_PROMPT, TEST_CONNECTION_USER_MESSAGE)
   }
-}
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
 }

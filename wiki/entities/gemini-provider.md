@@ -3,8 +3,13 @@ title: 'Gemini Provider'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-09-structured-output]]']
+updated: 2026-05-03
+sources:
+  [
+    '[[wiki/sources/ft-04-llm-provider]]',
+    '[[wiki/sources/ft-09-structured-output]]',
+    '[[wiki/analyses/llm-provider-cleanup]]'
+  ]
 tags: [llm, gemini, google, provider]
 lang: en
 ---
@@ -22,13 +27,22 @@ LLM provider implementation for Google Gemini. Uses `@google/genai` with `gemini
 - **API Key**: Required (throws `LLM_AUTH_ERROR` if missing)
 - **Model**: `config.model ?? 'gemini-2.5-flash'`
 - **Temperature**: `0.1`
-- **Timeout**: 60s via `AbortController` passed as `config.abortSignal`
+- **Timeout**: `config.timeout ?? 60000` via shared request-timeout handling passed as `config.abortSignal`
 
 ## Structured Output
 
 - Uses `models.generateContent()` with `systemInstruction` in config.
 - When `options.responseSchema` is present, sets `responseMimeType: 'application/json'` and `responseSchema: getSchema(...)`.
 - Extracts the final body through `response.text`.
+
+## Implementation Notes
+
+- Reuses [[wiki/entities/provider-shared-utilities]] for API-key validation, timeout handling, shared AppError helpers, and `testConnection()` prompt constants.
+- Keeps provider-specific error normalization as string matching because the Google SDK path used here does not expose a richer shared error class in this adapter.
+
+## Validation
+
+`tests/main/gemini-provider.spec.ts` covers constructor validation, request shape, structured output config, string-based error mapping, empty responses, and timeout abortion.
 
 ## Error Mapping
 
@@ -42,5 +56,6 @@ Uses string matching on error messages:
 
 - [[wiki/entities/llm-provider-factory]]
 - [[wiki/entities/llm-schemas]]
+- [[wiki/entities/provider-shared-utilities]]
 - [[wiki/concepts/llm-provider-abstraction]]
 - [[wiki/concepts/provider-native-structured-output]]

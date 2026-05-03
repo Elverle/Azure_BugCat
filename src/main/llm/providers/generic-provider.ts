@@ -1,21 +1,14 @@
 import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
 import { getSchema } from '../schemas'
-import { AppError } from '../../../shared/types'
-
-function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
-}
+import {
+  assertApiKey,
+  getProviderTimeout,
+  getStructuredOutputMetadata,
+  isAppError,
+  TEST_CONNECTION_SYSTEM_PROMPT,
+  TEST_CONNECTION_USER_MESSAGE,
+  throwAppError
+} from './provider-shared'
 
 function isLikelyHtmlResponse(response: Response, bodyText: string): boolean {
   const contentType = response.headers.get('content-type')?.toLowerCase() ?? ''
@@ -31,9 +24,7 @@ export class GenericProvider implements LLMProvider {
   readonly name = 'generic'
 
   constructor(private config: LLMProviderConfig) {
-    if (!config.apiKey?.trim()) {
-      throwAppError('LLM_AUTH_ERROR', 'API Key mancante per il provider generico')
-    }
+    assertApiKey(config.apiKey, 'il provider generico')
     if (!config.baseUrl?.trim()) {
       throwAppError('UNKNOWN_ERROR', 'Base URL mancante per il provider generico')
     }
@@ -56,7 +47,8 @@ export class GenericProvider implements LLMProvider {
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
     const baseUrl = this.config.baseUrl!.replace(/\/+$/, '')
     const url = `${baseUrl}/chat/completions`
-    const timeout = this.config.timeout ?? 60000
+    const timeout = getProviderTimeout(this.config)
+    const responseSchemaMetadata = getStructuredOutputMetadata(options?.responseSchema)
 
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), timeout)
@@ -75,16 +67,13 @@ export class GenericProvider implements LLMProvider {
             { role: 'user', content: userMessage }
           ],
           temperature: 0.1,
-          ...(options?.responseSchema && {
+          ...(responseSchemaMetadata && {
             response_format: {
               type: 'json_schema',
               json_schema: {
-                name:
-                  options.responseSchema === 'categorization'
-                    ? 'bug_categorization'
-                    : 'similar_bugs_detection',
+                name: responseSchemaMetadata.schemaName,
                 strict: true,
-                schema: getSchema(options.responseSchema)
+                schema: getSchema(options.responseSchema!)
               }
             }
           })
@@ -143,6 +132,6 @@ export class GenericProvider implements LLMProvider {
   }
 
   async testConnection(): Promise<void> {
-    await this.chat('You are a test assistant. Respond with: {"status":"ok"}', 'Test connection')
+    await this.chat(TEST_CONNECTION_SYSTEM_PROMPT, TEST_CONNECTION_USER_MESSAGE)
   }
 }
