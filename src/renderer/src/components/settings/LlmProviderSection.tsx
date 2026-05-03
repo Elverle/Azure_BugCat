@@ -20,6 +20,7 @@ const API_KEY_LABELS: Record<string, string> = {
   openai: 'OpenAI API Key',
   anthropic: 'Anthropic API Key',
   gemini: 'Gemini API Key',
+  openrouter: 'OpenRouter API Key',
   generic: 'API Key'
 }
 
@@ -27,6 +28,7 @@ const MODEL_PLACEHOLDERS: Record<string, string> = {
   openai: 'gpt-4.1-mini',
   anthropic: 'claude-sonnet-4.6',
   gemini: 'gemini-2.5-flash',
+  openrouter: 'openai/gpt-4.1-mini',
   generic: 'gpt-4.1-mini'
 }
 
@@ -61,6 +63,7 @@ export function LlmProviderSection({
             <option value="anthropic">Anthropic Claude</option>
             <option value="generic">Generico</option>
             <option value="gemini">Gemini</option>
+            <option value="openrouter">OpenRouter</option>
           </Select>
           {touched.llmProvider && errors.llmProvider && (
             <p className="text-xs text-red-500 mt-1">{errors.llmProvider}</p>

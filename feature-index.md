@@ -12,3 +12,4 @@
 | 8   | FT-08      | GenericProvider (OpenAI-compatible, replaces Copilot)  | Complete |
 | 9   | FT-09      | Structured Output (response_format / json_schema)      | Complete |
 | 10  | FT-10      | AI Cluster: Similar Bug Detection                      | Complete |
+| 11  | FT-11      | OpenRouter Provider via SDK                            | Complete |

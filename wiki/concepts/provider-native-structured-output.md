@@ -2,8 +2,8 @@
 title: 'Provider-Native Structured Output'
 type: concept
 created: 2026-05-01
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-09-structured-output]]']
+updated: 2026-05-02
+sources: ['[[wiki/sources/ft-09-structured-output]]', '[[wiki/sources/ft-11-openrouter-provider]]']
 tags: [llm, structured-output, json-schema, abstraction]
 lang: en
 ---
@@ -16,12 +16,13 @@ A portability pattern where the application defines one logical JSON Schema cont
 
 `llm-service.ts` asks for a schema by semantic intent through `ChatOptions.responseSchema`. The provider layer keeps the orchestration code vendor-neutral while still exploiting each backend's strongest output-enforcement primitive.
 
-| Provider                             | Native mechanism                                                                  |
-| ------------------------------------ | --------------------------------------------------------------------------------- |
-| [[wiki/entities/openai-provider]]    | `response_format: { type: 'json_schema', json_schema: { strict: true, schema } }` |
-| [[wiki/entities/generic-provider]]   | Same OpenAI-compatible `response_format` payload over raw HTTP                    |
-| [[wiki/entities/anthropic-provider]] | Tool-use with `tools[].input_schema` and forced `tool_choice`                     |
-| [[wiki/entities/gemini-provider]]    | `responseMimeType: 'application/json'` plus `responseSchema`                      |
+| Provider                              | Native mechanism                                                                  |
+| ------------------------------------- | --------------------------------------------------------------------------------- |
+| [[wiki/entities/openai-provider]]     | `response_format: { type: 'json_schema', json_schema: { strict: true, schema } }` |
+| [[wiki/entities/generic-provider]]    | Same OpenAI-compatible `response_format` payload over raw HTTP                    |
+| [[wiki/entities/anthropic-provider]]  | Tool-use with `tools[].input_schema` and forced `tool_choice`                     |
+| [[wiki/entities/gemini-provider]]     | `responseMimeType: 'application/json'` plus `responseSchema`                      |
+| [[wiki/entities/openrouter-provider]] | `responseFormat: { type: 'json_schema', jsonSchema: { strict: true, schema } }`   |
 
 ## Why It Matters
 
@@ -43,4 +44,5 @@ A portability pattern where the application defines one logical JSON Schema cont
 - [[wiki/entities/llm-schemas]]
 - [[wiki/entities/llm-provider-interface]]
 - [[wiki/concepts/llm-provider-abstraction]]
+- [[wiki/entities/openrouter-provider]]
 - [[wiki/topics/llm-categorization-pipeline]]

@@ -2,7 +2,7 @@
 // Shared Types — Bug Categorizer
 // ============================================
 
-export type LLMProviderType = 'openai' | 'anthropic' | 'generic' | 'gemini'
+export type LLMProviderType = 'openai' | 'anthropic' | 'generic' | 'gemini' | 'openrouter'
 
 export type ErrorCode =
   | 'ADO_AUTH_ERROR'

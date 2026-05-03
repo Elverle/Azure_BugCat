@@ -107,4 +107,26 @@ describe('DashboardPage', () => {
     expect(screen.getByText('#101')).toBeInTheDocument()
     expect(screen.getByText('#102')).toBeInTheDocument()
   })
+
+  it('shows a popup when categorization fails with a blocking error', async () => {
+    mockElectronAPI.categorizeBugs.mockRejectedValue(
+      new Error(
+        'OpenRouter ha instradato la richiesta verso un provider o modello che non supporta correttamente structured outputs con json_schema. Seleziona un modello compatibile oppure cambia routing/provider.'
+      )
+    )
+
+    render(<DashboardPage />)
+
+    const categorizeButton = await screen.findByRole('button', { name: /categorize/i })
+    fireEvent.click(categorizeButton)
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Errore categorizzazione' })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'OpenRouter ha instradato la richiesta verso un provider o modello che non supporta correttamente structured outputs con json_schema. Seleziona un modello compatibile oppure cambia routing/provider.'
+      )
+    ).toBeInTheDocument()
+  })
 })

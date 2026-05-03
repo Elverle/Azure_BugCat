@@ -3,15 +3,20 @@ title: 'LLM Provider Section'
 type: entity
 subtype: component
 created: 2026-04-29
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-08-generic-provider]]']
+updated: 2026-05-02
+sources:
+  [
+    '[[wiki/sources/ft-02-settings]]',
+    '[[wiki/sources/ft-08-generic-provider]]',
+    '[[wiki/sources/ft-11-openrouter-provider]]'
+  ]
 tags: [react, component, settings, llm]
 lang: en
 ---
 
 ## Description
 
-Settings card for LLM provider configuration. Includes provider select dropdown, API key field with dynamic label, generic-provider-only Base URL and Model inputs, chunk size input, and Test Connection button.
+Settings card for LLM provider configuration. Includes provider select dropdown, API key field with dynamic label, provider-aware model placeholder, generic-provider-only Base URL input, chunk size input, and Test Connection button.
 
 ## Location
 
@@ -36,22 +41,27 @@ interface LlmProviderSectionProps {
 The API key field is always shown:
 
 - Shows API key input with show/hide toggle
-- Label dynamically changes: "OpenAI API Key", "Anthropic API Key", "Gemini API Key", or generic "API Key"
+- Label dynamically changes: "OpenAI API Key", "Anthropic API Key", "Gemini API Key", "OpenRouter API Key", or generic "API Key"
+
+The model field is always shown:
+
+- Placeholder changes per provider (`gpt-4.1-mini`, `claude-sonnet-4.6`, `gemini-2.5-flash`, `openai/gpt-4.1-mini`)
+- OpenRouter uses the shared API-key + model surface, so no extra provider-specific fields are required
 
 When `llmProvider === 'generic'`:
 
 - Shows `Base URL` input with an OpenAI-compatible endpoint placeholder
-- Shows optional `Model` input so the user can override the default `gpt-4o`
 - Renders inline `errors.baseUrl` feedback when validation fails
 
 ## Provider Options
 
-| Value       | Label            |
-| ----------- | ---------------- |
-| `openai`    | OpenAI           |
-| `anthropic` | Anthropic Claude |
-| `generic`   | Generico         |
-| `gemini`    | Gemini           |
+| Value        | Label            |
+| ------------ | ---------------- |
+| `openai`     | OpenAI           |
+| `anthropic`  | Anthropic Claude |
+| `generic`    | Generico         |
+| `gemini`     | Gemini           |
+| `openrouter` | OpenRouter       |
 
 ## Dependencies
 

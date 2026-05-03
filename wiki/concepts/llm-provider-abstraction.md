@@ -2,12 +2,13 @@
 title: 'LLM Provider Abstraction'
 type: concept
 created: 2026-04-30
-updated: 2026-05-01
+updated: 2026-05-02
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-08-generic-provider]]',
-    '[[wiki/sources/ft-09-structured-output]]'
+    '[[wiki/sources/ft-09-structured-output]]',
+    '[[wiki/sources/ft-11-openrouter-provider]]'
   ]
 tags: [llm, design-pattern, factory-pattern, strategy-pattern]
 lang: en
@@ -15,7 +16,7 @@ lang: en
 
 ## Definition
 
-A polymorphic provider abstraction allowing the application to switch between multiple LLM backends (OpenAI, Anthropic, Generic OpenAI-compatible, Gemini) at runtime without changing orchestration code.
+A polymorphic provider abstraction allowing the application to switch between multiple LLM backends (OpenAI, Anthropic, Generic OpenAI-compatible, Gemini, OpenRouter) at runtime without changing orchestration code.
 
 ## Pattern
 
@@ -34,7 +35,7 @@ interface LLMProvider {
 All providers:
 
 - accept system + user message and return a raw string,
-- implement a 60 s timeout via `AbortController`,
+- implement an approximately 60 s timeout using either `AbortController` or a provider-native SDK request option,
 - map provider-specific failures to the shared `AppError` taxonomy,
 - validate required configuration at construction,
 - optionally interpret `ChatOptions.responseSchema` using provider-native structured-output features.
@@ -48,9 +49,10 @@ LLMProviderType (settings) -> createLLMProvider() -> LLMProvider instance
                                       +-> AnthropicProvider
                                       +-> GenericProvider
                                       +-> GeminiProvider
+                                      +-> OpenRouterProvider
 ```
 
-FT-08 proved the abstraction works across SDK and raw-HTTP adapters. FT-09 extends that same abstraction with schema-aware output intent without leaking vendor syntax into `llm-service.ts`.
+FT-08 proved the abstraction works across SDK and raw-HTTP adapters. FT-09 extends that same abstraction with schema-aware output intent without leaking vendor syntax into `llm-service.ts`. FT-11 adds OpenRouter as another SDK-backed adapter with a nested request envelope and native timeout handling, without changing the orchestration contract.
 
 ## Trade-offs
 
@@ -78,5 +80,6 @@ To add a new provider:
 - [[wiki/entities/anthropic-provider]]
 - [[wiki/entities/generic-provider]]
 - [[wiki/entities/gemini-provider]]
+- [[wiki/entities/openrouter-provider]]
 - [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

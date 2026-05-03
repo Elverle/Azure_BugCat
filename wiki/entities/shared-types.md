@@ -3,13 +3,14 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-01
+updated: 2026-05-02
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
     '[[wiki/sources/ft-02-settings]]',
     '[[wiki/sources/ft-08-generic-provider]]',
-    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]',
+    '[[wiki/sources/ft-11-openrouter-provider]]'
   ]
 tags: [typescript, types, shared, domain-model]
 lang: en
@@ -27,10 +28,10 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Core types
 
-| Type              | Purpose                                                             |
-| ----------------- | ------------------------------------------------------------------- |
-| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini'`           |
-| `ErrorCode`       | Union of known error codes (ADO*\*, LLM*\_, STORE\_\_, UNKNOWN\_\*) |
+| Type              | Purpose                                                                   |
+| ----------------- | ------------------------------------------------------------------------- |
+| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini' \| 'openrouter'` |
+| `ErrorCode`       | Union of known error codes (ADO*\*, LLM*\_, STORE\_\_, UNKNOWN\_\*)       |
 
 ### Bug types
 
@@ -41,10 +42,10 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Configuration
 
-| Type          | Purpose                                                                                                      |
-| ------------- | ------------------------------------------------------------------------------------------------------------ |
-| `AppSettings` | Full settings object, including optional `baseUrl` and `llmModel` for the generic OpenAI-compatible provider |
-| `SessionData` | Cached bug list with fetch/categorize timestamps plus optional `similarityResults` snapshot                  |
+| Type          | Purpose                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------- |
+| `AppSettings` | Full settings object, including shared `llmModel`, optional generic `baseUrl`, and the selected `llmProvider` |
+| `SessionData` | Cached bug list with fetch/categorize timestamps plus optional `similarityResults` snapshot                   |
 
 ### Error & Progress
 
@@ -86,6 +87,11 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 
 - `SessionData` now acts as the shared persistence surface for both categorization and AI Cluster similarity analysis.
 - Similarity-specific types live alongside categorization types because they cross the same main/preload/renderer boundary.
+
+## FT-11 Notes
+
+- `LLMProviderType` now includes `openrouter`, extending the cross-process provider selector without changing the IPC payload shape.
+- `AppSettings.llmModel` remains the shared model override field for both SDK-backed providers and the generic OpenAI-compatible adapter.
 
 ## See also
 
