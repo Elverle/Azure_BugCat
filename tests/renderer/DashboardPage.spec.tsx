@@ -155,7 +155,10 @@ describe('DashboardPage', () => {
       () =>
         new Promise((resolve) => {
           resolveCancel = () => {
-            rejectCategorize?.({ code: 'OPERATION_CANCELLED', message: 'Categorizzazione annullata' })
+            rejectCategorize?.({
+              code: 'OPERATION_CANCELLED',
+              message: 'Categorizzazione annullata'
+            })
             resolve({ cancelled: true })
           }
         })
