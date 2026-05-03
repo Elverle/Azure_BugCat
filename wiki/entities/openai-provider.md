@@ -8,7 +8,8 @@ sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
-    '[[wiki/analyses/llm-provider-cleanup]]'
+		'[[wiki/analyses/llm-provider-cleanup]]',
+		'[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [llm, openai, provider]
 lang: en
@@ -27,7 +28,7 @@ LLM provider implementation for OpenAI. Uses the official `openai` SDK with `gpt
 - **API Key**: Required at construction time (throws `LLM_AUTH_ERROR` if missing)
 - **Model**: `config.model ?? 'gpt-4o'`
 - **Temperature**: `0.1`
-- **Timeout**: `config.timeout ?? 60000`, enforced through the shared request-timeout helper
+- **Timeout**: `config.timeout ?? 60000`, enforced through the shared request-timeout helper, which can also merge an upstream cancellation signal
 
 ## Structured Output
 
@@ -53,17 +54,18 @@ The schema name is derived from the logical output type so the service can stay 
 
 ## Validation
 
-`tests/main/openai-provider.spec.ts` covers constructor validation, request shape, structured output wiring, status-code mapping, empty responses, and timeout abortion.
+`tests/main/openai-provider.spec.ts` covers constructor validation, request shape, structured output wiring, status-code mapping, empty responses, and timeout abortion. The categorization-level tests additionally verify that abort propagation stops the workflow before the next chunk.
 
 ## Error Mapping
 
-| SDK condition  | AppError code     |
-| -------------- | ----------------- |
-| HTTP 429       | `LLM_RATE_LIMIT`  |
-| HTTP 401/403   | `LLM_AUTH_ERROR`  |
-| AbortError     | `LLM_TIMEOUT`     |
-| Empty response | `LLM_PARSE_ERROR` |
-| Other          | `UNKNOWN_ERROR`   |
+| SDK condition                   | AppError code         |
+| ------------------------------- | --------------------- |
+| HTTP 429                        | `LLM_RATE_LIMIT`      |
+| HTTP 401/403                    | `LLM_AUTH_ERROR`      |
+| AbortError after user cancel    | `OPERATION_CANCELLED` |
+| AbortError after timeout budget | `LLM_TIMEOUT`         |
+| Empty response                  | `LLM_PARSE_ERROR`     |
+| Other                           | `UNKNOWN_ERROR`       |
 
 ## See also
 

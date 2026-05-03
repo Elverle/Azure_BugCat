@@ -3,7 +3,10 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug, ChunkProgress, SessionData } from '@shared/types'
-import { useDashboard } from '@renderer/hooks/useDashboard'
+import {
+  resetDashboardCategorizationUiStateForTests,
+  useDashboard
+} from '@renderer/hooks/useDashboard'
 
 const mockBug: CategorizedBug = {
   id: 1,
@@ -30,8 +33,10 @@ const mockSession: SessionData = {
 
 type ElectronApiMock = {
   getSession: ReturnType<typeof vi.fn>
+  getCategorizationStatus: ReturnType<typeof vi.fn>
   fetchBugs: ReturnType<typeof vi.fn>
   categorizeBugs: ReturnType<typeof vi.fn>
+  cancelCategorization: ReturnType<typeof vi.fn>
   onCategorizeProgress: ReturnType<typeof vi.fn>
 }
 
@@ -39,8 +44,10 @@ function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): Elect
   const cleanup = vi.fn()
   const api: ElectronApiMock = {
     getSession: vi.fn().mockResolvedValue(mockSession),
+    getCategorizationStatus: vi.fn().mockResolvedValue({ active: false }),
     fetchBugs: vi.fn().mockResolvedValue(undefined),
     categorizeBugs: vi.fn().mockResolvedValue(undefined),
+    cancelCategorization: vi.fn().mockResolvedValue({ cancelled: true }),
     onCategorizeProgress: vi.fn().mockReturnValue(cleanup),
     ...overrides
   }
@@ -55,10 +62,12 @@ function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): Elect
 
 describe('useDashboard', () => {
   beforeEach(() => {
+    resetDashboardCategorizationUiStateForTests()
     installElectronApiMock()
   })
 
   afterEach(() => {
+    resetDashboardCategorizationUiStateForTests()
     vi.restoreAllMocks()
   })
 
@@ -228,4 +237,5 @@ describe('useDashboard', () => {
 
     expect(cleanup).toHaveBeenCalled()
   })
+
 })

@@ -10,6 +10,8 @@ declare global {
       testAdoConnection: (settings: AppSettings) => Promise<unknown>
       fetchAdoAttachmentDataUrl: (url: string) => Promise<string>
       categorizeBugs: () => Promise<unknown>
+      cancelCategorization: () => Promise<unknown>
+      getCategorizationStatus: () => Promise<{ active: boolean }>
       testLlmConnection: (settings: AppSettings) => Promise<unknown>
       onCategorizeProgress: (callback: (data: unknown) => void) => () => void
       findSimilarBugs: () => Promise<unknown>

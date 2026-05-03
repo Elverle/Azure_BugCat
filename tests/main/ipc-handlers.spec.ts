@@ -88,6 +88,15 @@ describe('registerIPCHandlers', () => {
   it('registers the expected IPC channels', () => {
     expect(ipcMainHandle).toHaveBeenCalledWith(IPC_CHANNELS.PING, expect.any(Function))
     expect(ipcMainHandle).toHaveBeenCalledWith(IPC_CHANNELS.SETTINGS_GET, expect.any(Function))
+    expect(ipcMainHandle).toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE, expect.any(Function))
+    expect(ipcMainHandle).toHaveBeenCalledWith(
+      IPC_CHANNELS.LLM_CATEGORIZE_CANCEL,
+      expect.any(Function)
+    )
+    expect(ipcMainHandle).toHaveBeenCalledWith(
+      IPC_CHANNELS.LLM_CATEGORIZE_STATUS,
+      expect.any(Function)
+    )
     expect(ipcMainHandle).toHaveBeenCalledWith(
       IPC_CHANNELS.ADO_TEST_CONNECTION,
       expect.any(Function)
@@ -204,5 +213,70 @@ describe('registerIPCHandlers', () => {
 
     expect(storeGet).toHaveBeenCalledWith('session')
     expect(result).toEqual(mockSession)
+  })
+
+  it('cancels an active categorization without persisting partial results', async () => {
+    storeGet.mockReturnValueOnce(baseSettings).mockReturnValueOnce({
+      fetchedAt: '2026-05-01T00:00:00.000Z',
+      bugs: [{ id: 1 }]
+    })
+
+    categorizeBugs.mockImplementation(
+      (_settings, _bugs, _onProgress, signal?: AbortSignal) =>
+        new Promise((_, reject) => {
+          signal?.addEventListener(
+            'abort',
+            () => {
+              reject({ code: 'OPERATION_CANCELLED', message: 'Categorizzazione annullata' })
+            },
+            { once: true }
+          )
+        })
+    )
+
+    const categorizeHandler = handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)
+    const cancelHandler = handlers.get(IPC_CHANNELS.LLM_CATEGORIZE_CANCEL)
+    const event = { sender: { id: 99, send: vi.fn() } }
+
+    const categorizePromise = categorizeHandler?.(event)
+
+    await expect(cancelHandler?.({ sender: { id: 99 } })).resolves.toEqual({ cancelled: true })
+    await expect(categorizePromise).rejects.toMatchObject({ code: 'OPERATION_CANCELLED' })
+    expect(storeSet).not.toHaveBeenCalledWith('session', expect.objectContaining({ bugs: [] }))
+    expect(storeSet).not.toHaveBeenCalled()
+  })
+
+  it('surfaces a readable error when categorization is requested twice concurrently', async () => {
+    storeGet.mockImplementation((key: string) => {
+      if (key === 'settings') {
+        return baseSettings
+      }
+
+      if (key === 'session') {
+        return {
+          fetchedAt: '2026-05-01T00:00:00.000Z',
+          bugs: [{ id: 1 }]
+        }
+      }
+
+      return null
+    })
+
+    categorizeBugs.mockImplementation(
+      () =>
+        new Promise(() => {
+          // Keep the first categorization pending so the second request hits the in-flight guard.
+        })
+    )
+
+    const categorizeHandler = handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)
+    const event = { sender: { id: 77, send: vi.fn() } }
+
+    void categorizeHandler?.(event)
+
+    await expect(categorizeHandler?.(event)).rejects.toMatchObject({
+      code: 'UNKNOWN_ERROR',
+      message: 'Categorizzazione gia in corso'
+    })
   })
 })

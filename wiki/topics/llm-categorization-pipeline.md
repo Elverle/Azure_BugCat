@@ -9,7 +9,9 @@ sources:
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
-    '[[wiki/sources/ft-11-openrouter-provider]]'
+    '[[wiki/sources/ft-11-openrouter-provider]]',
+    '[[wiki/analyses/cancel-categorization-flow]]',
+    '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
 tags: [llm, categorization, similarity, pipeline, ipc, main-process]
 lang: en
@@ -24,25 +26,30 @@ End-to-end pipeline for categorizing Azure DevOps bugs via LLM. Runs entirely in
 ```text
 RENDERER
   invoke('llm:categorize') ------------------------+
+  invoke('llm:categorize-cancel') ---------------+ |
   on('llm:categorize-progress') <--- chunk updates |
-                                                   |
+                                                 | |
 MAIN PROCESS                                       |
   IPC handler                                      |
     -> load settings + session bugs                |
-    -> categorizeBugs(settings, bugs, onProgress)  |
+    -> register AbortController per webContents <-+ |
+    -> categorizeBugs(settings, bugs, onProgress, signal)
          -> createLLMProvider(type, config)        |
          -> buildSystemPrompt(categories)          |
          -> splitIntoChunks(bugs, chunkSize)       |
          -> for each chunk:                        |
+              -> throwIfCancelled(signal)          |
               -> buildUserMessage(chunk)           |
-              -> chatWithRetry(..., { responseSchema: 'categorization' })
+              -> chatWithRetry(..., { responseSchema: 'categorization', signal })
                    -> provider.chat(..., options)
                    -> provider-native structured output
               -> validateLLMResponse(raw, chunk)
               -> onProgress(event.sender.send)
-    -> persist categorized session state
+    -> persist categorized session state only on success
     -> return CategorizedBug[]
 ```
+
+On Dashboard mount, the renderer can separately invoke `llm:categorize-status` to ask whether the current `webContents` already has an active categorization run and recover the correct UI state after route remount.
 
 ## Components
 
@@ -62,7 +69,7 @@ MAIN PROCESS                                       |
 1. **Input**: `BugItem[]` from session store.
 2. **Processing**: each chunk -> prompt guidance + schema hint -> provider-native structured output request -> raw JSON string -> validated results.
 3. **Output**: `CategorizedBug[]` (`BugItem` plus `macroCategory`, `subCategory`, `categoryReason`, `categorizedAt`).
-4. **Side effects**: session updated in store with `categorizedAt` timestamp, unless a blocking provider error aborts the run before persistence.
+4. **Side effects**: session updated in store with `categorizedAt` timestamp only after a full successful run; blocking errors and user cancellation both skip persistence.
 
 ## Patterns Used
 
@@ -89,6 +96,18 @@ IPC (llm:test-connection)
 OpenRouter becomes the fifth runtime-selectable backend in this pipeline. The surrounding flow is unchanged, but the concrete adapter now demonstrates that the abstraction can also absorb SDKs that require a nested `chatRequest` payload and provider-native timeout configuration.
 
 The same FT-11 slice also adds a new blocking failure mode: if OpenRouter routes a `json_schema` request to an upstream provider/model that downgrades structured output support, categorization now stops immediately and the renderer surfaces a modal error instead of silently marking the chunk as `Non categorizzato`.
+
+## Cancellation Extension
+
+The categorization pipeline now has a second user-controlled path besides completion and provider failure:
+
+- the renderer invokes `llm:categorize-cancel` while a run is active,
+- the renderer can also invoke `llm:categorize-status` on mount to recover a still-running categorization after route remount,
+- the main process aborts the controller associated with that renderer window,
+- providers receive the merged abort signal,
+- `llm-service` converts the stop into `OPERATION_CANCELLED`,
+- the dashboard clears progress without persisting partial categorizations or surfacing a blocking error modal,
+- renderer-facing failures are normalized to real `Error` objects before crossing IPC, so blocking messages remain human-readable.
 
 ## FT-10 Extension
 

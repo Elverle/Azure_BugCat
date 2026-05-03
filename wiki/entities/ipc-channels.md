@@ -3,12 +3,14 @@ title: 'IPC Channel Constants'
 type: entity
 subtype: config
 created: 2026-04-29
-updated: 2026-05-01
+updated: 2026-05-03
 sources:
 	[
 		'[[wiki/sources/ft-01-scaffold]]',
 		'[[wiki/sources/ft-06-bug-detail-drawer]]',
-		'[[wiki/sources/ft-10-ai-cluster-similarity]]'
+		'[[wiki/sources/ft-10-ai-cluster-similarity]]',
+		'[[wiki/analyses/cancel-categorization-flow]]',
+		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
 	]
 tags: [electron, ipc, shared, shell, similarity]
 lang: en
@@ -32,6 +34,8 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `ADO_FETCH_BUGS`            | `ado:fetch-bugs`            | Azure DevOps |
 | `ADO_TEST_CONNECTION`       | `ado:test-connection`       | Azure DevOps |
 | `LLM_CATEGORIZE`            | `llm:categorize`            | LLM          |
+| `LLM_CATEGORIZE_CANCEL`     | `llm:categorize-cancel`     | LLM          |
+| `LLM_CATEGORIZE_STATUS`     | `llm:categorize-status`     | LLM          |
 | `LLM_CATEGORIZE_PROGRESS`   | `llm:categorize-progress`   | LLM          |
 | `LLM_TEST_CONNECTION`       | `llm:test-connection`       | LLM          |
 | `LLM_FIND_SIMILAR`          | `llm:find-similar`          | LLM          |

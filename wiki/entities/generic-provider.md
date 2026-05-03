@@ -8,7 +8,8 @@ sources:
   [
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
-    '[[wiki/analyses/llm-provider-cleanup]]'
+    '[[wiki/analyses/llm-provider-cleanup]]',
+    '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [llm, provider, openai-compatible, fetch]
 lang: en
@@ -27,13 +28,13 @@ LLM provider implementation for any OpenAI-compatible HTTP endpoint. Unlike the 
 - **API Key**: Required
 - **Base URL**: Required; trailing slashes are stripped before appending `/chat/completions`
 - **Model**: `config.model ?? 'gpt-4o'`
-- **Timeout**: `config.timeout ?? 60000`
+- **Timeout**: `config.timeout ?? 60000`, merged with any upstream cancellation signal through the shared timeout helper
 
 ## Behavior
 
 1. Validates `apiKey` and `baseUrl` at construction time.
 2. Enforces URL scheme in the main process: `https:` is required, except `http:` is allowed for `localhost` and `127.0.0.1`.
-3. Sends OpenAI-compatible payloads with `model`, `messages`, `temperature: 0.1`, and optional `response_format` when `responseSchema` is requested.
+3. Sends OpenAI-compatible payloads with `model`, `messages`, `temperature: 0.1`, optional `response_format` when `responseSchema` is requested, and a merged abort signal.
 4. Parses `choices[0].message.content` from the JSON response.
 5. Exposes `testConnection()` by reusing the same chat path with a lightweight prompt.
 
@@ -45,7 +46,8 @@ Uses the same `response_format.json_schema` contract as [[wiki/entities/openai-p
 
 - `401` / `403` -> `LLM_AUTH_ERROR`
 - `429` -> `LLM_RATE_LIMIT`
-- `AbortError` -> `LLM_TIMEOUT`
+- `AbortError` after user cancel -> `OPERATION_CANCELLED`
+- `AbortError` after timeout budget -> `LLM_TIMEOUT`
 - Non-JSON or empty response body -> `LLM_PARSE_ERROR`
 - Other failures -> `UNKNOWN_ERROR`
 

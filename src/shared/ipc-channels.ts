@@ -17,6 +17,8 @@ export const IPC_CHANNELS = {
 
   // LLM
   LLM_CATEGORIZE: 'llm:categorize',
+  LLM_CATEGORIZE_CANCEL: 'llm:categorize-cancel',
+  LLM_CATEGORIZE_STATUS: 'llm:categorize-status',
   LLM_CATEGORIZE_PROGRESS: 'llm:categorize-progress',
   LLM_TEST_CONNECTION: 'llm:test-connection',
 

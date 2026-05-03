@@ -8,7 +8,8 @@ sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
-    '[[wiki/analyses/llm-provider-cleanup]]'
+    '[[wiki/analyses/llm-provider-cleanup]]',
+    '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [llm, anthropic, provider]
 lang: en
@@ -28,7 +29,7 @@ LLM provider implementation for Anthropic Claude. Uses `@anthropic-ai/sdk` with 
 - **Model**: `config.model ?? 'claude-sonnet-4.6'`
 - **Max tokens**: `4096`
 - **Temperature**: `0.1`
-- **Timeout**: `config.timeout ?? 60000`, enforced through the shared request-timeout helper
+- **Timeout**: `config.timeout ?? 60000`, enforced through the shared request-timeout helper and any upstream cancellation signal
 
 ## Structured Output
 
@@ -44,7 +45,7 @@ LLM provider implementation for Anthropic Claude. Uses `@anthropic-ai/sdk` with 
 
 ## Error Mapping
 
-Same pattern as [[wiki/entities/openai-provider]] - SDK-specific status codes are normalized into the shared `AppError` taxonomy.
+Same pattern as [[wiki/entities/openai-provider]] - SDK-specific status codes are normalized into the shared `AppError` taxonomy, and `AbortError` is now split into `OPERATION_CANCELLED` vs `LLM_TIMEOUT` based on the merged timeout helper.
 
 ## See also
 

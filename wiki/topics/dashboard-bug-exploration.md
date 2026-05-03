@@ -2,8 +2,14 @@
 title: 'Dashboard Bug Exploration'
 type: topic
 created: 2026-04-30
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-05-dashboard]]', '[[wiki/sources/ft-06-bug-detail-drawer]]']
+updated: 2026-05-03
+sources:
+  [
+    '[[wiki/sources/ft-05-dashboard]]',
+    '[[wiki/sources/ft-06-bug-detail-drawer]]',
+    '[[wiki/analyses/cancel-categorization-flow]]',
+    '[[wiki/analyses/dashboard-categorization-state-recovery]]'
+  ]
 tags: [dashboard, triage, renderer, filters, grouping, drawer]
 lang: en
 ---
@@ -18,7 +24,7 @@ The dashboard is the main triage workspace of the app. It consumes the cached `S
 DashboardHeader actions
   → useDashboard
     → preload bridge
-      → FT-03 fetchBugs / FT-04 categorizeBugs
+      → FT-03 fetchBugs / FT-04 categorizeBugs / cancelCategorization / getCategorizationStatus
         → SessionData + ChunkProgress
   → DashboardPage derivation pipeline
     → filterBugs → sortBugs → useBugDrawer(sortedBugs)
@@ -50,6 +56,9 @@ DashboardHeader actions
 ## Interaction Model
 
 - Session hydration and action state come from [[wiki/entities/use-dashboard-hook]].
+- The header now exposes a mode-specific action model: normal idle state shows `Categorize`, while active categorization shows `Cancel` and disables `Fetch Bugs`.
+- The categorization action state survives route remounts because the hook reconciles its shared renderer store with the main-process `llm:categorize-status` answer on mount.
+- Clicking cancel transitions the header into `Cancelling...` immediately, without waiting for the next chunk-progress event.
 - Search, multi-select filters, grouping, and reset live in [[wiki/entities/filter-bar]].
 - Derivation rules are centralized in [[wiki/entities/dashboard-utils]] and summarized in [[wiki/concepts/dashboard-derivation-pipeline]].
 - Visual encoding of statuses and categories comes from [[wiki/entities/badge-color-utilities]].
@@ -58,6 +67,8 @@ DashboardHeader actions
 - The drawer's click-outside close behavior follows [[wiki/concepts/click-outside-exclusion-pattern]].
 - Accessibility behavior for listbox, drill-down controls, table sorting, and accordions follows [[wiki/concepts/accessible-collection-controls]].
 - The external work item action delegates to [[wiki/entities/open-external-ipc]] instead of opening browser URLs directly from the renderer.
+- Intentional categorization cancellation is silent in the UI: it clears progress and restores the previous session-backed dataset without opening the blocking error modal reserved for real provider failures.
+- Real categorization failures now surface readable messages because the main process converts structured error payloads into proper `Error` objects before returning them through IPC.
 
 ## Related Components
 

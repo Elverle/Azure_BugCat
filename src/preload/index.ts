@@ -19,6 +19,8 @@ const electronAPI = {
 
   // LLM
   categorizeBugs: () => ipcRenderer.invoke(IPC_CHANNELS.LLM_CATEGORIZE),
+  cancelCategorization: () => ipcRenderer.invoke(IPC_CHANNELS.LLM_CATEGORIZE_CANCEL),
+  getCategorizationStatus: () => ipcRenderer.invoke(IPC_CHANNELS.LLM_CATEGORIZE_STATUS),
   testLlmConnection: (settings: AppSettings) =>
     ipcRenderer.invoke(IPC_CHANNELS.LLM_TEST_CONNECTION, settings),
   onCategorizeProgress: (callback: (data: unknown) => void) => {

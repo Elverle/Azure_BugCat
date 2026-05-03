@@ -21,8 +21,9 @@ export class OpenAIProvider implements LLMProvider {
   }
 
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
-    const responseSchemaMetadata = getStructuredOutputMetadata(options?.responseSchema)
-    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config))
+    const responseSchema = options?.responseSchema
+    const responseSchemaMetadata = getStructuredOutputMetadata(responseSchema)
+    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config), options?.signal)
 
     try {
       const response = await this.client.chat.completions.create(
@@ -39,7 +40,7 @@ export class OpenAIProvider implements LLMProvider {
               json_schema: {
                 name: responseSchemaMetadata.schemaName,
                 strict: true,
-                schema: getSchema(options.responseSchema!)
+                schema: getSchema(responseSchema!)
               }
             }
           })
@@ -63,6 +64,9 @@ export class OpenAIProvider implements LLMProvider {
         }
       }
       if (error instanceof Error && error.name === 'AbortError') {
+        if (!requestTimeout.didTimeout()) {
+          throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
+        }
         throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta a OpenAI')
       }
       throwAppError(

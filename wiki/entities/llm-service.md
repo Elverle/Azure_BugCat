@@ -11,7 +11,8 @@ sources:
     '[[wiki/sources/ft-09-structured-output]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-11-openrouter-provider]]',
-    '[[wiki/analyses/llm-provider-cleanup]]'
+    '[[wiki/analyses/llm-provider-cleanup]]',
+    '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [llm, main-process, categorization, orchestration, retry]
 lang: en
@@ -27,10 +28,10 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 
 ## Public API
 
-| Function            | Signature                                                   | Purpose                                                        |
-| ------------------- | ----------------------------------------------------------- | -------------------------------------------------------------- |
-| `categorizeBugs`    | `(settings, bugs, onProgress?) → Promise<CategorizedBug[]>` | Process all bugs through LLM in chunks with progress callbacks |
-| `testLLMConnection` | `(settings) → Promise<void>`                                | Verify LLM provider credentials work                           |
+| Function            | Signature                                                            | Purpose                                                                                  |
+| ------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `categorizeBugs`    | `(settings, bugs, onProgress?, signal?) → Promise<CategorizedBug[]>` | Process all bugs through LLM in chunks with progress callbacks and optional cancellation |
+| `testLLMConnection` | `(settings) → Promise<void>`                                         | Verify LLM provider credentials work                                                     |
 
 ## Shared Helper Export
 
@@ -40,12 +41,15 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 
 ## Internal Functions
 
-| Function                | Purpose                                                                              |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| `applyCategorization`   | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId` |
-| `sleep`                 | Promise-based delay utility                                                          |
-| `buildErrorDiagnostics` | Normalizes unexpected provider failures for structured logging                       |
-| `buildChunkDiagnostics` | Captures provider/chunk context for chunk-level logs                                 |
+| Function                 | Purpose                                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| `applyCategorization`    | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId` |
+| `sleep`                  | Promise-based delay utility                                                          |
+| `sleepWithAbort`         | Delay utility that exits early when the run is cancelled                             |
+| `buildCancellationError` | Creates the shared `OPERATION_CANCELLED` AppError payload                            |
+| `throwIfCancelled`       | Guard used before retries and chunk execution                                        |
+| `buildErrorDiagnostics`  | Normalizes unexpected provider failures for structured logging                       |
+| `buildChunkDiagnostics`  | Captures provider/chunk context for chunk-level logs                                 |
 
 ## Behavior
 
@@ -53,21 +57,31 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 2. Builds system prompt from `settings.categories`.
 3. Splits bugs into chunks of `settings.chunkSize`.
 4. For each chunk:
-   - Builds a user message with id, title, description, and tags.
-   - Calls the provider through `chatWithRetry(..., { responseSchema: 'categorization' })`.
-   - Validates and parses the raw response.
-   - On non-blocking chunk failure, marks that chunk as `Non categorizzato` and continues.
-   - Invokes `onProgress` with the categorized chunk.
+
+- Stops immediately if the optional workflow `signal` has already been aborted.
+- Builds a user message with id, title, description, and tags.
+- Calls the provider through `chatWithRetry(..., { responseSchema: 'categorization', signal })`.
+- Validates and parses the raw response.
+- On cancellation, aborts the run without persisting or emitting fallback chunk labels.
+- On non-blocking chunk failure, marks that chunk as `Non categorizzato` and continues.
+- Invokes `onProgress` with the categorized chunk.
+
 5. Returns the merged `CategorizedBug[]` with a fresh `categorizedAt` timestamp.
 
 ## Error Handling
 
 - [[wiki/entities/llm-error-policy]] defines which failures are blocking across LLM workflows.
 - `LLM_AUTH_ERROR` and `LLM_TIMEOUT` -> re-thrown immediately and abort the whole categorization run.
+- `OPERATION_CANCELLED` -> re-thrown immediately and treated as an intentional stop, not a provider failure.
 - `LLM_PARSE_ERROR` with `details.reason === 'structured-output-routing-mismatch'` -> also re-thrown immediately, because continuing with fallback chunk labels would hide a provider/model compatibility problem from the user.
 - `LLM_RATE_LIMIT` -> retried with exponential backoff.
 - Other chunk errors -> graceful degradation with fallback categories.
-- Abort-like provider errors are normalized to `LLM_TIMEOUT` diagnostics.
+- Abort-like provider errors are normalized either to `OPERATION_CANCELLED` or `LLM_TIMEOUT`, depending on whether the workflow signal was aborted or the provider budget elapsed.
+
+## Cancellation Notes
+
+- Cancellation is cooperative: the same `AbortSignal` is checked in retry waits, before each new chunk, and inside each provider request.
+- The service still applies categorizations only after full completion; the main process keeps persistence all-or-nothing by saving `SessionData` only after `categorizeBugs()` resolves successfully.
 
 ## FT-11 Notes
 

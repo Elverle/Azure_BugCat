@@ -8,7 +8,9 @@ sources:
 	[
 		'[[wiki/sources/ft-05-dashboard]]',
 		'[[wiki/sources/ft-06-bug-detail-drawer]]',
-		'[[wiki/sources/ft-11-openrouter-provider]]'
+		'[[wiki/sources/ft-11-openrouter-provider]]',
+		'[[wiki/analyses/cancel-categorization-flow]]',
+		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
 	]
 tags: [react, page, dashboard, triage, ui]
 lang: en
@@ -37,6 +39,9 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 ## Key Behaviors
 
 - Uses `useDashboard()` for session hydration, fetch action, categorize action, and progress state.
+- For long-running categorization runs, passes `cancelCategorization()` plus `isCategorizing` into [[wiki/entities/dashboard-header]] so the top action can switch to a cancel affordance.
+- Also passes `isCancelling` into [[wiki/entities/dashboard-header]] so the cancel affordance can become a temporary `Cancelling...` state while the abort request is in flight.
+- Recovers an active categorization after Dashboard remount because [[wiki/entities/use-dashboard-hook]] rehydrates long-running state from the main-process status IPC instead of relying on page-local state only.
 - Uses [[wiki/entities/use-bug-drawer-hook]] with either `sortedBugs` or the full bug session list, depending on the active tab, so drill-down navigation matches the visible slice.
 - Builds `filterOptions` from the full bug dataset so users can still see available values even when the current result set is narrower.
 - Reconciles stale sub-category selections when macro-category choices change.
@@ -48,6 +53,8 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 - Loads `orgUrl` and `projectName` once from the preload bridge and composes the Azure DevOps work item URL for [[wiki/entities/open-external-ipc]].
 - Shows two empty states: no session data loaded at all, or no bugs matching the current filters.
 - Shows a modal error popup through [[wiki/entities/confirm-dialog]] when `useDashboard()` reports a blocking categorization failure, so provider/model incompatibility is visible to the user immediately.
+- The modal now receives the real categorization message forwarded by the main process instead of Electron's generic `[object Object]` invoke wrapper.
+- Does not show the modal for intentional cancellation; cancel returns the page to its normal dashboard state and leaves the previous persisted categorization intact.
 
 ## Dependencies
 

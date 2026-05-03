@@ -43,11 +43,14 @@ export function DashboardPage(): JSX.Element {
   const {
     bugs,
     loading,
+    isCategorizing,
+    isCancelling,
     progress,
     categorizeError,
     sessionInfo,
     fetchBugs,
     categorizeBugs,
+    cancelCategorization,
     clearCategorizeError
   } = useDashboard()
 
@@ -218,7 +221,10 @@ export function DashboardPage(): JSX.Element {
         <DashboardHeader
           onFetch={fetchBugs}
           onCategorize={categorizeBugs}
+          onCancelCategorize={cancelCategorization}
           loading={loading}
+          isCategorizing={isCategorizing}
+          isCancelling={isCancelling}
           sessionInfo={sessionInfo}
           progress={progress}
         />
@@ -242,7 +248,10 @@ export function DashboardPage(): JSX.Element {
         <DashboardHeader
           onFetch={fetchBugs}
           onCategorize={categorizeBugs}
+          onCancelCategorize={cancelCategorization}
           loading={loading}
+          isCategorizing={isCategorizing}
+          isCancelling={isCancelling}
           sessionInfo={sessionInfo}
           progress={progress}
         />

@@ -3,6 +3,7 @@ import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
 import { getSchema } from '../schemas'
 import {
   assertApiKey,
+  createRequestTimeout,
   getProviderTimeout,
   getStructuredOutputMetadata,
   isAppError,
@@ -219,7 +220,9 @@ export class OpenRouterProvider implements LLMProvider {
   }
 
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
-    const responseSchemaMetadata = getStructuredOutputMetadata(options?.responseSchema)
+    const responseSchema = options?.responseSchema
+    const responseSchemaMetadata = getStructuredOutputMetadata(responseSchema)
+    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config), options?.signal)
     const chatRequest = {
       model: this.config.model ?? 'openai/gpt-4o',
       messages: [
@@ -237,13 +240,13 @@ export class OpenRouterProvider implements LLMProvider {
           jsonSchema: {
             name: responseSchemaMetadata.schemaName,
             strict: true,
-            schema: getSchema(options.responseSchema!) as Record<string, unknown>
+            schema: getSchema(responseSchema!) as Record<string, unknown>
           }
         }
       })
     }
-    const structuredRequestDetails = options?.responseSchema
-      ? buildStructuredRequestDetails(chatRequest, options.responseSchema)
+    const structuredRequestDetails = responseSchema
+      ? buildStructuredRequestDetails(chatRequest, responseSchema)
       : null
 
     try {
@@ -251,7 +254,7 @@ export class OpenRouterProvider implements LLMProvider {
         {
           chatRequest
         },
-        { timeoutMs: getProviderTimeout(this.config) }
+        { timeoutMs: getProviderTimeout(this.config), signal: requestTimeout.signal }
       )
 
       const content = extractOpenRouterContent(response)
@@ -274,7 +277,7 @@ export class OpenRouterProvider implements LLMProvider {
             rawValue?: unknown
             pretty?: () => string
           },
-          options?.responseSchema,
+          responseSchema,
           structuredRequestDetails ?? undefined
         )
 
@@ -284,7 +287,7 @@ export class OpenRouterProvider implements LLMProvider {
               body?: unknown
               pretty?: () => string
             },
-            options?.responseSchema
+            responseSchema
           )
         ) {
           throwAppError(
@@ -318,6 +321,9 @@ export class OpenRouterProvider implements LLMProvider {
           error.name === 'RequestAbortedError' ||
           error.name === 'AbortError'
         ) {
+          if (!requestTimeout.didTimeout()) {
+            throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
+          }
           throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta a OpenRouter')
         }
       }
@@ -326,6 +332,8 @@ export class OpenRouterProvider implements LLMProvider {
         'UNKNOWN_ERROR',
         `Errore OpenRouter: ${error instanceof Error ? error.message : 'sconosciuto'}`
       )
+    } finally {
+      requestTimeout.dispose()
     }
   }
 

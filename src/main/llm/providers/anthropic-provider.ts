@@ -21,8 +21,9 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
-    const responseSchemaMetadata = getStructuredOutputMetadata(options?.responseSchema)
-    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config))
+    const responseSchema = options?.responseSchema
+    const responseSchemaMetadata = getStructuredOutputMetadata(responseSchema)
+    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config), options?.signal)
 
     try {
       const response = await this.client.messages.create(
@@ -37,9 +38,7 @@ export class AnthropicProvider implements LLMProvider {
               {
                 name: responseSchemaMetadata.anthropicToolName,
                 description: responseSchemaMetadata.anthropicToolDescription,
-                input_schema: getSchema(
-                  options.responseSchema!
-                ) as unknown as Anthropic.Tool.InputSchema
+                input_schema: getSchema(responseSchema!) as unknown as Anthropic.Tool.InputSchema
               }
             ],
             tool_choice: {
@@ -72,6 +71,9 @@ export class AnthropicProvider implements LLMProvider {
         }
       }
       if (error instanceof Error && error.name === 'AbortError') {
+        if (!requestTimeout.didTimeout()) {
+          throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
+        }
         throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta a Anthropic')
       }
       throwAppError(
