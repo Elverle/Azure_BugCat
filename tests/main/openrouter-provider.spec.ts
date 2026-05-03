@@ -193,6 +193,23 @@ describe('openrouter-provider', () => {
       )
     })
 
+    it('uses custom timeout from config', async () => {
+      mockSend.mockResolvedValue({
+        choices: [{ message: { content: 'ok' } }]
+      })
+
+      const provider = new OpenRouterProvider({
+        apiKey: 'sk-or-test',
+        timeout: 12345
+      })
+      await provider.chat('system', 'user')
+
+      expect(mockSend).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ timeoutMs: 12345 })
+      )
+    })
+
     it('passes responseFormat when responseSchema is provided', async () => {
       mockSend.mockResolvedValue({
         choices: [{ message: { content: '{"results":[]}' } }]

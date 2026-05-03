@@ -10,7 +10,8 @@ sources:
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-09-structured-output]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
-    '[[wiki/sources/ft-11-openrouter-provider]]'
+    '[[wiki/sources/ft-11-openrouter-provider]]',
+    '[[wiki/analyses/llm-provider-cleanup]]'
   ]
 tags: [llm, main-process, categorization, orchestration, retry]
 lang: en
@@ -39,11 +40,12 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 
 ## Internal Functions
 
-| Function                        | Purpose                                                                              |
-| ------------------------------- | ------------------------------------------------------------------------------------ |
-| `applyCategorization`           | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId` |
-| `sleep`                         | Promise-based delay utility                                                          |
-| `isBlockingCategorizationError` | Centralizes which provider failures must abort the whole categorization run          |
+| Function                | Purpose                                                                              |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| `applyCategorization`   | Merges `LLMCategorizeResult[]` into `CategorizedBug[]` using a Map lookup by `bugId` |
+| `sleep`                 | Promise-based delay utility                                                          |
+| `buildErrorDiagnostics` | Normalizes unexpected provider failures for structured logging                       |
+| `buildChunkDiagnostics` | Captures provider/chunk context for chunk-level logs                                 |
 
 ## Behavior
 
@@ -60,6 +62,7 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 
 ## Error Handling
 
+- [[wiki/entities/llm-error-policy]] defines which failures are blocking across LLM workflows.
 - `LLM_AUTH_ERROR` and `LLM_TIMEOUT` -> re-thrown immediately and abort the whole categorization run.
 - `LLM_PARSE_ERROR` with `details.reason === 'structured-output-routing-mismatch'` -> also re-thrown immediately, because continuing with fallback chunk labels would hide a provider/model compatibility problem from the user.
 - `LLM_RATE_LIMIT` -> retried with exponential backoff.
@@ -87,12 +90,14 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 - [[wiki/entities/llm-provider-factory]] - `createLLMProvider`
 - [[wiki/entities/llm-prompts]] - `buildSystemPrompt`, `buildUserMessage`
 - [[wiki/entities/chunking-utility]] - `splitIntoChunks`
+- [[wiki/entities/llm-error-policy]] - shared blocking error classification
 - [[wiki/entities/response-validator]] - `validateLLMResponse`
 
 ## See also
 
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/similarity-service]]
+- [[wiki/entities/llm-error-policy]]
 - [[wiki/concepts/chunk-retry-pattern]]
 - [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

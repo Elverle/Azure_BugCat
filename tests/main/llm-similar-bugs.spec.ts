@@ -134,6 +134,25 @@ describe('findSimilarBugs', () => {
     expect(result.categories[1].error).toBeUndefined()
   })
 
+  it('throws immediately on blocking auth error', async () => {
+    mockChat.mockRejectedValueOnce({
+      code: 'LLM_AUTH_ERROR',
+      message: 'Auth failed'
+    })
+
+    const bugs = [
+      makeCategorizedBug(1, 'Costi'),
+      makeCategorizedBug(2, 'Costi'),
+      makeCategorizedBug(3, 'Validazioni'),
+      makeCategorizedBug(4, 'Validazioni')
+    ]
+
+    await expect(findSimilarBugs(baseSettings, bugs)).rejects.toMatchObject({
+      code: 'LLM_AUTH_ERROR'
+    })
+    expect(mockChat).toHaveBeenCalledTimes(1)
+  })
+
   it('handles malformed LLM response gracefully', async () => {
     mockChat.mockResolvedValueOnce('not valid json at all')
 
@@ -179,6 +198,26 @@ describe('findSimilarBugs', () => {
 
     expect(result.categories[0].groups).toHaveLength(1)
     expect(result.categories[0].groups[0].similarityScore).toBe(0.8)
+  })
+
+  it('extracts JSON when the model adds extra prose around similarity payload', async () => {
+    mockChat.mockResolvedValueOnce(
+      [
+        'Here are the likely duplicates:',
+        JSON.stringify({
+          groups: [{ similarityScore: 0.8, reason: 'Same root cause', bugIds: [1, 2] }]
+        }),
+        'Done.'
+      ].join('\n')
+    )
+
+    const bugs = [makeCategorizedBug(1, 'Costi'), makeCategorizedBug(2, 'Costi')]
+
+    const result = await findSimilarBugs(baseSettings, bugs)
+
+    expect(result.categories[0].groups).toEqual([
+      { similarityScore: 0.8, reason: 'Same root cause', bugIds: [1, 2] }
+    ])
   })
 
   it('passes responseSchema option to provider', async () => {

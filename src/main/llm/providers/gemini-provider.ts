@@ -1,29 +1,26 @@
 import { GoogleGenAI } from '@google/genai'
 import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
 import { getSchema } from '../schemas'
-import { AppError } from '../../../shared/types'
-
-const REQUEST_TIMEOUT = 60000
-
-function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
+import {
+  assertApiKey,
+  createRequestTimeout,
+  getProviderTimeout,
+  isAppError,
+  TEST_CONNECTION_SYSTEM_PROMPT,
+  TEST_CONNECTION_USER_MESSAGE,
+  throwAppError
+} from './provider-shared'
 
 export class GeminiProvider implements LLMProvider {
   readonly name = 'gemini'
   private client: GoogleGenAI
 
   constructor(private config: LLMProviderConfig) {
-    if (!config.apiKey?.trim()) {
-      throwAppError('LLM_AUTH_ERROR', 'API Key mancante per Gemini')
-    }
-    this.client = new GoogleGenAI({ apiKey: config.apiKey })
+    this.client = new GoogleGenAI({ apiKey: assertApiKey(config.apiKey, 'Gemini') })
   }
 
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config))
 
     try {
       const response = await this.client.models.generateContent({
@@ -31,7 +28,7 @@ export class GeminiProvider implements LLMProvider {
         contents: userMessage,
         config: {
           systemInstruction: systemPrompt,
-          abortSignal: controller.signal,
+          abortSignal: requestTimeout.signal,
           temperature: 0.1,
           ...(options?.responseSchema && {
             responseMimeType: 'application/json',
@@ -63,21 +60,11 @@ export class GeminiProvider implements LLMProvider {
       }
       throwAppError('UNKNOWN_ERROR', `Errore Gemini: ${message}`)
     } finally {
-      clearTimeout(timeout)
+      requestTimeout.dispose()
     }
   }
 
   async testConnection(): Promise<void> {
-    await this.chat('You are a test assistant. Respond with: {"status":"ok"}', 'Test connection')
+    await this.chat(TEST_CONNECTION_SYSTEM_PROMPT, TEST_CONNECTION_USER_MESSAGE)
   }
-}
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
 }

@@ -1,29 +1,28 @@
 import OpenAI from 'openai'
 import { ChatOptions, LLMProvider, LLMProviderConfig } from '../types'
 import { getSchema } from '../schemas'
-import { AppError } from '../../../shared/types'
-
-const REQUEST_TIMEOUT = 60000
-
-function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
+import {
+  assertApiKey,
+  createRequestTimeout,
+  getProviderTimeout,
+  getStructuredOutputMetadata,
+  isAppError,
+  TEST_CONNECTION_SYSTEM_PROMPT,
+  TEST_CONNECTION_USER_MESSAGE,
+  throwAppError
+} from './provider-shared'
 
 export class OpenAIProvider implements LLMProvider {
   readonly name = 'openai'
   private client: OpenAI
 
   constructor(private config: LLMProviderConfig) {
-    if (!config.apiKey?.trim()) {
-      throwAppError('LLM_AUTH_ERROR', 'API Key mancante per OpenAI')
-    }
-    this.client = new OpenAI({ apiKey: config.apiKey })
+    this.client = new OpenAI({ apiKey: assertApiKey(config.apiKey, 'OpenAI') })
   }
 
   async chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string> {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+    const responseSchemaMetadata = getStructuredOutputMetadata(options?.responseSchema)
+    const requestTimeout = createRequestTimeout(getProviderTimeout(this.config))
 
     try {
       const response = await this.client.chat.completions.create(
@@ -34,21 +33,18 @@ export class OpenAIProvider implements LLMProvider {
             { role: 'user', content: userMessage }
           ],
           temperature: 0.1,
-          ...(options?.responseSchema && {
+          ...(responseSchemaMetadata && {
             response_format: {
               type: 'json_schema' as const,
               json_schema: {
-                name:
-                  options.responseSchema === 'categorization'
-                    ? 'bug_categorization'
-                    : 'similar_bugs_detection',
+                name: responseSchemaMetadata.schemaName,
                 strict: true,
-                schema: getSchema(options.responseSchema)
+                schema: getSchema(options.responseSchema!)
               }
             }
           })
         },
-        { signal: controller.signal }
+        { signal: requestTimeout.signal }
       )
 
       const content = response.choices[0]?.message?.content
@@ -74,21 +70,11 @@ export class OpenAIProvider implements LLMProvider {
         `Errore OpenAI: ${error instanceof Error ? error.message : 'sconosciuto'}`
       )
     } finally {
-      clearTimeout(timeout)
+      requestTimeout.dispose()
     }
   }
 
   async testConnection(): Promise<void> {
-    await this.chat('You are a test assistant. Respond with: {"status":"ok"}', 'Test connection')
+    await this.chat(TEST_CONNECTION_SYSTEM_PROMPT, TEST_CONNECTION_USER_MESSAGE)
   }
-}
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
 }

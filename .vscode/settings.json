@@ -4,6 +4,7 @@
     "npx tsc": true,
     "npm install": true,
     "npx vitest": true,
-    "npm exec": true
+    "npm exec": true,
+    "npm run lint": true
   }
 }

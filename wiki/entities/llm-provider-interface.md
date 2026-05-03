@@ -3,12 +3,13 @@ title: 'LLM Provider Interface'
 type: entity
 subtype: model
 created: 2026-04-30
-updated: 2026-05-01
+updated: 2026-05-03
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-08-generic-provider]]',
-    '[[wiki/sources/ft-09-structured-output]]'
+    '[[wiki/sources/ft-09-structured-output]]',
+    '[[wiki/analyses/llm-provider-cleanup]]'
   ]
 tags: [llm, interface, types]
 lang: en
@@ -55,6 +56,8 @@ interface LLMProviderConfig {
 }
 ```
 
+`timeout` is now honored consistently by all current providers through shared helper logic, instead of being fully enforced only by the generic fetch adapter.
+
 ### SchemaType
 
 Logical selector for shared output contracts: `'categorization' | 'similar-bugs'`.
@@ -67,5 +70,6 @@ Supporting types for chunk processing used internally by the orchestration layer
 
 - [[wiki/entities/llm-schemas]]
 - [[wiki/entities/llm-provider-factory]]
+- [[wiki/entities/provider-shared-utilities]]
 - [[wiki/concepts/llm-provider-abstraction]]
 - [[wiki/concepts/provider-native-structured-output]]

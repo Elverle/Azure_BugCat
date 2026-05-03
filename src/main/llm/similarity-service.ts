@@ -11,6 +11,18 @@ import { LLMProvider } from './types'
 import { createLLMProvider } from './provider-factory'
 import { buildSimilarBugsSystemPrompt, buildSimilarBugsUserMessage } from './prompts'
 import { chatWithRetry } from './llm-service'
+import { isBlockingLLMError } from './error-policy'
+import { parseLlmJson } from './llm-json'
+
+function isAppError(error: unknown): error is AppError {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'code' in error &&
+    'message' in error &&
+    typeof (error as AppError).message === 'string'
+  )
+}
 
 export interface SimilarityProgressCallback {
   (progress: SimilarityProgress): void
@@ -65,6 +77,10 @@ export async function findSimilarBugs(
       const parsed = parseSimilarityResponse(raw)
       categories.push({ macroCategory, groups: parsed })
     } catch (error: unknown) {
+      if (isAppError(error) && isBlockingLLMError(error)) {
+        throw error
+      }
+
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -85,13 +101,11 @@ export async function findSimilarBugs(
 }
 
 function parseSimilarityResponse(raw: string): SimilarityGroup[] {
-  // Strip markdown fences if present
-  let cleaned = raw.trim()
-  if (cleaned.startsWith('```')) {
-    cleaned = cleaned.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '')
-  }
+  const parsed = parseLlmJson(raw)
 
-  const parsed = JSON.parse(cleaned)
+  if (parsed === null) {
+    throw new SyntaxError('Invalid JSON in similarity response')
+  }
 
   if (!parsed || !Array.isArray(parsed.groups)) {
     console.warn('[Similarity] LLM response missing groups array, treating as empty')

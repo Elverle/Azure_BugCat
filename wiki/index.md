@@ -80,6 +80,9 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 - [[wiki/entities/html-to-text]] — HTML→plain text conversion utility (FT-03)
 - [[wiki/entities/llm-provider-interface]] — LLMProvider interface and config types (FT-04)
 - [[wiki/entities/llm-schemas]] — Shared JSON Schema registry for categorization and similar-bugs structured output (FT-09)
+- [[wiki/entities/provider-shared-utilities]] — Shared helper module for provider config guards, timeout handling, schema metadata, and test probes (2026-05-03)
+- [[wiki/entities/llm-error-policy]] — Shared classification of blocking vs recoverable LLM workflow failures (2026-05-03)
+- [[wiki/entities/llm-json-utilities]] — Shared tolerant JSON extraction/parsing helpers for LLM outputs (2026-05-03)
 - [[wiki/entities/openai-provider]] — OpenAI SDK provider (gpt-4o) (FT-04)
 - [[wiki/entities/anthropic-provider]] — Anthropic SDK provider (claude-sonnet-4-20250514) (FT-04)
 - [[wiki/entities/generic-provider]] — Generic OpenAI-compatible fetch provider with configurable base URL and model (FT-08)
@@ -140,3 +143,4 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 ## Analyses
 
 - [[wiki/analyses/structured-output-routing-mismatch]] — OpenRouter routed a `json_schema` request to a backend that downgraded structured output support; categorization now stops and surfaces a modal error (2026-05-03)
+- [[wiki/analyses/llm-provider-cleanup]] — Shared provider helpers, shared blocking-error policy, unified tolerant JSON parsing, and direct adapter test coverage for every current LLM provider (2026-05-03)

@@ -4,7 +4,7 @@ type: entity
 subtype: service
 created: 2026-05-02
 updated: 2026-05-03
-sources: ['[[wiki/sources/ft-11-openrouter-provider]]']
+sources: ['[[wiki/sources/ft-11-openrouter-provider]]', '[[wiki/analyses/llm-provider-cleanup]]']
 tags: [llm, openrouter, provider, sdk]
 lang: en
 ---
@@ -22,7 +22,7 @@ LLM provider implementation for OpenRouter. Uses the official `@openrouter/sdk` 
 - **API Key**: Required at construction time (throws `LLM_AUTH_ERROR` if missing or blank)
 - **Model**: `config.model ?? 'openai/gpt-4o'`
 - **Temperature**: `0.1`
-- **Timeout**: fixed 60 s through SDK request options: `{ timeoutMs: 60000 }`
+- **Timeout**: `config.timeout ?? 60000` through SDK request options: `{ timeoutMs }`
 
 The settings UI currently suggests `openai/gpt-4.1-mini` as a starter value, but the main-process runtime fallback remains `openai/gpt-4o` when no model is stored.
 
@@ -44,7 +44,7 @@ client.chat.send(
       responseFormat
     }
   },
-  { timeoutMs: 60000 }
+  { timeoutMs }
 )
 ```
 
@@ -76,6 +76,10 @@ Schema names are mapped to the logical FT-09 contracts:
 
 The provider also stores a request preview in error details for validation failures, but does not emit request-level console logs during normal execution.
 
+## Validation
+
+`tests/main/openrouter-provider.spec.ts` now also verifies that a custom provider timeout is forwarded to the SDK request options, alongside the existing structured-output and error-mapping coverage.
+
 ## Error Mapping
 
 | SDK condition                                                                                     | AppError code                                                                  |
@@ -90,7 +94,7 @@ The provider also stores a request preview in error details for validation failu
 ## Behavior Notes
 
 - `testConnection()` reuses `chat()` with a lightweight prompt rather than calling a separate health endpoint.
-- The provider keeps `throwAppError()` and `isAppError()` locally, matching the duplication pattern already present across the other adapters.
+- The provider now reuses [[wiki/entities/provider-shared-utilities]] for API-key validation, timeout resolution, shared AppError helpers, schema metadata, and test-connection prompt strings.
 - Unlike [[wiki/entities/generic-provider]], this adapter does not expose a configurable base URL because endpoint routing is delegated to the SDK.
 - `ResponseValidationError` is treated specially: the provider first tries to recover usable content from `rawValue` or the raw response body, then promotes unrecoverable structured-output routing mismatches into a dedicated parse error reason that higher layers can treat as blocking.
 
@@ -98,6 +102,7 @@ The provider also stores a request preview in error details for validation failu
 
 - [[wiki/entities/llm-provider-interface]]
 - [[wiki/entities/llm-schemas]]
+- [[wiki/entities/provider-shared-utilities]]
 - [[wiki/entities/shared-types]] - `AppError`
 - `@openrouter/sdk`
 
