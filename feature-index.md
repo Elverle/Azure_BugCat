@@ -22,5 +22,5 @@ Track every deliverable here using explicit prefixes:
 | 12  | min-01  | Refactor architecture provider LLM and cleanup (FT-04, FT-11)      | Complete |
 | 13  | min-02  | User-triggered cancellation for categorization flow (FT-04, FT-05) | Complete |
 | 14  | fix-01  | Lint cleanup and stabilization of cancel flow (FT-04, FT-05)       | Complete |
-| 15  | min-03  | README principale con overview, setup Settings e flusso operativo   | Complete |
+| 15  | min-03  | README principale con overview, setup Settings e flusso operativo  | Complete |
 | 16  | min-04  | README con packaging Windows/macOS, quickstart e copy funzionale   | Complete |
