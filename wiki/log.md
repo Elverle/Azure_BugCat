@@ -2,6 +2,7 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                   |
 | ---------- | -------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-05 | analysis README onboarding | GitHub Copilot | Added and refined the root README with Windows/macOS packaging guidance, Settings quickstart, operator workflow, and more functional wording for categorization and similarity.       |
 | 2026-05-03 | update feature index       | GitHub Copilot | Updated `feature-index.md` to track the latest non-feature deliveries with explicit `min-##` / `fix-##` IDs and linked the convention from the wiki index.                           |
 | 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                                                                                          |
 | 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                                                                                             |
@@ -33,6 +34,27 @@ Pages created:
 Pages updated:
 
 - [[wiki/index.md]]
+
+## [2026-05-05] analysis | README onboarding guide
+
+Added the missing root README so first-time users can understand the product scope, start the Electron app locally, fill the Settings page correctly, and follow the dashboard workflow from fetch to similarity analysis without reconstructing the flow from the wiki alone.
+
+Pages created:
+
+- [[wiki/analyses/readme-onboarding-guide]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+
+## [2026-05-05] update | README packaging and quickstart refinement
+
+Expanded the root README so it now explains how to prepare a Windows `.exe` installer and a macOS `.dmg`, how Mac users should launch the packaged app, which Settings fields are essential on first run, and what categorization and similarity mean in functional terms for operators.
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/analyses/readme-onboarding-guide]]
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/ipc-channels]]
 - [[wiki/entities/preload-bridge]]
