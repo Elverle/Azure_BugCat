@@ -28,8 +28,8 @@ Applicazione desktop per trasformare una Saved Query di Azure DevOps in una vist
 La categorizzazione serve a dare ordine al backlog.
 
 - Ogni bug viene assegnato a una macro-categoria e a una sotto-categoria.
-- Il sistema restituisce anche una motivazione sintetica, utile per capire perche il bug e stato messo in quel gruppo.
-- Il risultato pratico e una lista meno caotica, piu adatta a triage, pianificazione e confronto tra aree di problema.
+- Il sistema restituisce anche una motivazione sintetica, utile per capire perchè il bug è stato messo in quel gruppo.
+- Il risultato pratico è una lista meno caotica, più adatta a triage, pianificazione e confronto tra aree di problema.
 
 ### Analisi Similarita
 
@@ -72,23 +72,23 @@ Alla prima apertura dell'app vai subito nella pagina `Settings` e compila questi
 
 ### 1. Azure DevOps Connection
 
-| Campo | Obbligatorio | Esempio | A cosa serve |
-| --- | --- | --- | --- |
-| Organization URL | Si | `https://dev.azure.com/your-org` | Identifica l'organizzazione Azure DevOps da interrogare. |
-| Project Name | Si | `PaymentsPlatform` | Limita il lavoro al project corretto. |
-| Saved Query ID | Si | `12345678-1234-1234-1234-123456789abc` | Dice all'app quale query usare per recuperare i bug. |
-| Top N Bugs | Si | `20` | Decide quanti bug importare nella sessione. |
-| PAT | Si | `ado_pat_...` | Permette all'app di autenticarsi verso Azure DevOps. |
+| Campo            | Obbligatorio | Esempio                                | A cosa serve                                             |
+| ---------------- | ------------ | -------------------------------------- | -------------------------------------------------------- |
+| Organization URL | Si           | `https://dev.azure.com/your-org`       | Identifica l'organizzazione Azure DevOps da interrogare. |
+| Project Name     | Si           | `PaymentsPlatform`                     | Limita il lavoro al project corretto.                    |
+| Saved Query ID   | Si           | `12345678-1234-1234-1234-123456789abc` | Dice all'app quale query usare per recuperare i bug.     |
+| Top N Bugs       | Si           | `20`                                   | Decide quanti bug importare nella sessione.              |
+| PAT              | Si           | `ado_pat_...`                          | Permette all'app di autenticarsi verso Azure DevOps.     |
 
 ### 2. LLM Provider
 
-| Campo | Obbligatorio | Esempio | A cosa serve |
-| --- | --- | --- | --- |
-| Provider | Si | `OpenAI` | Sceglie il motore AI da usare per categorizzazione e similarita. |
-| API Key | Si | `sk-...` | Autentica il provider scelto. |
-| Base URL | Solo Generic | `https://api.example.com/v1` | Serve solo per endpoint OpenAI-compatible personalizzati. |
-| Model | Consigliato | `gpt-4.1-mini` | Definisce il modello effettivamente usato. |
-| Chunk Size | Si | `15` | Decide quanti bug inviare per volta al provider. |
+| Campo      | Obbligatorio | Esempio                      | A cosa serve                                                     |
+| ---------- | ------------ | ---------------------------- | ---------------------------------------------------------------- |
+| Provider   | Si           | `OpenAI`                     | Sceglie il motore AI da usare per categorizzazione e similarita. |
+| API Key    | Si           | `sk-...`                     | Autentica il provider scelto.                                    |
+| Base URL   | Solo Generic | `https://api.example.com/v1` | Serve solo per endpoint OpenAI-compatible personalizzati.        |
+| Model      | Consigliato  | `gpt-4.1-mini`               | Definisce il modello effettivamente usato.                       |
+| Chunk Size | Si           | `15`                         | Decide quanti bug inviare per volta al provider.                 |
 
 ### 3. Categories
 
