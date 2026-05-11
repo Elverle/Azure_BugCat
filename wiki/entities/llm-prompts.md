@@ -3,7 +3,7 @@ title: 'LLM Prompts'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-05-01
+updated: 2026-05-11
 sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-09-structured-output]]']
 tags: [llm, prompts, categorization, similar-bugs]
 lang: en
@@ -39,6 +39,7 @@ Builder functions for the system prompts and user messages sent to LLM providers
 - Category discipline: choose exactly one configured macro-category when a list is provided.
 - Technical layer discipline: `subCategory` is no longer free text; it represents the likely ownership layer and must be one of `FE`, `BE`, `FE/BE`, or `Non determinabile`.
 - Output guidance: return one result per input bug with `bugId`, `macroCategory`, `subCategory`, and `categoryReason`.
+- Example snippets in the system prompt are intentionally domain-neutral so they do not bias the model toward project-specific terminology.
 
 ## Technical Layer Semantics
 

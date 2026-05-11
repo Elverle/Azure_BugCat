@@ -24,7 +24,7 @@ describe('prompts', () => {
       expect(prompt).toContain('Use description as an additional signal')
       expect(prompt).toContain('3. The bug tags')
       expect(prompt).toContain('Validazioni')
-      expect(prompt).toContain('Costo sistemazione - errore apertura modale')
+      expect(prompt).toContain('Costo extra - errore apertura modale')
       expect(prompt).toContain('Best category: "Costi"')
       expect(prompt).toContain(`Use exactly one of: ${TECHNICAL_LAYER_VALUES.join(', ')}`)
     })
