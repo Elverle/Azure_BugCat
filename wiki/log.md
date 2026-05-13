@@ -1,27 +1,29 @@
 # Wiki Operation Log
 
-| Date       | Action                     | Author         | Notes                                                                                                                                                                                   |
-| ---------- | -------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-05-05 | analysis README onboarding | GitHub Copilot | Added and refined the root README with Windows/macOS packaging guidance, Settings quickstart, operator workflow, and more functional wording for categorization and similarity.       |
-| 2026-05-03 | update feature index       | GitHub Copilot | Updated `feature-index.md` to track the latest non-feature deliveries with explicit `min-##` / `fix-##` IDs and linked the convention from the wiki index.                           |
-| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                                                                                          |
-| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                                                                                             |
-| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.                                                                                         |
-| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.                                                                                                   |
-| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity.                                                                                       |
-| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.                                                                                           |
-| 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index.                                                                    |
-| 2026-05-01 | scan FT-07                 | GitHub Copilot | Scanned FT-07 session persistence. Created 1 source, 3 entities, 2 concepts, 1 topic. Updated 8 existing pages.                                                                         |
-| 2026-05-01 | scan FT-08                 | GitHub Copilot | Scanned FT-08 generic provider. Created 1 source, 1 entity. Updated LLM/settings/migration pages, index, and historical Copilot docs.                                                   |
-| 2026-05-01 | scan FT-09                 | GitHub Copilot | Scanned FT-09 structured output. Created 1 source, 1 entity, 1 concept. Updated LLM provider, prompt, validator, topic, index, and log pages.                                           |
-| 2026-05-01 | scan FT-10                 | GitHub Copilot | Scanned FT-10 AI Cluster. Created 1 source, 5 entities, 1 concept, 1 topic. Updated LLM, IPC, renderer, drawer, session, index, and log pages.                                          |
-| 2026-05-02 | scan FT-11                 | GitHub Copilot | Scanned FT-11 OpenRouter provider. Created 1 source, 1 entity. Updated LLM/build/topic pages, index, and log.                                                                           |
-| 2026-05-03 | update FT-11               | GitHub Copilot | Updated FT-11 docs for OpenRouter structured-output routing mismatch handling, blocking categorization behavior, and dashboard error modal UX.                                          |
-| 2026-05-03 | analysis FT-11             | GitHub Copilot | Added a dedicated analysis page for the OpenRouter `structured-output-routing-mismatch` failure mode and linked it from the wiki index.                                                 |
-| 2026-05-03 | cleanup wiki               | GitHub Copilot | Removed the obsolete historical Copilot provider page so the wiki no longer exposes a deleted provider as a current entity.                                                             |
-| 2026-05-03 | analysis LLM cleanup       | GitHub Copilot | Documented the shared LLM provider cleanup, added pages for the new helper modules, and updated provider/service docs to reflect aligned timeout, parsing, and blocking-error behavior. |
-| 2026-05-03 | analysis cancel flow       | GitHub Copilot | Documented abort-aware categorization cancellation, updated IPC/dashboard/provider pages, and recorded the all-or-nothing persistence rule for cancel.                                  |
-| 2026-05-03 | analysis dashboard state   | GitHub Copilot | Documented Dashboard remount recovery for active categorization, immediate cancelling feedback, and renderer-safe IPC error normalization.                                              |
+| Date       | Action                     | Author         | Notes                                                                                                                                                                                                   |
+| ---------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-13 | update min-05              | GitHub Copilot | Added a dashboard fetch summary that shows how many retrieved bugs are new versus the historical catalog. Updated shared types, fetch merge docs, dashboard header/hook docs, and the delivery tracker. |
+| 2026-05-13 | scan FT-12                 | GitHub Copilot | Scanned incremental session cache and selective re-categorization. Created 1 source, 1 entity, 1 concept, and 1 topic. Updated persistence, IPC, preload, settings, and tracker docs.                   |
+| 2026-05-05 | analysis README onboarding | GitHub Copilot | Added and refined the root README with Windows/macOS packaging guidance, Settings quickstart, operator workflow, and more functional wording for categorization and similarity.                         |
+| 2026-05-03 | update feature index       | GitHub Copilot | Updated `feature-index.md` to track the latest non-feature deliveries with explicit `min-##` / `fix-##` IDs and linked the convention from the wiki index.                                              |
+| 2026-04-29 | Wiki structure initialized | Claude Code    | Project in pre-development, no source code yet                                                                                                                                                          |
+| 2026-04-29 | scan FT-01                 | GitHub Copilot | Scanned FT-01 scaffold. Created 1 source, 9 entities, 3 concepts, 2 topics.                                                                                                                             |
+| 2026-04-29 | scan FT-02                 | GitHub Copilot | Scanned FT-02 settings. Created 1 source, 10 entities, 2 concepts. Updated 3 entities, 1 topic.                                                                                                         |
+| 2026-04-30 | scan FT-03                 | GitHub Copilot | Scanned FT-03 ADO fetch. Created 1 source, 4 entities, 1 concept. Updated 2 entities.                                                                                                                   |
+| 2026-04-30 | scan FT-04                 | GitHub Copilot | Scanned FT-04 LLM provider. Created 1 source, 10 entities, 2 concepts, 1 topic. Updated 1 entity.                                                                                                       |
+| 2026-04-30 | scan FT-05                 | GitHub Copilot | Scanned FT-05 dashboard. Created 1 source, 11 entities, 2 concepts, 1 topic. Updated 1 topic.                                                                                                           |
+| 2026-04-30 | scan FT-06                 | GitHub Copilot | Scanned FT-06 drawer flow. Created 1 source, 3 entities, 1 concept. Updated 6 entities, 1 concept, 1 topic, 1 index.                                                                                    |
+| 2026-05-01 | scan FT-07                 | GitHub Copilot | Scanned FT-07 session persistence. Created 1 source, 3 entities, 2 concepts, 1 topic. Updated 8 existing pages.                                                                                         |
+| 2026-05-01 | scan FT-08                 | GitHub Copilot | Scanned FT-08 generic provider. Created 1 source, 1 entity. Updated LLM/settings/migration pages, index, and historical Copilot docs.                                                                   |
+| 2026-05-01 | scan FT-09                 | GitHub Copilot | Scanned FT-09 structured output. Created 1 source, 1 entity, 1 concept. Updated LLM provider, prompt, validator, topic, index, and log pages.                                                           |
+| 2026-05-01 | scan FT-10                 | GitHub Copilot | Scanned FT-10 AI Cluster. Created 1 source, 5 entities, 1 concept, 1 topic. Updated LLM, IPC, renderer, drawer, session, index, and log pages.                                                          |
+| 2026-05-02 | scan FT-11                 | GitHub Copilot | Scanned FT-11 OpenRouter provider. Created 1 source, 1 entity. Updated LLM/build/topic pages, index, and log.                                                                                           |
+| 2026-05-03 | update FT-11               | GitHub Copilot | Updated FT-11 docs for OpenRouter structured-output routing mismatch handling, blocking categorization behavior, and dashboard error modal UX.                                                          |
+| 2026-05-03 | analysis FT-11             | GitHub Copilot | Added a dedicated analysis page for the OpenRouter `structured-output-routing-mismatch` failure mode and linked it from the wiki index.                                                                 |
+| 2026-05-03 | cleanup wiki               | GitHub Copilot | Removed the obsolete historical Copilot provider page so the wiki no longer exposes a deleted provider as a current entity.                                                                             |
+| 2026-05-03 | analysis LLM cleanup       | GitHub Copilot | Documented the shared LLM provider cleanup, added pages for the new helper modules, and updated provider/service docs to reflect aligned timeout, parsing, and blocking-error behavior.                 |
+| 2026-05-03 | analysis cancel flow       | GitHub Copilot | Documented abort-aware categorization cancellation, updated IPC/dashboard/provider pages, and recorded the all-or-nothing persistence rule for cancel.                                                  |
+| 2026-05-03 | analysis dashboard state   | GitHub Copilot | Documented Dashboard remount recovery for active categorization, immediate cancelling feedback, and renderer-safe IPC error normalization.                                                              |
 
 ## [2026-05-03] analysis | Dashboard categorization state recovery
 
@@ -46,6 +48,31 @@ Pages created:
 Pages updated:
 
 - [[wiki/index.md]]
+
+## [2026-05-13] scan | FT-12 - Incremental Session Cache & Selective Re-Categorization
+
+Scanned FT-12 after the persistence redesign that split the open `session` snapshot from the historical `bugCatalog`. The feature adds signature-based fetch merging, selective LLM categorization, similarity lifecycle metadata, migration v3 backfill, and separate Settings actions for clearing the session snapshot vs clearing historical catalog data. Also updated `feature-index.md` to register FT-12 in the delivery tracker.
+
+Pages created:
+
+- [[wiki/sources/ft-12-incremental-session-cache]]
+- [[wiki/entities/catalog-merge-utility]]
+- [[wiki/concepts/catalog-backed-selective-re-categorization]]
+- [[wiki/topics/historical-bug-catalog-lifecycle]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/electron-store]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/ipc-channels]]
+- [[wiki/entities/store-migration]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/preload-bridge]]
+- [[wiki/entities/settings-page]]
+- [[wiki/concepts/schema-versioned-store-migration]]
+- [[wiki/topics/session-persistence-lifecycle]]
+- [[wiki/topics/llm-categorization-pipeline]]
 
 ## [2026-05-05] update | README packaging and quickstart refinement
 

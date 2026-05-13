@@ -3,15 +3,20 @@ title: 'Settings Page'
 type: entity
 subtype: component
 created: 2026-04-29
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-07-session-persistence]]']
-tags: [react, page, settings, ui, session]
+updated: 2026-05-13
+sources:
+  [
+    '[[wiki/sources/ft-02-settings]]',
+    '[[wiki/sources/ft-07-session-persistence]]',
+    '[[wiki/sources/ft-12-incremental-session-cache]]'
+  ]
+tags: [react, page, settings, ui, session, catalog]
 lang: en
 ---
 
 ## Description
 
-Top-level page component for application configuration. Composes three section cards (ADO connection, LLM provider, categories), a save action bar, and a destructive danger zone for clearing cached session data. Delegates settings state management to the [[wiki/entities/use-settings-hook]] and calls `window.electronAPI.clearSession()` only after explicit confirmation.
+Top-level page component for application configuration. Composes three section cards (ADO connection, LLM provider, categories), a save action bar, and two destructive cleanup zones: one for clearing the current session snapshot and one for deleting the persisted bug catalog history. Delegates settings state management to the [[wiki/entities/use-settings-hook]] and gates both destructive actions behind explicit confirmation dialogs.
 
 ## Location
 
@@ -39,9 +44,15 @@ Top-level page component for application configuration. Composes three section c
 ├─────────────────────────────────────────┤
 │ ⚠ Zona pericolosa                      │
 │   [Pulisci dati sessione]               │
+├─────────────────────────────────────────┤
+│ [Clear catalog result banner - cond.]   │
+├─────────────────────────────────────────┤
+│ ⚠ Cancella storico bug                  │
+│   [Cancella storico bug]                │
 └─────────────────────────────────────────┘
 
-[ConfirmDialog — conditional overlay]
+[ConfirmDialog session clear - conditional overlay]
+[ConfirmDialog catalog clear - conditional overlay]
 ```
 
 ## Behavior
@@ -50,14 +61,15 @@ Top-level page component for application configuration. Composes three section c
 - Keeps the security note always visible: credentials are stored locally in encrypted form.
 - Shows a save result banner: success auto-dismisses after 10 seconds, error stays dismissible.
 - Disables the save button when the form is not dirty, contains validation errors, or is currently saving.
-- Renders a danger zone card that explains the destructive impact of clearing the cached bug session.
-- Opens [[wiki/entities/confirm-dialog]] before invoking `window.electronAPI.clearSession()`.
-- Shows a dedicated success/error banner for the clear-session action; confirming always closes the modal in `finally`.
+- Renders a session danger zone card that explains the destructive impact of clearing the current snapshot while preserving historical catalog data.
+- Renders a second danger zone card for deleting the historical bug catalog while preserving the current session snapshot.
+- Opens separate [[wiki/entities/confirm-dialog]] instances before invoking `window.electronAPI.clearSession()` and `window.electronAPI.clearCatalog()`.
+- Shows dedicated success/error banners for both destructive actions; confirming either action always closes its modal in `finally`.
 - Adds explicit `aria-label`s to dismiss buttons for non-text icon controls.
 
 ## Props / State
 
-No props — uses `useSettings()` hook directly for settings state and local `useState()` only for confirmation dialog visibility plus clear-session feedback.
+No props — uses `useSettings()` hook directly for settings state and local `useState()` for two confirmation dialogs plus separate feedback banners for session-clear and catalog-clear results.
 
 ## Dependencies
 
@@ -73,5 +85,6 @@ No props — uses `useSettings()` hook directly for settings state and local `us
 
 - [[wiki/topics/renderer-ui]]
 - [[wiki/topics/session-persistence-lifecycle]]
+- [[wiki/topics/historical-bug-catalog-lifecycle]]
 - [[wiki/concepts/settings-persistence-flow]]
 - [[wiki/concepts/accessible-confirmation-dialog]]

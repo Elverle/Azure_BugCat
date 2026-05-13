@@ -3,7 +3,7 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-03
+updated: 2026-05-13
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -11,9 +11,10 @@ sources:
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-11-openrouter-provider]]',
+    '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
-tags: [typescript, types, shared, domain-model]
+tags: [typescript, types, shared, domain-model, catalog]
 lang: en
 ---
 
@@ -36,17 +37,19 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Bug types
 
-| Type             | Purpose                                                                                              |
-| ---------------- | ---------------------------------------------------------------------------------------------------- |
-| `BugItem`        | Raw bug from Azure DevOps (id, title, state, assignee, areaPath, description, priority, dates, tags) |
-| `CategorizedBug` | Extends `BugItem` with `macroCategory`, `subCategory`, `categoryReason`, `categorizedAt`             |
+| Type             | Purpose                                                                                               |
+| ---------------- | ----------------------------------------------------------------------------------------------------- |
+| `BugItem`        | Raw bug from Azure DevOps (id, title, state, assignee, areaPath, description, priority, dates, tags)  |
+| `CategorizedBug` | Extends `BugItem` with `macroCategory`, `subCategory`, `categoryReason`, `categorizedAt`              |
+| `CatalogBug`     | Extends `CategorizedBug` with lifecycle timestamps, `inputSignature`, and similarity-history metadata |
+| `BugCatalog`     | `Record<number, CatalogBug>` used as the main-process historical bug catalog                          |
 
 ### Configuration
 
-| Type          | Purpose                                                                                                       |
-| ------------- | ------------------------------------------------------------------------------------------------------------- |
-| `AppSettings` | Full settings object, including shared `llmModel`, optional generic `baseUrl`, and the selected `llmProvider` |
-| `SessionData` | Cached bug list with fetch/categorize timestamps plus optional `similarityResults` snapshot                   |
+| Type          | Purpose                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `AppSettings` | Full settings object, including shared `llmModel`, optional generic `baseUrl`, and the selected `llmProvider`             |
+| `SessionData` | Open-snapshot bug cache with fetch/categorize timestamps, optional `lastFetchNewCount`, plus optional `similarityResults` |
 
 ### Error & Progress
 
@@ -94,6 +97,13 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `LLMProviderType` now includes `openrouter`, extending the cross-process provider selector without changing the IPC payload shape.
 - `AppSettings.llmModel` remains the shared model override field for both SDK-backed providers and the generic OpenAI-compatible adapter.
 
+## FT-12 Notes
+
+- `SessionData` and `BugCatalog` now represent separate persistence responsibilities: the former is the current open snapshot, the latter is the historical catalog used only in the main process.
+- `SessionData.lastFetchNewCount` stores how many fetched bugs were not present in the historical catalog before the latest merge, letting the renderer show a fetch summary without reading `bugCatalog` directly.
+- `CatalogBug.inputSignature` captures the normalized categorization inputs (`title`, `description`, `tags`, `priority`, `areaPath`) so unchanged bugs can safely reuse previous categorization.
+- `CatalogBug.everInSimilarityGroup` and `lastSimilarityGroupAt` preserve similarity-history metadata without expanding the renderer-facing session payload.
+
 ## Cancellation Notes
 
 - `ErrorCode` now includes `OPERATION_CANCELLED` so intentional user aborts can be distinguished from `LLM_TIMEOUT`.
@@ -101,6 +111,7 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 
 ## See also
 
-- [[wiki/entities/electron-store]] — persists `AppSettings` and `SessionData`
+- [[wiki/entities/electron-store]] — persists `AppSettings`, `SessionData`, and `BugCatalog`
 - [[wiki/entities/ipc-handlers]] — serves settings/session over IPC
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
+- [[wiki/topics/historical-bug-catalog-lifecycle]]

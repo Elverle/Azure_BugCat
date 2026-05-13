@@ -8,6 +8,7 @@ import type { SessionData } from '@shared/types'
 
 const mockSession: SessionData = {
   fetchedAt: '2026-01-01T09:00:00Z',
+  lastFetchNewCount: 2,
   categorizedAt: '2026-01-01T10:00:00Z',
   bugs: [
     {
@@ -98,6 +99,8 @@ describe('DashboardPage', () => {
 
   it('renders the Similarita tab in Dashboard and shows the Motivation panel', async () => {
     render(<DashboardPage />)
+
+    expect(await screen.findByText('Nuovi rispetto allo storico: 2')).toBeInTheDocument()
 
     const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
     fireEvent.click(similarityTab)
