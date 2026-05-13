@@ -23,19 +23,20 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ### Features
 
-| #   | ID    | Descrizione                                            | Status |
-| --- | ----- | ------------------------------------------------------ | ------ |
-| 1   | FT-01 | Scaffold Electron + Infrastruttura Base                | Done   |
-| 2   | FT-02 | Pagina Settings e Persistenza Configurazione           | Done   |
-| 3   | FT-03 | Azure DevOps Bug Fetching (Main Process)               | Done   |
-| 4   | FT-04 | LLM Provider Abstraction e Categorizzazione            | Done   |
-| 5   | FT-05 | Dashboard Principale: Tabella, Filtri e Raggruppamenti | Done   |
-| 6   | FT-06 | Pannello Dettaglio Bug (Drawer)                        | Done   |
-| 7   | FT-07 | Persistenza Dati e Gestione Sessione                   | Done   |
-| 8   | FT-08 | GenericProvider OpenAI-compatible e rimozione Copilot  | Done   |
-| 9   | FT-09 | Structured output JSON Schema per tutti i provider LLM | Done   |
-| 10  | FT-10 | AI Cluster - Similar Bug Detection                     | Done   |
-| 11  | FT-11 | OpenRouter SDK Provider                                | Done   |
+| #   | ID    | Descrizione                                               | Status |
+| --- | ----- | --------------------------------------------------------- | ------ |
+| 1   | FT-01 | Scaffold Electron + Infrastruttura Base                   | Done   |
+| 2   | FT-02 | Pagina Settings e Persistenza Configurazione              | Done   |
+| 3   | FT-03 | Azure DevOps Bug Fetching (Main Process)                  | Done   |
+| 4   | FT-04 | LLM Provider Abstraction e Categorizzazione               | Done   |
+| 5   | FT-05 | Dashboard Principale: Tabella, Filtri e Raggruppamenti    | Done   |
+| 6   | FT-06 | Pannello Dettaglio Bug (Drawer)                           | Done   |
+| 7   | FT-07 | Persistenza Dati e Gestione Sessione                      | Done   |
+| 8   | FT-08 | GenericProvider OpenAI-compatible e rimozione Copilot     | Done   |
+| 9   | FT-09 | Structured output JSON Schema per tutti i provider LLM    | Done   |
+| 10  | FT-10 | AI Cluster - Similar Bug Detection                        | Done   |
+| 11  | FT-11 | OpenRouter SDK Provider                                   | Done   |
+| 12  | FT-12 | Incremental Session Cache e Re-Categorizzazione Selettiva | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -52,6 +53,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-09-structured-output]] — FT-09 structured output: shared JSON Schemas, provider-native schema enforcement, simplified prompts, and temperature 0.1 standardization (2026-05-01)
 - [[wiki/sources/ft-10-ai-cluster-similarity]] — FT-10 AI Cluster: macroCategory-scoped similar-bug detection with progress IPC, session persistence, and drawer drill-down (2026-05-01)
 - [[wiki/sources/ft-11-openrouter-provider]] — FT-11 OpenRouter provider: official SDK adapter, json_schema structured output, routing-mismatch blocking error handling, and dashboard modal feedback (2026-05-03)
+- [[wiki/sources/ft-12-incremental-session-cache]] — FT-12 incremental persistence: bugCatalog history, signature-based fetch merge, selective categorization, migration v3 backfill, and dual cleanup controls (2026-05-13)
 
 ## Entities
 
@@ -105,6 +107,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/bug-detail-drawer]] — Fixed right-side detail drawer with LLM reasoning, metadata, and prev/next navigation (FT-06)
 - [[wiki/entities/ai-cluster-category-section]] — Collapsible per-category result section for AI Cluster (FT-10)
 - [[wiki/entities/similarity-group-card]] — Similarity score/reason card with clickable bug list (FT-10)
+- [[wiki/entities/catalog-merge-utility]] — Main-process utility for signature computation, catalog/session merge, selective categorization merge, and similarity lifecycle metadata (FT-12)
 - [[wiki/entities/group-accordion]] — Collapsible grouped container with count badges and ARIA wiring (FT-05)
 - [[wiki/entities/multi-select-component]] — Custom searchable multi-select dropdown without external dependencies (FT-05)
 - [[wiki/entities/use-bug-drawer-hook]] — Hook for selected bug state and filtered-list navigation inside the drawer (FT-06)
@@ -132,6 +135,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/concepts/accessible-collection-controls]] — Project pattern for custom listbox, sortable table headers, and accordion controls with semantic HTML + ARIA (FT-05)
 - [[wiki/concepts/accessible-confirmation-dialog]] — Focus-managed modal confirmation pattern for destructive actions (FT-07)
 - [[wiki/concepts/click-outside-exclusion-pattern]] — Document-level outside-click closing with `data-bug-click` exclusion markers (FT-06)
+- [[wiki/concepts/catalog-backed-selective-re-categorization]] — Dual-layer persistence pattern that reuses categorization only when catalog signatures still match current open-bug inputs (FT-12)
 
 ## Topics
 
@@ -141,6 +145,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/topics/ai-cluster-similar-bug-detection]] — End-to-end similar-bug detection: dashboard tab → session gate → IPC → per-category LLM analysis → persisted results
 - [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, drawer drill-down, and categorization actions together
 - [[wiki/topics/session-persistence-lifecycle]] — Startup migration, session hydration, timestamp display, and user-triggered session reset (FT-07)
+- [[wiki/topics/historical-bug-catalog-lifecycle]] — End-to-end lifecycle of the persisted bug catalog across fetch, selective categorization, similarity, migration, and cleanup (FT-12)
 
 ## Analyses
 

@@ -3,10 +3,11 @@ title: 'Dashboard Header'
 type: entity
 subtype: component
 created: 2026-04-30
-updated: 2026-05-03
+updated: 2026-05-13
 sources:
   [
     '[[wiki/sources/ft-05-dashboard]]',
+    '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
@@ -17,7 +18,7 @@ lang: en
 
 ## Description
 
-Header strip for the dashboard. Displays the page title, session freshness timestamps, and the primary `Fetch Bugs` / `Categorize` actions.
+Header strip for the dashboard. Displays the page title, session freshness timestamps, a small fetch summary for newly discovered bugs, and the primary `Fetch Bugs` / `Categorize` actions.
 
 ## Location
 
@@ -33,7 +34,11 @@ interface DashboardHeaderProps {
   loading: boolean
   isCategorizing: boolean
   isCancelling: boolean
-  sessionInfo: { fetchedAt: string | null; categorizedAt: string | null }
+  sessionInfo: {
+    fetchedAt: string | null
+    categorizedAt: string | null
+    lastFetchNewCount: number | null
+  }
   progress: ChunkProgress | null
 }
 ```
@@ -42,6 +47,7 @@ interface DashboardHeaderProps {
 
 - Formats session timestamps through [[wiki/entities/date-format-utility]] instead of inlining locale logic inside the component.
 - Shows `Dati aggiornati il ...` plus an optional `Categorizzati il ...` suffix when session metadata exists.
+- Shows `Nuovi rispetto allo storico: N` under the `Fetch Bugs` button after a fetch completes, using the scalar summary persisted in `SessionData.lastFetchNewCount`.
 - Shows `Nessun dato caricato` when no session exists yet.
 - `Fetch Bugs` shows a spinner while hydration or fetch is loading, and is also disabled while categorization is active.
 - While `isCategorizing` is `true`, the primary action swaps from `Categorize` to a red `Cancel` button.

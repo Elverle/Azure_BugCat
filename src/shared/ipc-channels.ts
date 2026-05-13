@@ -30,6 +30,9 @@ export const IPC_CHANNELS = {
   SESSION_GET: 'session:get',
   SESSION_CLEAR: 'session:clear',
 
+  // Catalog
+  CATALOG_CLEAR: 'catalog:clear',
+
   // Shell
   OPEN_EXTERNAL: 'shell:open-external'
 } as const

@@ -19,6 +19,7 @@ const mockElectronAPI = {
   }),
   setSettings: vi.fn().mockResolvedValue(undefined),
   clearSession: vi.fn().mockResolvedValue(undefined),
+  clearCatalog: vi.fn().mockResolvedValue(undefined),
   testAdoConnection: vi.fn(),
   testLlmConnection: vi.fn(),
   fetchBugs: vi.fn(),
@@ -56,6 +57,7 @@ describe('SettingsPage — clear session', () => {
       categories: []
     })
     mockElectronAPI.clearSession.mockResolvedValue(undefined)
+    mockElectronAPI.clearCatalog.mockResolvedValue(undefined)
   })
 
   it('renders the "Pulisci dati sessione" button', async () => {
@@ -72,7 +74,7 @@ describe('SettingsPage — clear session', () => {
 
     const dialog = await screen.findByRole('dialog')
     expect(dialog).toBeInTheDocument()
-    expect(screen.getByText('Conferma pulizia dati sessione')).toBeInTheDocument()
+    expect(screen.getByText('Conferma pulizia sessione corrente')).toBeInTheDocument()
   })
 
   it('calls clearSession when confirming the dialog', async () => {
@@ -80,7 +82,7 @@ describe('SettingsPage — clear session', () => {
     const button = await screen.findByRole('button', { name: 'Pulisci dati sessione' })
     fireEvent.click(button)
 
-    const confirmButton = await screen.findByRole('button', { name: 'Pulisci dati' })
+    const confirmButton = await screen.findByRole('button', { name: 'Pulisci sessione' })
     fireEvent.click(confirmButton)
 
     await waitFor(() => {
@@ -100,6 +102,90 @@ describe('SettingsPage — clear session', () => {
 
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+    expect(mockElectronAPI.clearSession).not.toHaveBeenCalled()
+  })
+})
+
+describe('SettingsPage — clear catalog', () => {
+  beforeEach(() => {
+    Object.defineProperty(window, 'electronAPI', {
+      configurable: true,
+      value: mockElectronAPI
+    })
+    vi.clearAllMocks()
+    mockElectronAPI.getSettings.mockResolvedValue({
+      orgUrl: '',
+      projectName: '',
+      queryId: '',
+      topN: 20,
+      chunkSize: 15,
+      llmProvider: 'openai',
+      apiKey: '',
+      pat: '',
+      categories: []
+    })
+    mockElectronAPI.clearSession.mockResolvedValue(undefined)
+    mockElectronAPI.clearCatalog.mockResolvedValue(undefined)
+  })
+
+  it('renders the "Cancella storico bug" button', async () => {
+    renderSettingsPage()
+    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    expect(button).toBeInTheDocument()
+  })
+
+  it('opens catalog confirmation dialog when clicking the button', async () => {
+    renderSettingsPage()
+    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+
+    fireEvent.click(button)
+
+    const dialog = await screen.findByRole('dialog')
+    expect(dialog).toBeInTheDocument()
+    expect(screen.getByText('Conferma cancellazione storico')).toBeInTheDocument()
+  })
+
+  it('calls clearCatalog when confirming the dialog', async () => {
+    renderSettingsPage()
+    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    fireEvent.click(button)
+
+    const confirmButton = await screen.findByRole('button', { name: 'Cancella storico' })
+    fireEvent.click(confirmButton)
+
+    await waitFor(() => {
+      expect(mockElectronAPI.clearCatalog).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('does not call clearCatalog when canceling', async () => {
+    renderSettingsPage()
+    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    fireEvent.click(button)
+
+    await screen.findByRole('dialog')
+
+    const cancelButtons = screen.getAllByRole('button', { name: 'Annulla' })
+    // Click the last "Annulla" button which belongs to the catalog dialog
+    fireEvent.click(cancelButtons[cancelButtons.length - 1])
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    })
+    expect(mockElectronAPI.clearCatalog).not.toHaveBeenCalled()
+  })
+
+  it('does not call clearSession when clearing catalog', async () => {
+    renderSettingsPage()
+    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    fireEvent.click(button)
+
+    const confirmButton = await screen.findByRole('button', { name: 'Cancella storico' })
+    fireEvent.click(confirmButton)
+
+    await waitFor(() => {
+      expect(mockElectronAPI.clearCatalog).toHaveBeenCalledTimes(1)
     })
     expect(mockElectronAPI.clearSession).not.toHaveBeenCalled()
   })

@@ -18,6 +18,7 @@ declare global {
       onFindSimilarProgress: (callback: (data: unknown) => void) => () => void
       getSession: () => Promise<unknown>
       clearSession: () => Promise<unknown>
+      clearCatalog: () => Promise<unknown>
       openExternal: (url: string) => Promise<unknown>
     }
   }

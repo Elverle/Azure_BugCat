@@ -1,4 +1,6 @@
-export const CURRENT_SCHEMA_VERSION = 2
+import { computeInputSignature } from './utils/catalog-merge'
+
+export const CURRENT_SCHEMA_VERSION = 3
 
 export type Migration = {
   version: number
@@ -20,6 +22,74 @@ export const migrations: Migration[] = [
         }
         delete settings.copilotAuthStatus
       }
+      return data
+    }
+  },
+  {
+    version: 3,
+    up: (data) => {
+      const session = data.session as {
+        bugs: Record<string, unknown>[]
+        fetchedAt: string
+        categorizedAt?: string
+        similarityResults?: {
+          categories: {
+            macroCategory: string
+            groups: { similarityScore: number; reason: string; bugIds: number[] }[]
+            error?: string
+          }[]
+          analyzedAt: string
+        }
+      } | null
+
+      if (!session || !session.bugs || session.bugs.length === 0) {
+        data.bugCatalog = null
+        return data
+      }
+
+      const catalog: Record<number, Record<string, unknown>> = {}
+
+      for (const bug of session.bugs) {
+        const id = bug.id as number
+        // Normalize legacy bug fields for safe signature computation
+        const safeBug = {
+          id,
+          title: typeof bug.title === 'string' ? bug.title : '',
+          state: typeof bug.state === 'string' ? bug.state : '',
+          assignee: typeof bug.assignee === 'string' ? bug.assignee : null,
+          areaPath: typeof bug.areaPath === 'string' ? bug.areaPath : '',
+          description: typeof bug.description === 'string' ? bug.description : '',
+          priority: typeof bug.priority === 'number' ? bug.priority : 0,
+          createdDate: typeof bug.createdDate === 'string' ? bug.createdDate : '',
+          updatedDate: typeof bug.updatedDate === 'string' ? bug.updatedDate : '',
+          tags: Array.isArray(bug.tags) ? (bug.tags as string[]) : []
+        }
+        catalog[id] = {
+          ...bug,
+          firstSeenAt: session.fetchedAt,
+          lastSeenAt: session.fetchedAt,
+          closedAt: null,
+          inputSignature: computeInputSignature(safeBug),
+          everInSimilarityGroup: false,
+          lastSimilarityGroupAt: null
+        }
+      }
+
+      if (session.similarityResults) {
+        const analyzedAt = session.similarityResults.analyzedAt
+        for (const category of session.similarityResults.categories) {
+          for (const group of category.groups) {
+            for (const bugId of group.bugIds) {
+              if (catalog[bugId]) {
+                catalog[bugId].everInSimilarityGroup = true
+                catalog[bugId].lastSimilarityGroupAt = analyzedAt
+              }
+            }
+          }
+        }
+      }
+
+      data.bugCatalog = catalog
       return data
     }
   }
@@ -47,7 +117,8 @@ export function migrateStore(store: StoreAccess): void {
     const pending = migrations.filter((m) => m.version > schemaVersion)
     let data: Record<string, unknown> = {
       settings: store.get('settings'),
-      session: store.get('session')
+      session: store.get('session'),
+      bugCatalog: store.get('bugCatalog')
     }
     for (const migration of pending) {
       data = migration.up(data)
@@ -55,6 +126,7 @@ export function migrateStore(store: StoreAccess): void {
     // Persist migrated data before bumping schema version (atomic ordering)
     if (data.settings !== undefined) store.set('settings', data.settings)
     if (data.session !== undefined) store.set('session', data.session)
+    if (data.bugCatalog !== undefined) store.set('bugCatalog', data.bugCatalog)
     store.set('schemaVersion', CURRENT_SCHEMA_VERSION)
   } catch (error) {
     console.error('Store migration failed:', error)

@@ -55,6 +55,7 @@ export interface AppSettings {
 export interface SessionData {
   bugs: CategorizedBug[]
   fetchedAt: string
+  lastFetchNewCount?: number
   categorizedAt?: string
   similarityResults?: SimilarityResult
 }
@@ -109,3 +110,14 @@ export interface SimilarityProgress {
   completed: number
   currentGroup: string
 }
+
+export interface CatalogBug extends CategorizedBug {
+  firstSeenAt: string
+  lastSeenAt: string
+  closedAt: string | null
+  inputSignature: string
+  everInSimilarityGroup: boolean
+  lastSimilarityGroupAt: string | null
+}
+
+export type BugCatalog = Record<number, CatalogBug>

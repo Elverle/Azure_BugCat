@@ -3,10 +3,11 @@ title: 'useDashboard Hook'
 type: entity
 subtype: hook
 created: 2026-04-30
-updated: 2026-05-03
+updated: 2026-05-13
 sources:
   [
     '[[wiki/sources/ft-05-dashboard]]',
+    '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/sources/ft-11-openrouter-provider]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
@@ -17,7 +18,7 @@ lang: en
 
 ## Description
 
-Central state management hook for the dashboard page. Owns session hydration, long-running action state, categorization progress subscription, and session timestamp exposure.
+Central state management hook for the dashboard page. Owns session hydration, long-running action state, categorization progress subscription, and session metadata exposure.
 
 ## Location
 
@@ -33,7 +34,11 @@ export interface UseDashboardReturn {
   isCancelling: boolean
   progress: ChunkProgress | null
   categorizeError: string | null
-  sessionInfo: { fetchedAt: string | null; categorizedAt: string | null }
+  sessionInfo: {
+    fetchedAt: string | null
+    categorizedAt: string | null
+    lastFetchNewCount: number | null
+  }
   fetchBugs: () => Promise<void>
   categorizeBugs: () => Promise<void>
   cancelCategorization: () => Promise<void>
@@ -43,9 +48,10 @@ export interface UseDashboardReturn {
 
 ## Key Behaviors
 
-- Calls `window.electronAPI.getSession()` on mount and hydrates `bugs`, `fetchedAt`, and `categorizedAt` from `SessionData`.
+- Calls `window.electronAPI.getSession()` on mount and hydrates `bugs`, `fetchedAt`, `categorizedAt`, and `lastFetchNewCount` from `SessionData`.
 - Reads `getSession()` and `getCategorizationStatus()` together on mount so a remounted Dashboard can recover an active categorization started before the route change.
 - Exposes a shared `loadSession()` callback so both fetch and categorize flows refresh the same source of truth after IPC completes.
+- Keeps the renderer decoupled from `bugCatalog` by exposing only the derived `lastFetchNewCount` summary needed by the header.
 - Keeps `loading` focused on hydration/fetch flows and exposes a separate `isCategorizing` state so the UI can present cancel-specific affordances.
 - Stores categorization UI state in a module-scoped external store synchronized through `useSyncExternalStore()`, so route remounts do not reset the renderer's in-progress affordances.
 - Subscribes to `window.electronAPI.onCategorizeProgress()` only during categorization and clears the listener on success, failure, or unmount.

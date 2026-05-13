@@ -3,16 +3,17 @@ title: 'Preload Bridge (contextBridge)'
 type: entity
 subtype: middleware
 created: 2026-04-29
-updated: 2026-05-03
+updated: 2026-05-13
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
     '[[wiki/sources/ft-06-bug-detail-drawer]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
+    '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
-tags: [electron, ipc, preload, context-bridge, shell, similarity]
+tags: [electron, ipc, preload, context-bridge, shell, similarity, catalog]
 lang: en
 ---
 
@@ -23,27 +24,30 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 ## Location
 
 - `src/preload/index.ts` — bridge implementation
-- `src/preload/index.d.ts` — TypeScript declarations for `Window.electronAPI`
+- `src/preload/index.d.ts` — preload-exported `ElectronAPI` type
+- `src/renderer/src/global.d.ts` — renderer-side `Window.electronAPI` augmentation
 
 ## Exposed API (`window.electronAPI`)
 
-| Method                      | IPC Channel                 | Direction                |
-| --------------------------- | --------------------------- | ------------------------ |
-| `ping()`                    | `ping`                      | invoke                   |
-| `getSettings()`             | `settings:get`              | invoke                   |
-| `setSettings(settings)`     | `settings:set`              | invoke                   |
-| `fetchBugs()`               | `ado:fetch-bugs`            | invoke                   |
-| `testAdoConnection()`       | `ado:test-connection`       | invoke                   |
-| `categorizeBugs()`          | `llm:categorize`            | invoke                   |
-| `cancelCategorization()`    | `llm:categorize-cancel`     | invoke                   |
-| `getCategorizationStatus()` | `llm:categorize-status`     | invoke                   |
-| `testLlmConnection()`       | `llm:test-connection`       | invoke                   |
-| `onCategorizeProgress(cb)`  | `llm:categorize-progress`   | on (returns unsubscribe) |
-| `findSimilarBugs()`         | `llm:find-similar`          | invoke                   |
-| `onFindSimilarProgress(cb)` | `llm:find-similar-progress` | on (returns unsubscribe) |
-| `getSession()`              | `session:get`               | invoke                   |
-| `clearSession()`            | `session:clear`             | invoke                   |
-| `openExternal(url)`         | `shell:open-external`       | invoke                   |
+| Method                           | IPC Channel                     | Direction                |
+| -------------------------------- | ------------------------------- | ------------------------ |
+| `ping()`                         | `ping`                          | invoke                   |
+| `getSettings()`                  | `settings:get`                  | invoke                   |
+| `setSettings(settings)`          | `settings:set`                  | invoke                   |
+| `fetchBugs()`                    | `ado:fetch-bugs`                | invoke                   |
+| `testAdoConnection()`            | `ado:test-connection`           | invoke                   |
+| `fetchAdoAttachmentDataUrl(url)` | `ado:fetch-attachment-data-url` | invoke                   |
+| `categorizeBugs()`               | `llm:categorize`                | invoke                   |
+| `cancelCategorization()`         | `llm:categorize-cancel`         | invoke                   |
+| `getCategorizationStatus()`      | `llm:categorize-status`         | invoke                   |
+| `testLlmConnection()`            | `llm:test-connection`           | invoke                   |
+| `onCategorizeProgress(cb)`       | `llm:categorize-progress`       | on (returns unsubscribe) |
+| `findSimilarBugs()`              | `llm:find-similar`              | invoke                   |
+| `onFindSimilarProgress(cb)`      | `llm:find-similar-progress`     | on (returns unsubscribe) |
+| `getSession()`                   | `session:get`                   | invoke                   |
+| `clearSession()`                 | `session:clear`                 | invoke                   |
+| `clearCatalog()`                 | `catalog:clear`                 | invoke                   |
+| `openExternal(url)`              | `shell:open-external`           | invoke                   |
 
 ## Type Export
 
@@ -66,6 +70,7 @@ declare global {
 - Only named methods are exposed — no raw `ipcRenderer.send`/`invoke` access.
 - Progress subscriptions return cleanup functions to prevent listener leaks.
 - `openExternal()` preserves the security boundary by routing browser launches through the validated main-process handler.
+- Cleanup remains narrow and explicit: the renderer can trigger `clearSession()` and `clearCatalog()`, but there is still no generic catalog-read bridge.
 - Cancellation remains explicit and whitelisted: the renderer can only abort the current categorization run through the dedicated method, not by touching arbitrary process state.
 - The status method is read-only and window-scoped: the renderer can query whether its own categorization is still active without receiving access to the controller itself.
 
@@ -77,3 +82,4 @@ declare global {
 - [[wiki/entities/use-ai-cluster-hook]]
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/electron-architecture]]
+- [[wiki/topics/historical-bug-catalog-lifecycle]]

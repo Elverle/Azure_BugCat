@@ -24,3 +24,5 @@ Track every deliverable here using explicit prefixes:
 | 14  | fix-01  | Lint cleanup and stabilization of cancel flow (FT-04, FT-05)       | Complete |
 | 15  | min-03  | README principale con overview, setup Settings e flusso operativo  | Complete |
 | 16  | min-04  | README con packaging Windows/macOS, quickstart e copy funzionale   | Complete |
+| 17  | FT-12   | Incremental Session Cache & Selective Re-Categorization            | Complete |
+| 18  | min-05  | Contatore nuovi bug recuperati dopo la fetch (FT-05, FT-12)        | Complete |
