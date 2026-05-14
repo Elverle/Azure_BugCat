@@ -15,6 +15,7 @@ sources:
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
+    '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -39,7 +40,8 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 | `settings:set`                  | ✅ Implemented | Calls `store.set('settings', payload)`                                                                                                                                                                          |
 | `session:get`                   | ✅ Implemented | Returns `store.get('session')`                                                                                                                                                                                  |
 | `session:clear`                 | ✅ Implemented | Sets `session` to `null`                                                                                                                                                                                        |
-| `catalog:clear`                 | ✅ Implemented | Sets `bugCatalog` to `null` without touching the current `session`                                                                                                                                              |
+| `catalog:clear`                 | ✅ Implemented | Sets `bugCatalog` to `null`, records `catalogMetadata.lastClearedAt`, and leaves the current `session` untouched                                                                                                |
+| `catalog:get-closed`            | ✅ Implemented | Reads `bugCatalog`, filters to entries with `closedAt !== null`, and returns that closed-only slice together with the latest `session.fetchedAt` plus `catalogMetadata.lastClearedAt` if available              |
 | `ado:fetch-bugs`                | ✅ Implemented | Validates settings, calls `fetchBugsFromQuery()`, merges results into `bugCatalog`, persists a fresh open-bug `session` plus `lastFetchNewCount`, and reuses categorization when signatures still match         |
 | `ado:test-connection`           | ✅ Implemented | Calls `testAdoConnection()`, returns `TestConnectionResult`                                                                                                                                                     |
 | `ado:fetch-attachment-data-url` | ✅ Implemented | Loads persisted settings and returns a renderer-safe attachment data URL for Azure DevOps-hosted images                                                                                                         |
@@ -57,11 +59,12 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - The shell handler uses `new URL(url)` plus protocol enforcement so the renderer cannot open arbitrary schemes.
 - FT-08 removed the old Copilot-specific authentication branch from `llm:test-connection`; all providers now enter the same `testLLMConnection()` path once minimal required fields are present.
 - FT-10 keeps similarity analysis behind the same main-process boundary: the renderer cannot pass raw bug payloads or store writes directly, it can only request analysis against the current persisted session.
-- FT-12 keeps `bugCatalog` main-process only: the renderer can clear history through a dedicated channel but cannot enumerate or mutate catalog entries directly.
+- FT-12 keeps `bugCatalog` main-process owned; FT-13 adds only a filtered closed-history read channel, so the renderer still cannot enumerate or mutate the full catalog directly.
 - Categorization cancellation is scoped per `webContents`, preventing one renderer surface from aborting another window's run.
 - Categorization status is also scoped per `webContents`, so Dashboard remount recovery reflects only the current window's work.
 - Cancelled categorization runs do not write partial `SessionData`; the existing session remains the source of truth until a full run succeeds.
 - `session:clear` and `catalog:clear` intentionally have different blast radii, which lets operators reset the open snapshot without losing historical categorization reuse.
+- `catalog:get-closed` reuses `session.fetchedAt` as the renderer-facing "last update" marker for FT-13, and now also forwards the persisted history cleanup baseline without exposing the mutable session snapshot itself.
 - `toRendererError()` converts plain thrown objects into real `Error` instances before they cross the IPC boundary, preserving human-readable messages and error codes for the renderer.
 
 ## Dependencies

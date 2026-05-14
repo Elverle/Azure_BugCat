@@ -110,6 +110,10 @@ describe('registerIPCHandlers', () => {
       expect.any(Function)
     )
     expect(ipcMainHandle).toHaveBeenCalledWith(IPC_CHANNELS.CATALOG_CLEAR, expect.any(Function))
+    expect(ipcMainHandle).toHaveBeenCalledWith(
+      IPC_CHANNELS.CATALOG_GET_CLOSED,
+      expect.any(Function)
+    )
   })
 
   it('fetches ADO attachments through the main process using persisted settings', async () => {
@@ -622,7 +626,140 @@ describe('registerIPCHandlers', () => {
       await handlers.get(IPC_CHANNELS.CATALOG_CLEAR)?.()
 
       expect(storeSet).toHaveBeenCalledWith('bugCatalog', null)
+      expect(storeSet).toHaveBeenCalledWith(
+        'catalogMetadata',
+        expect.objectContaining({ lastClearedAt: expect.any(String) })
+      )
       expect(storeSet).not.toHaveBeenCalledWith('session', expect.anything())
+    })
+  })
+
+  describe('CATALOG_GET_CLOSED', () => {
+    it('returns empty when catalog is null', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'bugCatalog') return null
+        if (key === 'catalogMetadata') return { lastClearedAt: '2024-06-01T00:00:00Z' }
+        return null
+      })
+
+      const result = await handlers.get(IPC_CHANNELS.CATALOG_GET_CLOSED)?.()
+
+      expect(result).toEqual({
+        closedBugs: [],
+        fetchedAt: null,
+        lastClearedAt: '2024-06-01T00:00:00Z'
+      })
+    })
+
+    it('returns only closed bugs from catalog', async () => {
+      const catalog = {
+        1: {
+          id: 1,
+          title: 'Open Bug',
+          state: 'Active',
+          assignee: null,
+          areaPath: 'A',
+          description: 'd',
+          priority: 1,
+          createdDate: '2024-01-01',
+          updatedDate: '2024-01-01',
+          tags: [],
+          macroCategory: 'UI',
+          subCategory: 'Layout',
+          categoryReason: 'r',
+          categorizedAt: '2024-06-01',
+          firstSeenAt: '2024-05-01',
+          lastSeenAt: '2024-06-01',
+          closedAt: null,
+          inputSignature: 'sig1',
+          everInSimilarityGroup: false,
+          lastSimilarityGroupAt: null
+        },
+        2: {
+          id: 2,
+          title: 'Closed Bug',
+          state: 'Closed',
+          assignee: null,
+          areaPath: 'A',
+          description: 'd',
+          priority: 2,
+          createdDate: '2024-01-01',
+          updatedDate: '2024-01-01',
+          tags: [],
+          macroCategory: 'Performance',
+          subCategory: 'Memory',
+          categoryReason: 'r',
+          categorizedAt: '2024-06-01',
+          firstSeenAt: '2024-05-01',
+          lastSeenAt: '2024-06-01',
+          closedAt: '2024-07-01T00:00:00Z',
+          inputSignature: 'sig2',
+          everInSimilarityGroup: true,
+          lastSimilarityGroupAt: '2024-06-15'
+        }
+      }
+
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'bugCatalog') return catalog
+        if (key === 'session') return { fetchedAt: '2024-07-01T00:00:00Z', bugs: [] }
+        if (key === 'catalogMetadata') return { lastClearedAt: '2024-06-01T00:00:00Z' }
+        return null
+      })
+
+      const result = (await handlers.get(IPC_CHANNELS.CATALOG_GET_CLOSED)?.()) as {
+        closedBugs: { id: number }[]
+        fetchedAt: string | null
+        lastClearedAt: string | null
+      }
+
+      expect(result.closedBugs).toHaveLength(1)
+      expect(result.closedBugs[0].id).toBe(2)
+      expect(result.fetchedAt).toBe('2024-07-01T00:00:00Z')
+      expect(result.lastClearedAt).toBe('2024-06-01T00:00:00Z')
+    })
+
+    it('returns null fetchedAt when session is null', async () => {
+      const catalog = {
+        1: {
+          id: 1,
+          title: 'Closed',
+          state: 'Closed',
+          assignee: null,
+          areaPath: 'A',
+          description: 'd',
+          priority: 1,
+          createdDate: '2024-01-01',
+          updatedDate: '2024-01-01',
+          tags: [],
+          macroCategory: '',
+          subCategory: '',
+          categoryReason: '',
+          categorizedAt: '',
+          firstSeenAt: '2024-05-01',
+          lastSeenAt: '2024-06-01',
+          closedAt: '2024-07-01T00:00:00Z',
+          inputSignature: 'sig',
+          everInSimilarityGroup: false,
+          lastSimilarityGroupAt: null
+        }
+      }
+
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'bugCatalog') return catalog
+        if (key === 'session') return null
+        if (key === 'catalogMetadata') return { lastClearedAt: null }
+        return null
+      })
+
+      const result = (await handlers.get(IPC_CHANNELS.CATALOG_GET_CLOSED)?.()) as {
+        closedBugs: { id: number }[]
+        fetchedAt: string | null
+        lastClearedAt: string | null
+      }
+
+      expect(result.closedBugs).toHaveLength(1)
+      expect(result.fetchedAt).toBeNull()
+      expect(result.lastClearedAt).toBeNull()
     })
   })
 })

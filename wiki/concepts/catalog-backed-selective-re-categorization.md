@@ -3,7 +3,11 @@ title: 'Catalog-Backed Selective Re-Categorization'
 type: concept
 created: 2026-05-13
 updated: 2026-05-13
-sources: ['[[wiki/sources/ft-12-incremental-session-cache]]']
+sources:
+	[
+		'[[wiki/sources/ft-12-incremental-session-cache]]',
+		'[[wiki/sources/ft-13-closed-bugs-history]]'
+	]
 tags: [catalog, session, llm, cache, incremental, persistence]
 lang: en
 ---
@@ -33,7 +37,7 @@ Catalog-backed selective re-categorization is the persistence pattern introduced
 - The signature intentionally ignores non-categorization inputs such as `assignee` and `state`, so category reuse favors stability over maximal sensitivity to every field change.
 - The catalog can grow indefinitely because FT-12 adds no pruning or archival policy.
 - A bug disappearing from the query is treated the same as a bug being closed from the catalog's perspective; the current model tracks absence, not the exact reason.
-- The renderer cannot inspect catalog history directly yet, so the feature improves behavior and persistence before it exposes new historical UI.
+- FT-13 adds a closed-only historical analytics page through a filtered IPC slice, but the renderer still cannot browse or mutate the full catalog.
 
 ## See also
 

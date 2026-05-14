@@ -37,6 +37,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 10  | FT-10 | AI Cluster - Similar Bug Detection                        | Done   |
 | 11  | FT-11 | OpenRouter SDK Provider                                   | Done   |
 | 12  | FT-12 | Incremental Session Cache e Re-Categorizzazione Selettiva | Done   |
+| 13  | FT-13 | Storico Chiusi - KPI storici per bug closed/done          | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -54,6 +55,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-10-ai-cluster-similarity]] — FT-10 AI Cluster: macroCategory-scoped similar-bug detection with progress IPC, session persistence, and drawer drill-down (2026-05-01)
 - [[wiki/sources/ft-11-openrouter-provider]] — FT-11 OpenRouter provider: official SDK adapter, json_schema structured output, routing-mismatch blocking error handling, and dashboard modal feedback (2026-05-03)
 - [[wiki/sources/ft-12-incremental-session-cache]] — FT-12 incremental persistence: bugCatalog history, signature-based fetch merge, selective categorization, migration v3 backfill, and dual cleanup controls (2026-05-13)
+- [[wiki/sources/ft-13-closed-bugs-history]] — FT-13 closed-history analytics: filtered catalog IPC, cleanup-baseline metadata, bug-level category detail, local row filtering, and resilient renderer states (2026-05-13)
 
 ## Entities
 
@@ -99,6 +101,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/chunking-utility]] — Bug array chunk splitter (FT-04)
 - [[wiki/entities/llm-prompts]] — System prompt and user message builders (FT-04)
 - [[wiki/entities/dashboard-page]] — Home page for browsing, filtering, grouping, and re-categorizing bugs (FT-05)
+- [[wiki/entities/closed-bugs-page]] — Top-level historical KPI page for closed catalog bugs (FT-13)
 - [[wiki/entities/dashboard-header]] — Dashboard title bar with session timestamps and Fetch/Categorize actions (FT-05)
 - [[wiki/entities/kpi-cards]] — KPI strip for totals, active bugs, clusters, and top assignees (FT-05)
 - [[wiki/entities/filter-bar]] — Debounced search + multi-select filter row + grouping controls (FT-05)
@@ -112,8 +115,10 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/multi-select-component]] — Custom searchable multi-select dropdown without external dependencies (FT-05)
 - [[wiki/entities/use-bug-drawer-hook]] — Hook for selected bug state and filtered-list navigation inside the drawer (FT-06)
 - [[wiki/entities/use-dashboard-hook]] — Renderer hook for session hydration, fetch/categorize actions, and progress subscription (FT-05)
+- [[wiki/entities/use-closed-bug-kpis-hook]] — Renderer hook for loading and deriving closed-history KPIs from a filtered catalog slice (FT-13)
 - [[wiki/entities/use-ai-cluster-hook]] — Renderer hook for similarity hydration, analysis progress, and stale detection (FT-10)
 - [[wiki/entities/dashboard-utils]] — Pure filter/sort/group/KPI utilities for the dashboard (FT-05)
+- [[wiki/entities/closed-bug-kpis-utility]] — Pure KPI aggregation helpers for historical closed bugs (FT-13)
 - [[wiki/entities/date-format-utility]] — Pure `formatDate()` helper for renderer session timestamps (FT-07)
 - [[wiki/entities/badge-color-utilities]] — Deterministic badge and tint color helpers for status/categories (FT-05)
 - [[wiki/entities/open-external-ipc]] — Secure IPC contract for opening Azure DevOps work item URLs in the system browser (FT-06)
@@ -136,6 +141,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/concepts/accessible-confirmation-dialog]] — Focus-managed modal confirmation pattern for destructive actions (FT-07)
 - [[wiki/concepts/click-outside-exclusion-pattern]] — Document-level outside-click closing with `data-bug-click` exclusion markers (FT-06)
 - [[wiki/concepts/catalog-backed-selective-re-categorization]] — Dual-layer persistence pattern that reuses categorization only when catalog signatures still match current open-bug inputs (FT-12)
+- [[wiki/concepts/renderer-safe-closed-catalog-projection]] — Read-model pattern that exposes only closed historical bugs and fetch metadata to the renderer (FT-13)
 
 ## Topics
 
@@ -146,6 +152,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, drawer drill-down, and categorization actions together
 - [[wiki/topics/session-persistence-lifecycle]] — Startup migration, session hydration, timestamp display, and user-triggered session reset (FT-07)
 - [[wiki/topics/historical-bug-catalog-lifecycle]] — End-to-end lifecycle of the persisted bug catalog across fetch, selective categorization, similarity, migration, and cleanup (FT-12)
+- [[wiki/topics/closed-bug-history-analytics]] — Top-level historical analytics flow for closed catalog bugs, from filtered IPC to KPI rendering (FT-13)
 
 ## Analyses
 

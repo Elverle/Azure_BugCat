@@ -38,6 +38,9 @@ export const store = new Store({
       categories: []
     },
     session: null,
-    bugCatalog: null
+    bugCatalog: null,
+    catalogMetadata: {
+      lastClearedAt: null
+    }
   }
 })

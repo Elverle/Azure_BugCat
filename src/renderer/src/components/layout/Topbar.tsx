@@ -1,4 +1,4 @@
-import { Bug, Database } from 'lucide-react'
+import { Archive, Bug, Database } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@renderer/lib/utils'
 
@@ -23,6 +23,20 @@ export function Topbar() {
             }
           >
             Dashboard
+          </NavLink>
+          <NavLink
+            to="/closed-bugs"
+            className={({ isActive }) =>
+              cn(
+                'px-3 py-2 text-sm font-medium flex items-center gap-1.5',
+                isActive
+                  ? 'text-blue-700 border-b-2 border-blue-700'
+                  : 'text-gray-500 hover:text-gray-900'
+              )
+            }
+          >
+            <Archive className="w-4 h-4" />
+            Storico Chiusi
           </NavLink>
           <NavLink
             to="/settings"

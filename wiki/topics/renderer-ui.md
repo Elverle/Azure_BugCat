@@ -2,14 +2,15 @@
 title: 'Renderer UI'
 type: topic
 created: 2026-04-29
-updated: 2026-05-01
+updated: 2026-05-13
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
     '[[wiki/sources/ft-02-settings]]',
     '[[wiki/sources/ft-05-dashboard]]',
     '[[wiki/sources/ft-07-session-persistence]]',
-    '[[wiki/sources/ft-10-ai-cluster-similarity]]'
+    '[[wiki/sources/ft-10-ai-cluster-similarity]]',
+    '[[wiki/sources/ft-13-closed-bugs-history]]'
   ]
 tags: [react, ui, routing, tailwind, shadcn-ui]
 lang: en
@@ -17,15 +18,16 @@ lang: en
 
 ## Overview
 
-The renderer is a React 18 SPA bundled by Vite, styled with Tailwind CSS + Inter font, and using shadcn/ui components (manual). Routing uses `HashRouter` for Electron `file://` compatibility. The primary landing surfaces are now the dashboard workspace for bug triage and similarity analysis, plus the settings page.
+The renderer is a React 18 SPA bundled by Vite, styled with Tailwind CSS + Inter font, and using shadcn/ui components (manual). Routing uses `HashRouter` for Electron `file://` compatibility. The primary landing surfaces are now the dashboard workspace for bug triage and similarity analysis, the closed-history KPI page, and the settings page.
 
 ## Routing
 
-| Path        | Component       | Status                 |
-| ----------- | --------------- | ---------------------- |
-| `/`         | `DashboardPage` | ✅ Implemented (FT-05) |
-| `/settings` | `SettingsPage`  | ✅ Implemented (FT-02) |
-| `*`         | `Navigate to /` | Catch-all redirect     |
+| Path           | Component        | Status                 |
+| -------------- | ---------------- | ---------------------- |
+| `/`            | `DashboardPage`  | ✅ Implemented (FT-05) |
+| `/closed-bugs` | `ClosedBugsPage` | ✅ Implemented (FT-13) |
+| `/settings`    | `SettingsPage`   | ✅ Implemented (FT-02) |
+| `*`            | `Navigate to /`  | Catch-all redirect     |
 
 All routes are wrapped in `AppLayout` (Topbar + Outlet).
 
@@ -37,6 +39,7 @@ All routes are wrapped in `AppLayout` (Topbar + Outlet).
     <Routes>
       <Route element={<AppLayout />}>     <- Topbar + scrollable main
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/closed-bugs" element={<ClosedBugsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Route>
@@ -58,6 +61,7 @@ All routes are wrapped in `AppLayout` (Topbar + Outlet).
 | [[wiki/entities/select-component]]            | UI primitive      | shadcn Select                            |
 | [[wiki/entities/textarea-component]]          | UI primitive      | shadcn Textarea                          |
 | [[wiki/entities/dashboard-page]]              | Page              | Main bug triage workspace                |
+| [[wiki/entities/closed-bugs-page]]            | Page              | Historical KPI view for closed bugs      |
 | [[wiki/entities/dashboard-header]]            | Page header       | Fetch/Categorize actions                 |
 | [[wiki/entities/kpi-cards]]                   | Dashboard widget  | KPI summary strip                        |
 | [[wiki/entities/filter-bar]]                  | Dashboard widget  | Search, filters, grouping                |
@@ -69,9 +73,11 @@ All routes are wrapped in `AppLayout` (Topbar + Outlet).
 | [[wiki/entities/ai-cluster-category-section]] | AI Cluster widget | Collapsible category result section      |
 | [[wiki/entities/similarity-group-card]]       | AI Cluster widget | Score/reason/bug-list card               |
 | [[wiki/entities/use-dashboard-hook]]          | Hook              | Session-backed dashboard state           |
+| [[wiki/entities/use-closed-bug-kpis-hook]]    | Hook              | Closed-history KPI loading state         |
 | [[wiki/entities/use-ai-cluster-hook]]         | Hook              | Session-backed similarity state          |
 | [[wiki/entities/use-bug-drawer-hook]]         | Hook              | Shared selected-bug state and navigation |
 | [[wiki/entities/dashboard-utils]]             | Library           | Pure filter/sort/group helpers           |
+| [[wiki/entities/closed-bug-kpis-utility]]     | Library           | Pure historical KPI aggregation          |
 | [[wiki/entities/date-format-utility]]         | Library           | Shared Italian date formatting           |
 | [[wiki/entities/settings-page]]               | Page              | Full settings page                       |
 | [[wiki/entities/ado-connection-section]]      | Settings section  | ADO connection card                      |
@@ -93,6 +99,13 @@ All routes are wrapped in `AppLayout` (Topbar + Outlet).
 - The FT-10 similarity workflow is now embedded in the dashboard `Similarità` tab instead of a dedicated route.
 - [[wiki/entities/use-ai-cluster-hook]] hydrates persisted `similarityResults`, subscribes to per-category progress, and flags stale results when categorization is newer than the last analysis.
 - The results view uses [[wiki/entities/ai-cluster-category-section]] and [[wiki/entities/similarity-group-card]], then reuses [[wiki/entities/use-bug-drawer-hook]] and [[wiki/entities/bug-detail-drawer]] for bug inspection.
+
+## Closed History Surface
+
+- [[wiki/entities/closed-bugs-page]] is a dedicated `/closed-bugs` route, not a tab inside [[wiki/entities/dashboard-page]].
+- [[wiki/entities/use-closed-bug-kpis-hook]] invokes `getCatalogClosed()` and turns the filtered historical payload into renderer-local KPI state.
+- [[wiki/entities/closed-bug-kpis-utility]] keeps aggregation pure, so the page only handles loading, error, empty, and rendered states.
+- The page is read-only and intentionally compact: summary KPIs, category distribution bars, and a note that catalog "closure" means absence from the active ADO query, not guaranteed Azure DevOps terminal state.
 
 ## Settings Surface
 

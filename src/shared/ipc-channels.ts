@@ -32,6 +32,7 @@ export const IPC_CHANNELS = {
 
   // Catalog
   CATALOG_CLEAR: 'catalog:clear',
+  CATALOG_GET_CLOSED: 'catalog:get-closed',
 
   // Shell
   OPEN_EXTERNAL: 'shell:open-external'
