@@ -19,6 +19,7 @@ declare global {
       getSession: () => Promise<unknown>
       clearSession: () => Promise<unknown>
       clearCatalog: () => Promise<unknown>
+      getCatalogClosed: () => Promise<unknown>
       openExternal: (url: string) => Promise<unknown>
     }
   }

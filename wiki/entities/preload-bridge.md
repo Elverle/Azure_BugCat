@@ -10,6 +10,7 @@ sources:
     '[[wiki/sources/ft-06-bug-detail-drawer]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
+    '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -47,6 +48,7 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 | `getSession()`                   | `session:get`                   | invoke                   |
 | `clearSession()`                 | `session:clear`                 | invoke                   |
 | `clearCatalog()`                 | `catalog:clear`                 | invoke                   |
+| `getCatalogClosed()`             | `catalog:get-closed`            | invoke                   |
 | `openExternal(url)`              | `shell:open-external`           | invoke                   |
 
 ## Type Export
@@ -70,7 +72,7 @@ declare global {
 - Only named methods are exposed — no raw `ipcRenderer.send`/`invoke` access.
 - Progress subscriptions return cleanup functions to prevent listener leaks.
 - `openExternal()` preserves the security boundary by routing browser launches through the validated main-process handler.
-- Cleanup remains narrow and explicit: the renderer can trigger `clearSession()` and `clearCatalog()`, but there is still no generic catalog-read bridge.
+- Catalog access remains narrow and explicit: the renderer can trigger `clearSession()` and `clearCatalog()`, and FT-13 adds only `getCatalogClosed()` instead of a generic catalog-read bridge.
 - Cancellation remains explicit and whitelisted: the renderer can only abort the current categorization run through the dedicated method, not by touching arbitrary process state.
 - The status method is read-only and window-scoped: the renderer can query whether its own categorization is still active without receiving access to the controller itself.
 

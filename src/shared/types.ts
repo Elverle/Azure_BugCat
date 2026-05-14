@@ -120,4 +120,14 @@ export interface CatalogBug extends CategorizedBug {
   lastSimilarityGroupAt: string | null
 }
 
+export interface CatalogMetadata {
+  lastClearedAt: string | null
+}
+
+export interface ClosedCatalogSnapshot {
+  closedBugs: CatalogBug[]
+  fetchedAt: string | null
+  lastClearedAt: string | null
+}
+
 export type BugCatalog = Record<number, CatalogBug>

@@ -2,6 +2,9 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                                   |
 | ---------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-14 | update min-07              | GitHub Copilot | Refined Storico Chiusi with a local detail filter by bug ID/title and collapsible macro-category sections, keeping KPI cards stable while making historical rows easier to navigate.                    |
+| 2026-05-13 | update min-06              | GitHub Copilot | Refined Storico Chiusi KPIs with a persisted `lastClearedAt` baseline for history cleanup, richer bug-level detail under each macro-category, and updated docs/tests for the new renderer contract.     |
+| 2026-05-13 | scan FT-13                 | GitHub Copilot | Scanned Storico Chiusi. Created the FT-13 source, 3 renderer entities, 1 concept, and 1 topic. Updated catalog, IPC, renderer navigation, and tracker docs.                                             |
 | 2026-05-13 | update min-05              | GitHub Copilot | Added a dashboard fetch summary that shows how many retrieved bugs are new versus the historical catalog. Updated shared types, fetch merge docs, dashboard header/hook docs, and the delivery tracker. |
 | 2026-05-13 | scan FT-12                 | GitHub Copilot | Scanned incremental session cache and selective re-categorization. Created 1 source, 1 entity, 1 concept, and 1 topic. Updated persistence, IPC, preload, settings, and tracker docs.                   |
 | 2026-05-05 | analysis README onboarding | GitHub Copilot | Added and refined the root README with Windows/macOS packaging guidance, Settings quickstart, operator workflow, and more functional wording for categorization and similarity.                         |
@@ -47,6 +50,58 @@ Pages created:
 
 Pages updated:
 
+- [[wiki/index.md]]
+
+## [2026-05-13] scan | FT-13 - Storico Chiusi
+
+Scanned FT-13 after the renderer gained its first historical-catalog page. The feature adds a dedicated `/closed-bugs` route, a filtered `catalog:get-closed` IPC read model for closed catalog entries, pure KPI derivation in the renderer, and explicit loading, error, and empty states for the new historical analytics surface. Also updated `feature-index.md` to register FT-13 in the delivery tracker.
+
+Pages created:
+
+- [[wiki/sources/ft-13-closed-bugs-history]]
+- [[wiki/entities/closed-bugs-page]]
+- [[wiki/entities/use-closed-bug-kpis-hook]]
+- [[wiki/entities/closed-bug-kpis-utility]]
+- [[wiki/concepts/renderer-safe-closed-catalog-projection]]
+- [[wiki/topics/closed-bug-history-analytics]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/ipc-channels]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/preload-bridge]]
+- [[wiki/entities/topbar]]
+- [[wiki/concepts/catalog-backed-selective-re-categorization]]
+- [[wiki/topics/renderer-ui]]
+- [[wiki/topics/session-persistence-lifecycle]]
+- [[wiki/topics/historical-bug-catalog-lifecycle]]
+
+## [2026-05-13] update | min-06 - Baseline pulizia storico e dettaglio bug chiusi
+
+Refined the FT-13 historical analytics flow so the `Bug Chiusi Totali` KPI now declares the current history baseline through the last explicit catalog cleanup timestamp, and each macro-category now exposes bug-level detail (`id`, `title`, close timestamp, and whether similarity history exists). The underlying closed-history IPC contract now also returns the persisted cleanup baseline.
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/sources/ft-13-closed-bugs-history]]
+- [[wiki/entities/closed-bugs-page]]
+- [[wiki/entities/use-closed-bug-kpis-hook]]
+- [[wiki/entities/closed-bug-kpis-utility]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/topics/closed-bug-history-analytics]]
+- [[wiki/topics/historical-bug-catalog-lifecycle]]
+
+## [2026-05-14] update | min-07 - Filtro dettaglio e collapse per categoria
+
+Refined the FT-13 historical analytics page so bug-detail rows can now be filtered locally by bug ID or title and each macro-category can be collapsed independently. The KPI cards remain unfiltered, while the detail section reports only the currently visible rows.
+
+Pages updated:
+
+- [[wiki/entities/closed-bugs-page]]
+- [[wiki/topics/closed-bug-history-analytics]]
+- [[wiki/sources/ft-13-closed-bugs-history]]
 - [[wiki/index.md]]
 
 ## [2026-05-13] scan | FT-12 - Incremental Session Cache & Selective Re-Categorization

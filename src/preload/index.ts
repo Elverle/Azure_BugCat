@@ -43,6 +43,7 @@ const electronAPI = {
 
   // Catalog
   clearCatalog: () => ipcRenderer.invoke(IPC_CHANNELS.CATALOG_CLEAR),
+  getCatalogClosed: () => ipcRenderer.invoke(IPC_CHANNELS.CATALOG_GET_CLOSED),
 
   // Shell
   openExternal: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url)

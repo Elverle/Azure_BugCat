@@ -10,6 +10,7 @@ sources:
 		'[[wiki/sources/ft-06-bug-detail-drawer]]',
 		'[[wiki/sources/ft-10-ai-cluster-similarity]]',
 		'[[wiki/sources/ft-12-incremental-session-cache]]',
+		'[[wiki/sources/ft-13-closed-bugs-history]]',
 		'[[wiki/analyses/cancel-categorization-flow]]',
 		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
 	]
@@ -45,6 +46,7 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `SESSION_GET`                   | `session:get`                   | Session      |
 | `SESSION_CLEAR`                 | `session:clear`                 | Session      |
 | `CATALOG_CLEAR`                 | `catalog:clear`                 | Catalog      |
+| `CATALOG_GET_CLOSED`            | `catalog:get-closed`            | Catalog      |
 | `OPEN_EXTERNAL`                 | `shell:open-external`           | Shell        |
 
 ## Type

@@ -6,6 +6,8 @@ import {
   AppSettings,
   BugCatalog,
   BugItem,
+  CatalogMetadata,
+  ClosedCatalogSnapshot,
   SessionData,
   TestConnectionResult
 } from '../shared/types'
@@ -81,6 +83,27 @@ export function registerIPCHandlers(): void {
   // Catalog
   ipcMain.handle(IPC_CHANNELS.CATALOG_CLEAR, () => {
     store.set('bugCatalog', null)
+    store.set('catalogMetadata', { lastClearedAt: new Date().toISOString() })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CATALOG_GET_CLOSED, () => {
+    const catalog = store.get('bugCatalog') as BugCatalog | null
+    const catalogMetadata = store.get('catalogMetadata') as CatalogMetadata | null
+    const snapshot: ClosedCatalogSnapshot = {
+      closedBugs: [],
+      fetchedAt: null,
+      lastClearedAt: catalogMetadata?.lastClearedAt ?? null
+    }
+
+    if (!catalog) return snapshot
+
+    const session = store.get('session') as SessionData | null
+    const closedBugs = Object.values(catalog).filter((b) => b.closedAt !== null)
+    return {
+      closedBugs,
+      fetchedAt: session?.fetchedAt ?? null,
+      lastClearedAt: snapshot.lastClearedAt
+    }
   })
 
   // Azure DevOps

@@ -10,7 +10,8 @@ sources:
     '[[wiki/sources/ft-05-dashboard]]',
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
-    '[[wiki/sources/ft-12-incremental-session-cache]]'
+    '[[wiki/sources/ft-12-incremental-session-cache]]',
+    '[[wiki/sources/ft-13-closed-bugs-history]]'
   ]
 tags: [session, catalog, persistence, dashboard, ai-cluster, settings, migration]
 lang: en
@@ -74,9 +75,10 @@ Manual reset
 
 - [[wiki/entities/use-dashboard-hook]] hydrates renderer state from the stored session.
 - [[wiki/entities/use-ai-cluster-hook]] hydrates the stored bug list plus optional `similarityResults`.
+- [[wiki/entities/use-closed-bug-kpis-hook]] reads a filtered closed-only catalog slice plus `session.fetchedAt`, then derives historical KPIs for the dedicated FT-13 route.
 - [[wiki/entities/dashboard-header]] renders human-readable freshness timestamps and the latest `lastFetchNewCount` summary under the fetch action.
 - The rest of [[wiki/topics/dashboard-bug-exploration]] derives filters, KPIs, and views from the hydrated session bugs.
-- The renderer still does not receive `bugCatalog` by default, so a large historical catalog does not expand dashboard payload size.
+- The renderer still does not receive the full `bugCatalog` by default, so a large historical catalog does not expand dashboard payload size; FT-13 only adds a filtered closed-history read model.
 
 ### Refresh and Staleness
 

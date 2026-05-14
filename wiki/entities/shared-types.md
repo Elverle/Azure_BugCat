@@ -12,6 +12,7 @@ sources:
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-11-openrouter-provider]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
+    '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [typescript, types, shared, domain-model, catalog]
@@ -37,12 +38,14 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Bug types
 
-| Type             | Purpose                                                                                               |
-| ---------------- | ----------------------------------------------------------------------------------------------------- |
-| `BugItem`        | Raw bug from Azure DevOps (id, title, state, assignee, areaPath, description, priority, dates, tags)  |
-| `CategorizedBug` | Extends `BugItem` with `macroCategory`, `subCategory`, `categoryReason`, `categorizedAt`              |
-| `CatalogBug`     | Extends `CategorizedBug` with lifecycle timestamps, `inputSignature`, and similarity-history metadata |
-| `BugCatalog`     | `Record<number, CatalogBug>` used as the main-process historical bug catalog                          |
+| Type                    | Purpose                                                                                               |
+| ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| `BugItem`               | Raw bug from Azure DevOps (id, title, state, assignee, areaPath, description, priority, dates, tags)  |
+| `CategorizedBug`        | Extends `BugItem` with `macroCategory`, `subCategory`, `categoryReason`, `categorizedAt`              |
+| `CatalogBug`            | Extends `CategorizedBug` with lifecycle timestamps, `inputSignature`, and similarity-history metadata |
+| `BugCatalog`            | `Record<number, CatalogBug>` used as the main-process historical bug catalog                          |
+| `CatalogMetadata`       | Top-level catalog metadata, currently used for `lastClearedAt`                                        |
+| `ClosedCatalogSnapshot` | Renderer-facing read model for FT-13: `{ closedBugs, fetchedAt, lastClearedAt }`                      |
 
 ### Configuration
 
@@ -103,6 +106,11 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `SessionData.lastFetchNewCount` stores how many fetched bugs were not present in the historical catalog before the latest merge, letting the renderer show a fetch summary without reading `bugCatalog` directly.
 - `CatalogBug.inputSignature` captures the normalized categorization inputs (`title`, `description`, `tags`, `priority`, `areaPath`) so unchanged bugs can safely reuse previous categorization.
 - `CatalogBug.everInSimilarityGroup` and `lastSimilarityGroupAt` preserve similarity-history metadata without expanding the renderer-facing session payload.
+
+## FT-13 Notes
+
+- `CatalogMetadata.lastClearedAt` now preserves the last explicit history cleanup timestamp so historical KPIs can declare the current counting baseline.
+- `ClosedCatalogSnapshot` is the renderer-safe FT-13 read model that combines the filtered closed-only slice with `fetchedAt` and `lastClearedAt`.
 
 ## Cancellation Notes
 
