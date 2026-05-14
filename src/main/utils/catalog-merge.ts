@@ -1,0 +1,188 @@
+import { createHash } from 'crypto'
+import type {
+  BugItem,
+  CategorizedBug,
+  CatalogBug,
+  BugCatalog,
+  SimilarityResult
+} from '@shared/types'
+
+export interface MergeResult {
+  updatedCatalog: BugCatalog
+  sessionBugs: CategorizedBug[]
+  newBugCount: number
+}
+
+export function computeInputSignature(bug: BugItem): string {
+  const parts = [
+    bug.title.trim().toLowerCase(),
+    bug.description.trim().toLowerCase(),
+    (bug.tags ?? []).slice().sort().join(';'),
+    String(bug.priority),
+    bug.areaPath.trim().toLowerCase()
+  ]
+  const input = parts.join('\0')
+  return createHash('sha256').update(input).digest('hex').slice(0, 16)
+}
+
+export function mergeFetchIntoCatalog(
+  fetchedBugs: BugItem[],
+  existingCatalog: BugCatalog | null,
+  now: string
+): MergeResult {
+  const catalog: BugCatalog = existingCatalog ? { ...existingCatalog } : {}
+  const sessionBugs: CategorizedBug[] = []
+  const fetchedIds = new Set<number>()
+  let newBugCount = 0
+
+  for (const bug of fetchedBugs) {
+    fetchedIds.add(bug.id)
+    const signature = computeInputSignature(bug)
+    const existing = catalog[bug.id]
+
+    if (existing && existing.inputSignature === signature && existing.categorizedAt) {
+      // Signature matches and categorization exists — carry over
+      catalog[bug.id] = {
+        ...existing,
+        ...bug,
+        macroCategory: existing.macroCategory,
+        subCategory: existing.subCategory,
+        categoryReason: existing.categoryReason,
+        categorizedAt: existing.categorizedAt,
+        lastSeenAt: now,
+        closedAt: null,
+        inputSignature: signature
+      }
+
+      sessionBugs.push({
+        ...bug,
+        macroCategory: existing.macroCategory,
+        subCategory: existing.subCategory,
+        categoryReason: existing.categoryReason,
+        categorizedAt: existing.categorizedAt
+      })
+    } else if (existing) {
+      // Signature differs or categorizedAt is falsy — reset categorization
+      catalog[bug.id] = {
+        ...existing,
+        ...bug,
+        macroCategory: '',
+        subCategory: '',
+        categoryReason: '',
+        categorizedAt: '',
+        lastSeenAt: now,
+        closedAt: null,
+        inputSignature: signature
+      }
+
+      sessionBugs.push({
+        ...bug,
+        macroCategory: '',
+        subCategory: '',
+        categoryReason: '',
+        categorizedAt: ''
+      })
+    } else {
+      // New bug — not in catalog
+      newBugCount += 1
+      catalog[bug.id] = {
+        ...bug,
+        macroCategory: '',
+        subCategory: '',
+        categoryReason: '',
+        categorizedAt: '',
+        firstSeenAt: now,
+        lastSeenAt: now,
+        closedAt: null,
+        inputSignature: signature,
+        everInSimilarityGroup: false,
+        lastSimilarityGroupAt: null
+      }
+
+      sessionBugs.push({
+        ...bug,
+        macroCategory: '',
+        subCategory: '',
+        categoryReason: '',
+        categorizedAt: ''
+      })
+    }
+  }
+
+  // Mark unfetched catalog entries as closed
+  for (const idStr of Object.keys(catalog)) {
+    const id = Number(idStr)
+    if (!fetchedIds.has(id) && catalog[id].closedAt === null) {
+      catalog[id] = { ...catalog[id], closedAt: now }
+    }
+  }
+
+  return { updatedCatalog: catalog, sessionBugs, newBugCount }
+}
+
+export function mergeCategorization(
+  sessionBugs: CategorizedBug[],
+  llmResults: CategorizedBug[],
+  catalog: BugCatalog,
+  now: string
+): { updatedSessionBugs: CategorizedBug[]; updatedCatalog: BugCatalog } {
+  const llmMap = new Map<number, CategorizedBug>()
+  for (const result of llmResults) {
+    llmMap.set(result.id, result)
+  }
+
+  const updatedSessionBugs = sessionBugs.map((bug) => {
+    const llmResult = llmMap.get(bug.id)
+    if (llmResult) {
+      return {
+        ...bug,
+        macroCategory: llmResult.macroCategory,
+        subCategory: llmResult.subCategory,
+        categoryReason: llmResult.categoryReason,
+        categorizedAt: now
+      }
+    }
+    return { ...bug }
+  })
+
+  const updatedCatalog: BugCatalog = { ...catalog }
+  for (const [id, llmResult] of llmMap) {
+    if (updatedCatalog[id]) {
+      const entry = updatedCatalog[id]
+      const updatedEntry: CatalogBug = {
+        ...entry,
+        macroCategory: llmResult.macroCategory,
+        subCategory: llmResult.subCategory,
+        categoryReason: llmResult.categoryReason,
+        categorizedAt: now,
+        inputSignature: computeInputSignature(entry)
+      }
+      updatedCatalog[id] = updatedEntry
+    }
+  }
+
+  return { updatedSessionBugs, updatedCatalog }
+}
+
+export function updateCatalogSimilarityMetadata(
+  catalog: BugCatalog,
+  similarityResult: SimilarityResult
+): BugCatalog {
+  const updated: BugCatalog = { ...catalog }
+
+  for (const category of similarityResult.categories) {
+    for (const group of category.groups) {
+      for (const bugId of group.bugIds) {
+        if (updated[bugId]) {
+          updated[bugId] = {
+            ...updated[bugId],
+            everInSimilarityGroup: true,
+            lastSimilarityGroupAt: similarityResult.analyzedAt
+          }
+        }
+      }
+    }
+  }
+
+  return updated
+}

@@ -37,6 +37,10 @@ export const store = new Store({
       pat: '',
       categories: []
     },
-    session: null
+    session: null,
+    bugCatalog: null,
+    catalogMetadata: {
+      lastClearedAt: null
+    }
   }
 })

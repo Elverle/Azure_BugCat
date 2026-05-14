@@ -66,7 +66,11 @@ export interface UseDashboardReturn {
   isCancelling: boolean
   progress: ChunkProgress | null
   categorizeError: string | null
-  sessionInfo: { fetchedAt: string | null; categorizedAt: string | null }
+  sessionInfo: {
+    fetchedAt: string | null
+    categorizedAt: string | null
+    lastFetchNewCount: number | null
+  }
   fetchBugs: () => Promise<void>
   categorizeBugs: () => Promise<void>
   cancelCategorization: () => Promise<void>
@@ -120,9 +124,11 @@ export function useDashboard(): UseDashboardReturn {
   const [sessionInfo, setSessionInfo] = useState<{
     fetchedAt: string | null
     categorizedAt: string | null
+    lastFetchNewCount: number | null
   }>({
     fetchedAt: null,
-    categorizedAt: null
+    categorizedAt: null,
+    lastFetchNewCount: null
   })
 
   const cleanupRef = useRef<(() => void) | null>(null)
@@ -138,11 +144,12 @@ export function useDashboard(): UseDashboardReturn {
       setBugs(session.bugs)
       setSessionInfo({
         fetchedAt: session.fetchedAt,
-        categorizedAt: session.categorizedAt ?? null
+        categorizedAt: session.categorizedAt ?? null,
+        lastFetchNewCount: session.lastFetchNewCount ?? null
       })
     } else {
       setBugs([])
-      setSessionInfo({ fetchedAt: null, categorizedAt: null })
+      setSessionInfo({ fetchedAt: null, categorizedAt: null, lastFetchNewCount: null })
     }
   }, [])
 
@@ -166,11 +173,12 @@ export function useDashboard(): UseDashboardReturn {
           setBugs(typedSession.bugs)
           setSessionInfo({
             fetchedAt: typedSession.fetchedAt,
-            categorizedAt: typedSession.categorizedAt ?? null
+            categorizedAt: typedSession.categorizedAt ?? null,
+            lastFetchNewCount: typedSession.lastFetchNewCount ?? null
           })
         } else {
           setBugs([])
-          setSessionInfo({ fetchedAt: null, categorizedAt: null })
+          setSessionInfo({ fetchedAt: null, categorizedAt: null, lastFetchNewCount: null })
         }
 
         if (categorizationStatus.active) {

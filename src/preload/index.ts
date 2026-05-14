@@ -41,6 +41,10 @@ const electronAPI = {
   getSession: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_GET),
   clearSession: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_CLEAR),
 
+  // Catalog
+  clearCatalog: () => ipcRenderer.invoke(IPC_CHANNELS.CATALOG_CLEAR),
+  getCatalogClosed: () => ipcRenderer.invoke(IPC_CHANNELS.CATALOG_GET_CLOSED),
+
   // Shell
   openExternal: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url)
 }

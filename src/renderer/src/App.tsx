@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AppLayout } from '@renderer/components/layout/AppLayout'
 import { DashboardPage } from '@renderer/pages/DashboardPage'
+import { ClosedBugsPage } from '@renderer/pages/ClosedBugsPage'
 import { SettingsPage } from '@renderer/pages/SettingsPage'
 
 function App() {
@@ -9,6 +10,7 @@ function App() {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<DashboardPage />} />
+          <Route path="/closed-bugs" element={<ClosedBugsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

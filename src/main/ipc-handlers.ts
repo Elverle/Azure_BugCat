@@ -1,10 +1,24 @@
 import { ipcMain, IpcMainInvokeEvent, shell } from 'electron'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { store } from './store'
-import { AppError, AppSettings, BugItem, SessionData, TestConnectionResult } from '../shared/types'
+import {
+  AppError,
+  AppSettings,
+  BugCatalog,
+  BugItem,
+  CatalogMetadata,
+  ClosedCatalogSnapshot,
+  SessionData,
+  TestConnectionResult
+} from '../shared/types'
 import { fetchBugsFromQuery, testAdoConnection } from './ado/ado-service'
 import { fetchAdoAttachmentDataUrl } from './ado/ado-client'
 import { categorizeBugs, testLLMConnection, findSimilarBugs } from './llm'
+import {
+  mergeFetchIntoCatalog,
+  mergeCategorization,
+  updateCatalogSimilarityMetadata
+} from './utils/catalog-merge'
 
 function isAppError(error: unknown): error is AppError {
   return (
@@ -66,6 +80,32 @@ export function registerIPCHandlers(): void {
     store.set('session', null)
   })
 
+  // Catalog
+  ipcMain.handle(IPC_CHANNELS.CATALOG_CLEAR, () => {
+    store.set('bugCatalog', null)
+    store.set('catalogMetadata', { lastClearedAt: new Date().toISOString() })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CATALOG_GET_CLOSED, () => {
+    const catalog = store.get('bugCatalog') as BugCatalog | null
+    const catalogMetadata = store.get('catalogMetadata') as CatalogMetadata | null
+    const snapshot: ClosedCatalogSnapshot = {
+      closedBugs: [],
+      fetchedAt: null,
+      lastClearedAt: catalogMetadata?.lastClearedAt ?? null
+    }
+
+    if (!catalog) return snapshot
+
+    const session = store.get('session') as SessionData | null
+    const closedBugs = Object.values(catalog).filter((b) => b.closedAt !== null)
+    return {
+      closedBugs,
+      fetchedAt: session?.fetchedAt ?? null,
+      lastClearedAt: snapshot.lastClearedAt
+    }
+  })
+
   // Azure DevOps
   ipcMain.handle(IPC_CHANNELS.ADO_FETCH_BUGS, async () => {
     const settings = store.get('settings') as AppSettings | null
@@ -73,17 +113,21 @@ export function registerIPCHandlers(): void {
 
     try {
       const fetchedBugs = await fetchBugsFromQuery(settings)
-      const updatedSession: SessionData = {
-        bugs: fetchedBugs.map((bug) => ({
-          ...bug,
-          macroCategory: '',
-          subCategory: '',
-          categoryReason: '',
-          categorizedAt: ''
-        })),
-        fetchedAt: new Date().toISOString()
-      }
+      const now = new Date().toISOString()
+      const catalog = store.get('bugCatalog') as BugCatalog | null
+      const { updatedCatalog, sessionBugs, newBugCount } = mergeFetchIntoCatalog(
+        fetchedBugs,
+        catalog,
+        now
+      )
 
+      store.set('bugCatalog', updatedCatalog)
+
+      const updatedSession: SessionData = {
+        bugs: sessionBugs,
+        fetchedAt: now,
+        lastFetchNewCount: newBugCount
+      }
       store.set('session', updatedSession)
 
       return updatedSession.bugs
@@ -122,10 +166,23 @@ export function registerIPCHandlers(): void {
       const session = store.get('session') as SessionData | null
       if (!session?.bugs?.length) throw { code: 'STORE_ERROR', message: 'Nessun bug in sessione' }
 
-      const bugs: BugItem[] = session.bugs
-
       if (categorizeControllers.has(webContentsId)) {
         throw { code: 'UNKNOWN_ERROR', message: 'Categorizzazione gia in corso' }
+      }
+
+      const bugsToSend: BugItem[] = session.bugs.filter((b) => !b.categorizedAt)
+      const now = new Date().toISOString()
+
+      if (bugsToSend.length === 0) {
+        // All bugs already categorized — preserve existing categorizedAt to avoid false stale
+        if (!session.categorizedAt) {
+          const updatedSession: SessionData = {
+            ...session,
+            categorizedAt: now
+          }
+          store.set('session', updatedSession)
+        }
+        return session.bugs
       }
 
       abortController = new AbortController()
@@ -133,21 +190,42 @@ export function registerIPCHandlers(): void {
 
       const categorized = await categorizeBugs(
         settings,
-        bugs,
+        bugsToSend,
         (progress) => {
           event.sender.send(IPC_CHANNELS.LLM_CATEGORIZE_PROGRESS, progress)
         },
         abortController.signal
       )
 
+      // Merge LLM results back into full session bug list
+      const llmMap = new Map(categorized.map((b) => [b.id, b]))
+      const updatedSessionBugs = session.bugs.map((bug) => {
+        const llmResult = llmMap.get(bug.id)
+        if (llmResult) {
+          return {
+            ...bug,
+            macroCategory: llmResult.macroCategory,
+            subCategory: llmResult.subCategory,
+            categoryReason: llmResult.categoryReason,
+            categorizedAt: now
+          }
+        }
+        return bug
+      })
+
+      const catalog = store.get('bugCatalog') as BugCatalog | null
+      if (catalog) {
+        const { updatedCatalog } = mergeCategorization(session.bugs, categorized, catalog, now)
+        store.set('bugCatalog', updatedCatalog)
+      }
+
       const updatedSession: SessionData = {
-        bugs: categorized,
+        bugs: updatedSessionBugs,
         fetchedAt: session.fetchedAt,
-        categorizedAt: new Date().toISOString()
+        categorizedAt: now
       }
       store.set('session', updatedSession)
-
-      return categorized
+      return updatedSessionBugs
     } catch (error: unknown) {
       throw toRendererError(error)
     } finally {
@@ -207,6 +285,13 @@ export function registerIPCHandlers(): void {
     // Persist results in session
     const updatedSession: SessionData = { ...session, similarityResults: result }
     store.set('session', updatedSession)
+
+    // Update catalog similarity metadata
+    const catalog = store.get('bugCatalog') as BugCatalog | null
+    if (catalog) {
+      const updatedCatalog = updateCatalogSimilarityMetadata(catalog, result)
+      store.set('bugCatalog', updatedCatalog)
+    }
 
     return result
   })

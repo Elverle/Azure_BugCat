@@ -28,6 +28,7 @@ const mockBug: CategorizedBug = {
 const mockSession: SessionData = {
   bugs: [mockBug],
   fetchedAt: '2026-01-01T00:00:00.000Z',
+  lastFetchNewCount: 3,
   categorizedAt: '2026-01-01T12:00:00.000Z'
 }
 
@@ -79,7 +80,8 @@ describe('useDashboard', () => {
     expect(result.current.bugs).toEqual([mockBug])
     expect(result.current.sessionInfo).toEqual({
       fetchedAt: '2026-01-01T00:00:00.000Z',
-      categorizedAt: '2026-01-01T12:00:00.000Z'
+      categorizedAt: '2026-01-01T12:00:00.000Z',
+      lastFetchNewCount: 3
     })
   })
 
@@ -93,7 +95,8 @@ describe('useDashboard', () => {
     expect(result.current.bugs).toEqual([])
     expect(result.current.sessionInfo).toEqual({
       fetchedAt: null,
-      categorizedAt: null
+      categorizedAt: null,
+      lastFetchNewCount: null
     })
   })
 
