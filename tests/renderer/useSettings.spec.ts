@@ -14,7 +14,11 @@ const validSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'pat-token',
-  categories: ['UI']
+  categories: ['UI'],
+  agentProvider: 'none',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 
 type ElectronApiMock = {

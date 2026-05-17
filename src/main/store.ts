@@ -35,7 +35,16 @@ export const store = new Store({
       llmProvider: 'openai',
       apiKey: '',
       pat: '',
-      categories: []
+      categories: [],
+      agentProvider: 'none',
+      agentApiKey: '',
+      agentModel: '',
+      copilotByokEnabled: false,
+      copilotByokProvider: undefined,
+      copilotByokApiKey: '',
+      projects: [],
+      architectureContext: '',
+      maxConcurrentSessions: 1
     },
     session: null,
     bugCatalog: null,

@@ -35,7 +35,16 @@ export const IPC_CHANNELS = {
   CATALOG_GET_CLOSED: 'catalog:get-closed',
 
   // Shell
-  OPEN_EXTERNAL: 'shell:open-external'
+  OPEN_EXTERNAL: 'shell:open-external',
+
+  // Agent
+  AGENT_CHECK_BINARY: 'agent:check-binary',
+  AGENT_SELECT_DIRECTORY: 'agent:select-directory',
+
+  // Projects
+  PROJECTS_GET: 'projects:get',
+  PROJECTS_SET: 'projects:set',
+  PROJECTS_VALIDATE_PATHS: 'projects:validate-paths'
 } as const
 
 export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

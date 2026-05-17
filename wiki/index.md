@@ -23,21 +23,22 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ### Features
 
-| #   | ID    | Descrizione                                               | Status |
-| --- | ----- | --------------------------------------------------------- | ------ |
-| 1   | FT-01 | Scaffold Electron + Infrastruttura Base                   | Done   |
-| 2   | FT-02 | Pagina Settings e Persistenza Configurazione              | Done   |
-| 3   | FT-03 | Azure DevOps Bug Fetching (Main Process)                  | Done   |
-| 4   | FT-04 | LLM Provider Abstraction e Categorizzazione               | Done   |
-| 5   | FT-05 | Dashboard Principale: Tabella, Filtri e Raggruppamenti    | Done   |
-| 6   | FT-06 | Pannello Dettaglio Bug (Drawer)                           | Done   |
-| 7   | FT-07 | Persistenza Dati e Gestione Sessione                      | Done   |
-| 8   | FT-08 | GenericProvider OpenAI-compatible e rimozione Copilot     | Done   |
-| 9   | FT-09 | Structured output JSON Schema per tutti i provider LLM    | Done   |
-| 10  | FT-10 | AI Cluster - Similar Bug Detection                        | Done   |
-| 11  | FT-11 | OpenRouter SDK Provider                                   | Done   |
-| 12  | FT-12 | Incremental Session Cache e Re-Categorizzazione Selettiva | Done   |
-| 13  | FT-13 | Storico Chiusi - KPI storici per bug closed/done          | Done   |
+| #   | ID     | Descrizione                                               | Status |
+| --- | ------ | --------------------------------------------------------- | ------ |
+| 1   | FT-01  | Scaffold Electron + Infrastruttura Base                   | Done   |
+| 2   | FT-02  | Pagina Settings e Persistenza Configurazione              | Done   |
+| 3   | FT-03  | Azure DevOps Bug Fetching (Main Process)                  | Done   |
+| 4   | FT-04  | LLM Provider Abstraction e Categorizzazione               | Done   |
+| 5   | FT-05  | Dashboard Principale: Tabella, Filtri e Raggruppamenti    | Done   |
+| 6   | FT-06  | Pannello Dettaglio Bug (Drawer)                           | Done   |
+| 7   | FT-07  | Persistenza Dati e Gestione Sessione                      | Done   |
+| 8   | FT-08  | GenericProvider OpenAI-compatible e rimozione Copilot     | Done   |
+| 9   | FT-09  | Structured output JSON Schema per tutti i provider LLM    | Done   |
+| 10  | FT-10  | AI Cluster - Similar Bug Detection                        | Done   |
+| 11  | FT-11  | OpenRouter SDK Provider                                   | Done   |
+| 12  | FT-12  | Incremental Session Cache e Re-Categorizzazione Selettiva | Done   |
+| 13  | FT-13  | Storico Chiusi - KPI storici per bug closed/done          | Done   |
+| 14  | FT-14A | Agent Configuration & Project Registry                    | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -56,6 +57,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-11-openrouter-provider]] — FT-11 OpenRouter provider: official SDK adapter, json_schema structured output, routing-mismatch blocking error handling, and dashboard modal feedback (2026-05-03)
 - [[wiki/sources/ft-12-incremental-session-cache]] — FT-12 incremental persistence: bugCatalog history, signature-based fetch merge, selective categorization, migration v3 backfill, and dual cleanup controls (2026-05-13)
 - [[wiki/sources/ft-13-closed-bugs-history]] — FT-13 closed-history analytics: filtered catalog IPC, cleanup-baseline metadata, bug-level category detail, local row filtering, and resilient renderer states (2026-05-13)
+- [[wiki/sources/ft-14a-agent-configuration-project-registry]] — FT-14A settings foundation for agent-provider derivation, project registry, architecture context, save-time sanitization, and schema v4 backfill (2026-05-17)
 
 ## Entities
 
@@ -77,9 +79,13 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/settings-page]] — Full settings page with ADO, LLM, and categories sections (FT-02)
 - [[wiki/entities/ado-connection-section]] — ADO connection settings card (FT-02)
 - [[wiki/entities/llm-provider-section]] — LLM provider settings card with conditional rendering (FT-02)
+- [[wiki/entities/agent-provider-section]] — Agent runtime settings card with auto-derivation, BYOK, and Codex CLI checks (FT-14A)
+- [[wiki/entities/project-registry-section]] — Settings card for CRUD over registered local projects (FT-14A)
+- [[wiki/entities/architecture-context-section]] — Settings card for architecture notes and max concurrent sessions (FT-14A)
 - [[wiki/entities/categories-section]] — Categories textarea editor card (FT-02)
 - [[wiki/entities/use-settings-hook]] — Central settings state management hook (FT-02)
 - [[wiki/entities/validation-utils]] — Pure validation functions for settings fields (FT-02)
+- [[wiki/entities/project-registry]] — Persisted registry of local projects for future agent sessions (FT-14A)
 - [[wiki/entities/ado-types]] — ADO interfaces, QueryStrategy, constants (FT-03)
 - [[wiki/entities/ado-client]] — Low-level ADO HTTP client with auth and error mapping (FT-03)
 - [[wiki/entities/ado-service]] — ADO orchestration: validate → query → batch → map (FT-03)
@@ -130,6 +136,9 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/concepts/tailwind-styling]] — Tailwind CSS + Inter font + shadcn/ui approach + cn() utility
 - [[wiki/concepts/form-validation-pattern]] — Pure validation functions + React hook two-layer pattern (FT-02)
 - [[wiki/concepts/settings-persistence-flow]] — Renderer → IPC → Main → encrypted electron-store flow (FT-02)
+- [[wiki/concepts/agent-provider-auto-derivation]] — Derived `agentProvider` mapping for `anthropic` and `openai`, with manual fallback for other LLM providers (FT-14A)
+- [[wiki/concepts/settings-sanitization-before-save]] — Clear hidden dependent agent/BYOK fields before validation and persistence (FT-14A)
+- [[wiki/concepts/dynamic-collection-touched-state]] — Flat touched/error keys for project-row field visibility in dynamic forms (FT-14A)
 - [[wiki/concepts/schema-versioned-store-migration]] — Explicit schemaVersion bootstrap and ordered migration pipeline for persisted data (FT-07)
 - [[wiki/concepts/ado-rest-api-pattern]] — ADO REST API consumption: layered architecture, batching, typed errors (FT-03)
 - [[wiki/concepts/llm-provider-abstraction]] — Strategy + Factory pattern for multi-provider LLM abstraction (FT-04)
@@ -147,6 +156,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 
 - [[wiki/topics/electron-architecture]] — Three-process architecture, source structure, data flow
 - [[wiki/topics/renderer-ui]] — React SPA: HashRouter routing, component tree, styling stack
+- [[wiki/topics/agent-session-configuration-foundation]] — Settings-driven foundation for future agent-session execution: provider derivation, project registry, architecture context, and concurrency limits
 - [[wiki/topics/llm-categorization-pipeline]] — End-to-end LLM categorization: IPC → chunking → provider → validation → progressive results
 - [[wiki/topics/ai-cluster-similar-bug-detection]] — End-to-end similar-bug detection: dashboard tab → session gate → IPC → per-category LLM analysis → persisted results
 - [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, drawer drill-down, and categorization actions together

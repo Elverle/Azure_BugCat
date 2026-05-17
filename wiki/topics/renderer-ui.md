@@ -2,7 +2,7 @@
 title: 'Renderer UI'
 type: topic
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-05-17
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -10,9 +10,10 @@ sources:
     '[[wiki/sources/ft-05-dashboard]]',
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
-    '[[wiki/sources/ft-13-closed-bugs-history]]'
+    '[[wiki/sources/ft-13-closed-bugs-history]]',
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]'
   ]
-tags: [react, ui, routing, tailwind, shadcn-ui]
+tags: [react, ui, routing, tailwind, shadcn-ui, settings, agent]
 lang: en
 ---
 
@@ -50,41 +51,44 @@ All routes are wrapped in `AppLayout` (Topbar + Outlet).
 
 ## Components
 
-| Component                                     | Type              | Page / Surface                           |
-| --------------------------------------------- | ----------------- | ---------------------------------------- |
-| [[wiki/entities/app-layout]]                  | Layout shell      | Topbar + Outlet                          |
-| [[wiki/entities/topbar]]                      | Navigation        | BugCat brand + nav links                 |
-| [[wiki/entities/button-component]]            | UI primitive      | shadcn Button with variants              |
-| [[wiki/entities/confirm-dialog]]              | UI primitive      | Reusable confirmation modal              |
-| [[wiki/entities/input-component]]             | UI primitive      | shadcn Input                             |
-| [[wiki/entities/label-component]]             | UI primitive      | shadcn Label                             |
-| [[wiki/entities/select-component]]            | UI primitive      | shadcn Select                            |
-| [[wiki/entities/textarea-component]]          | UI primitive      | shadcn Textarea                          |
-| [[wiki/entities/dashboard-page]]              | Page              | Main bug triage workspace                |
-| [[wiki/entities/closed-bugs-page]]            | Page              | Historical KPI view for closed bugs      |
-| [[wiki/entities/dashboard-header]]            | Page header       | Fetch/Categorize actions                 |
-| [[wiki/entities/kpi-cards]]                   | Dashboard widget  | KPI summary strip                        |
-| [[wiki/entities/filter-bar]]                  | Dashboard widget  | Search, filters, grouping                |
-| [[wiki/entities/multi-select-component]]      | UI primitive      | Custom searchable multi-select           |
-| [[wiki/entities/bug-table]]                   | Data grid         | Sortable flat list view                  |
-| [[wiki/entities/bug-card]]                    | Dashboard widget  | Card renderer for grouped bugs           |
-| [[wiki/entities/group-accordion]]             | Dashboard widget  | Collapsible grouped sections             |
-| [[wiki/entities/bug-detail-drawer]]           | Shared widget     | Bug inspection drawer                    |
-| [[wiki/entities/ai-cluster-category-section]] | AI Cluster widget | Collapsible category result section      |
-| [[wiki/entities/similarity-group-card]]       | AI Cluster widget | Score/reason/bug-list card               |
-| [[wiki/entities/use-dashboard-hook]]          | Hook              | Session-backed dashboard state           |
-| [[wiki/entities/use-closed-bug-kpis-hook]]    | Hook              | Closed-history KPI loading state         |
-| [[wiki/entities/use-ai-cluster-hook]]         | Hook              | Session-backed similarity state          |
-| [[wiki/entities/use-bug-drawer-hook]]         | Hook              | Shared selected-bug state and navigation |
-| [[wiki/entities/dashboard-utils]]             | Library           | Pure filter/sort/group helpers           |
-| [[wiki/entities/closed-bug-kpis-utility]]     | Library           | Pure historical KPI aggregation          |
-| [[wiki/entities/date-format-utility]]         | Library           | Shared Italian date formatting           |
-| [[wiki/entities/settings-page]]               | Page              | Full settings page                       |
-| [[wiki/entities/ado-connection-section]]      | Settings section  | ADO connection card                      |
-| [[wiki/entities/llm-provider-section]]        | Settings section  | LLM provider card                        |
-| [[wiki/entities/categories-section]]          | Settings section  | Categories editor card                   |
-| [[wiki/entities/use-settings-hook]]           | Hook              | Settings state management                |
-| [[wiki/entities/validation-utils]]            | Library           | Pure validation functions                |
+| Component                                      | Type              | Page / Surface                           |
+| ---------------------------------------------- | ----------------- | ---------------------------------------- |
+| [[wiki/entities/app-layout]]                   | Layout shell      | Topbar + Outlet                          |
+| [[wiki/entities/topbar]]                       | Navigation        | BugCat brand + nav links                 |
+| [[wiki/entities/button-component]]             | UI primitive      | shadcn Button with variants              |
+| [[wiki/entities/confirm-dialog]]               | UI primitive      | Reusable confirmation modal              |
+| [[wiki/entities/input-component]]              | UI primitive      | shadcn Input                             |
+| [[wiki/entities/label-component]]              | UI primitive      | shadcn Label                             |
+| [[wiki/entities/select-component]]             | UI primitive      | shadcn Select                            |
+| [[wiki/entities/textarea-component]]           | UI primitive      | shadcn Textarea                          |
+| [[wiki/entities/dashboard-page]]               | Page              | Main bug triage workspace                |
+| [[wiki/entities/closed-bugs-page]]             | Page              | Historical KPI view for closed bugs      |
+| [[wiki/entities/dashboard-header]]             | Page header       | Fetch/Categorize actions                 |
+| [[wiki/entities/kpi-cards]]                    | Dashboard widget  | KPI summary strip                        |
+| [[wiki/entities/filter-bar]]                   | Dashboard widget  | Search, filters, grouping                |
+| [[wiki/entities/multi-select-component]]       | UI primitive      | Custom searchable multi-select           |
+| [[wiki/entities/bug-table]]                    | Data grid         | Sortable flat list view                  |
+| [[wiki/entities/bug-card]]                     | Dashboard widget  | Card renderer for grouped bugs           |
+| [[wiki/entities/group-accordion]]              | Dashboard widget  | Collapsible grouped sections             |
+| [[wiki/entities/bug-detail-drawer]]            | Shared widget     | Bug inspection drawer                    |
+| [[wiki/entities/ai-cluster-category-section]]  | AI Cluster widget | Collapsible category result section      |
+| [[wiki/entities/similarity-group-card]]        | AI Cluster widget | Score/reason/bug-list card               |
+| [[wiki/entities/use-dashboard-hook]]           | Hook              | Session-backed dashboard state           |
+| [[wiki/entities/use-closed-bug-kpis-hook]]     | Hook              | Closed-history KPI loading state         |
+| [[wiki/entities/use-ai-cluster-hook]]          | Hook              | Session-backed similarity state          |
+| [[wiki/entities/use-bug-drawer-hook]]          | Hook              | Shared selected-bug state and navigation |
+| [[wiki/entities/dashboard-utils]]              | Library           | Pure filter/sort/group helpers           |
+| [[wiki/entities/closed-bug-kpis-utility]]      | Library           | Pure historical KPI aggregation          |
+| [[wiki/entities/date-format-utility]]          | Library           | Shared Italian date formatting           |
+| [[wiki/entities/settings-page]]                | Page              | Full settings page                       |
+| [[wiki/entities/ado-connection-section]]       | Settings section  | ADO connection card                      |
+| [[wiki/entities/llm-provider-section]]         | Settings section  | LLM provider card                        |
+| [[wiki/entities/agent-provider-section]]       | Settings section  | Agent runtime selection and BYOK         |
+| [[wiki/entities/project-registry-section]]     | Settings section  | Registered local projects                |
+| [[wiki/entities/architecture-context-section]] | Settings section  | Architecture notes and concurrency       |
+| [[wiki/entities/categories-section]]           | Settings section  | Categories editor card                   |
+| [[wiki/entities/use-settings-hook]]            | Hook              | Settings state management                |
+| [[wiki/entities/validation-utils]]             | Library           | Pure validation functions                |
 
 ## Dashboard Surface
 
@@ -109,9 +113,12 @@ All routes are wrapped in `AppLayout` (Topbar + Outlet).
 
 ## Settings Surface
 
-- [[wiki/entities/settings-page]] remains the `/settings` route and includes a destructive session-reset danger zone.
+- [[wiki/entities/settings-page]] remains the `/settings` route and now also hosts the FT-14A agent-session preparation surface.
 - The reset flow is guarded by [[wiki/entities/confirm-dialog]], which provides focus management and explicit confirm/cancel behavior.
-- Form state, validation, and connection tests still live in [[wiki/entities/use-settings-hook]].
+- [[wiki/entities/agent-provider-section]] derives or selects the effective agent runtime and can trigger a Codex CLI binary check.
+- [[wiki/entities/project-registry-section]] manages local project metadata with per-field touched/error visibility.
+- [[wiki/entities/architecture-context-section]] captures free-form architecture hints plus the concurrency ceiling for future agent sessions.
+- Form state, validation, connection tests, sanitization, and save-time project-path verification still live in [[wiki/entities/use-settings-hook]].
 
 ## Styling Stack
 
@@ -131,6 +138,7 @@ See [[wiki/concepts/tailwind-styling]] for full details.
 ## See also
 
 - [[wiki/topics/electron-architecture]]
+- [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/concepts/tailwind-styling]]
 - [[wiki/topics/dashboard-bug-exploration]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]

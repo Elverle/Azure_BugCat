@@ -3,15 +3,20 @@ title: 'useSettings Hook'
 type: entity
 subtype: hook
 created: 2026-04-29
-updated: 2026-05-01
-sources: ['[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-08-generic-provider]]']
-tags: [react, hook, state-management, settings, ipc]
+updated: 2026-05-17
+sources:
+  [
+    '[[wiki/sources/ft-02-settings]]',
+    '[[wiki/sources/ft-08-generic-provider]]',
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]'
+  ]
+tags: [react, hook, state-management, settings, ipc, agent, projects]
 lang: en
 ---
 
 ## Description
 
-Central state management hook for the Settings page. Owns form state, validation, dirty tracking, IPC load/save, and test connection calls. Single source of truth for all settings-related state.
+Central state management hook for the Settings page. It owns form state, validation, dirty tracking, IPC load/save, connection tests, FT-14A agent-provider derivation, project registry CRUD, and save-time sanitization/path validation.
 
 ## Location
 
@@ -41,6 +46,11 @@ export interface UseSettingsReturn {
   resetCategories: () => void
   categoriesToText: (categories: string[]) => string
   textToCategories: (text: string) => string[]
+  addProject: () => void
+  updateProject: (id: string, updates: Partial<ProjectEntry>) => void
+  removeProject: (id: string) => void
+  checkAgentBinary: () => Promise<BinaryCheckResult>
+  selectDirectory: () => Promise<string | null>
 }
 ```
 
@@ -56,6 +66,7 @@ export interface UseSettingsReturn {
 | `saving`                          | `boolean`                        | True while saving to IPC                     |
 | `saveResult`                      | `ResultMessage \| null`          | Success/error feedback after save            |
 | `testAdoResult` / `testLlmResult` | `ResultMessage \| null`          | Test connection feedback                     |
+| `initialLoadDone`                 | `Ref<boolean>`                   | Guards auto-derivation during first hydrate  |
 
 ## Key Behaviors
 
@@ -63,10 +74,21 @@ export interface UseSettingsReturn {
 - **Real-time validation:** Re-runs `validateSettings()` on every settings change via `useEffect`
 - **Dirty tracking:** `isDirty = JSON.stringify(settings) !== JSON.stringify(originalSettings)`
 - **`canSave`:** `isDirty && isSettingsValid(errors) && !saving`
-- **Save flow:** Mark all fields touched → validate → if valid, call `setSettings()` IPC → update `originalSettings`
+- **Auto-derivation:** After initial load, switching `llmProvider` to `anthropic` or `openai` writes `agentProvider = 'claude-sdk'` or `'codex-sdk'` into state.
+- **Save flow:** Mark all fields touched, including per-project keys → sanitize hidden dependent fields → validate → validate project paths through IPC → if valid, call `setSettings()` IPC → update `originalSettings`
 - **Test connections:** Race IPC call against 5 s timeout → structured result
 - **Auto-dismiss:** Test results clear after 5 s via `useEffect` timers
 - **Categories helpers:** `categoriesToText` (join with `\n`), `textToCategories` (split, trim, deduplicate)
+- **Project registry:** Adds rows with `crypto.randomUUID()`, updates rows by `id`, removes rows, and marks only the touched project sub-fields that actually changed.
+- **Privileged helpers:** Exposes `checkAgentBinary()` and `selectDirectory()` as thin wrappers over the preload bridge.
+
+## Sanitization Helper
+
+```typescript
+function sanitizeSettingsBeforeSave(settings: AppSettings): AppSettings
+```
+
+This helper clears hidden dependent fields before validation and persistence so stale BYOK or manual-agent secrets do not survive provider-mode changes.
 
 ## Default Settings
 
@@ -82,7 +104,16 @@ const DEFAULT_SETTINGS: AppSettings = {
   baseUrl: '',
   llmModel: '',
   pat: '',
-  categories: []
+  categories: [],
+  agentProvider: 'none',
+  agentApiKey: '',
+  agentModel: '',
+  copilotByokEnabled: false,
+  copilotByokProvider: undefined,
+  copilotByokApiKey: '',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 ```
 
@@ -91,14 +122,24 @@ const DEFAULT_SETTINGS: AppSettings = {
 - `useSettings` now treats generic-provider fields as part of the normal form state rather than branching on a Copilot-only authentication mode.
 - The hook preserves `baseUrl` and `llmModel` values when users switch providers, because it stores the full `AppSettings` object and only changes the targeted field.
 
+## FT-14A Notes
+
+- `projects:get` / `projects:set` exist in the preload bridge, but the current Settings surface still persists the registry through the full `settings:set` flow so the entire form remains atomic.
+- Project path validation is intentionally deferred to save time because the renderer is not allowed to hit `fs` directly.
+- Per-project validation visibility uses synthetic touched keys such as `project-0-path`.
+
 ## Dependencies
 
 - [[wiki/entities/validation-utils]] — `validateSettings()`, `isSettingsValid()`
-- [[wiki/entities/preload-bridge]] — `window.electronAPI` (getSettings, setSettings, testAdoConnection, testLlmConnection)
+- [[wiki/entities/preload-bridge]] — `window.electronAPI` (settings load/save, test connections, path validation, binary check, directory picker)
 - [[wiki/entities/shared-types]] — `AppSettings`
 
 ## See also
 
 - [[wiki/entities/settings-page]] — consumer
+- [[wiki/entities/project-registry]]
+- [[wiki/concepts/agent-provider-auto-derivation]]
+- [[wiki/concepts/settings-sanitization-before-save]]
+- [[wiki/concepts/dynamic-collection-touched-state]]
 - [[wiki/concepts/form-validation-pattern]]
 - [[wiki/concepts/settings-persistence-flow]]

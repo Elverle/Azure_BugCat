@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
-import type { AppSettings } from '@shared/types'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import type { AppSettings, ProjectEntry, BinaryCheckResult } from '@shared/types'
 import { validateSettings, isSettingsValid } from '@renderer/lib/validation'
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -13,7 +13,16 @@ const DEFAULT_SETTINGS: AppSettings = {
   baseUrl: '',
   llmModel: '',
   pat: '',
-  categories: []
+  categories: [],
+  agentProvider: 'none',
+  agentApiKey: '',
+  agentModel: '',
+  copilotByokEnabled: false,
+  copilotByokProvider: undefined,
+  copilotByokApiKey: '',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 
 type ResultMessage = { type: 'success' | 'error'; message: string }
@@ -39,9 +48,35 @@ export interface UseSettingsReturn {
   resetCategories: () => void
   categoriesToText: (categories: string[]) => string
   textToCategories: (text: string) => string[]
+  addProject: () => void
+  updateProject: (id: string, updates: Partial<ProjectEntry>) => void
+  removeProject: (id: string) => void
+  checkAgentBinary: () => Promise<BinaryCheckResult>
+  selectDirectory: () => Promise<string | null>
 }
 
 const CONNECTION_TIMEOUT = 5000
+
+function sanitizeSettingsBeforeSave(settings: AppSettings): AppSettings {
+  const sanitized = { ...settings }
+
+  if (sanitized.agentProvider === 'none') {
+    sanitized.agentApiKey = ''
+    sanitized.agentModel = ''
+    sanitized.copilotByokEnabled = false
+    sanitized.copilotByokProvider = undefined
+    sanitized.copilotByokApiKey = ''
+  } else if (sanitized.agentProvider !== 'copilot-sdk') {
+    sanitized.copilotByokEnabled = false
+    sanitized.copilotByokProvider = undefined
+    sanitized.copilotByokApiKey = ''
+  } else if (sanitized.agentProvider === 'copilot-sdk' && !sanitized.copilotByokEnabled) {
+    sanitized.copilotByokProvider = undefined
+    sanitized.copilotByokApiKey = ''
+  }
+
+  return sanitized
+}
 
 export function useSettings(): UseSettingsReturn {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
@@ -55,6 +90,7 @@ export function useSettings(): UseSettingsReturn {
   const [testAdoLoading, setTestAdoLoading] = useState(false)
   const [testLlmResult, setTestLlmResult] = useState<ResultMessage | null>(null)
   const [testLlmLoading, setTestLlmLoading] = useState(false)
+  const initialLoadDone = useRef(false)
 
   // Load settings on mount
   useEffect(() => {
@@ -74,7 +110,10 @@ export function useSettings(): UseSettingsReturn {
         setErrors(validateSettings(DEFAULT_SETTINGS))
         setSaveResult({ type: 'error', message: 'Failed to load settings. Using defaults.' })
       } finally {
-        if (!cancelled) setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+          initialLoadDone.current = true
+        }
       }
     }
 
@@ -88,6 +127,16 @@ export function useSettings(): UseSettingsReturn {
   useEffect(() => {
     setErrors(validateSettings(settings))
   }, [settings])
+
+  // Auto-derive agentProvider when llmProvider changes (skip initial load)
+  useEffect(() => {
+    if (!initialLoadDone.current) return
+    if (settings.llmProvider === 'anthropic') {
+      setSettings((prev) => ({ ...prev, agentProvider: 'claude-sdk' }))
+    } else if (settings.llmProvider === 'openai') {
+      setSettings((prev) => ({ ...prev, agentProvider: 'codex-sdk' }))
+    }
+  }, [settings.llmProvider])
 
   const isDirty = useMemo(
     () => JSON.stringify(settings) !== JSON.stringify(originalSettings),
@@ -108,15 +157,49 @@ export function useSettings(): UseSettingsReturn {
   }, [])
 
   const save = useCallback(async () => {
-    // Mark all fields as touched
+    // Mark all fields as touched (including per-project keys)
     const allTouched: Record<string, boolean> = {}
     for (const key of Object.keys(settings)) {
       allTouched[key] = true
     }
+    for (let i = 0; i < settings.projects.length; i++) {
+      allTouched[`project-${i}-name`] = true
+      allTouched[`project-${i}-path`] = true
+      allTouched[`project-${i}-description`] = true
+      allTouched[`project-${i}-keywords`] = true
+    }
     setTouched(allTouched)
 
+    // Sanitize dependent fields before validation/save
+    const sanitized = sanitizeSettingsBeforeSave(settings)
+    setSettings(sanitized)
+
     // Run full validation
-    const currentErrors = validateSettings(settings)
+    const currentErrors = validateSettings(sanitized)
+
+    // Validate project paths via main process
+    const projectPaths = sanitized.projects.map((p) => p.path)
+    if (projectPaths.length > 0) {
+      try {
+        const pathResults = (await (window as any).electronAPI.validateProjectPaths(
+          projectPaths
+        )) as Record<string, string | null>
+        for (let i = 0; i < sanitized.projects.length; i++) {
+          const pathError = pathResults[sanitized.projects[i].path]
+          if (pathError) {
+            currentErrors[`project-${i}-path`] = pathError
+          }
+        }
+      } catch {
+        // If path validation IPC fails, mark all paths as unverifiable to block save
+        for (let i = 0; i < sanitized.projects.length; i++) {
+          if (!currentErrors[`project-${i}-path`]) {
+            currentErrors[`project-${i}-path`] = 'Unable to verify directory — check path and retry'
+          }
+        }
+      }
+    }
+
     setErrors(currentErrors)
 
     if (!isSettingsValid(currentErrors)) {
@@ -126,8 +209,8 @@ export function useSettings(): UseSettingsReturn {
 
     setSaving(true)
     try {
-      await window.electronAPI.setSettings(settings)
-      setOriginalSettings(settings)
+      await window.electronAPI.setSettings(sanitized)
+      setOriginalSettings(sanitized)
       setSaveResult({ type: 'success', message: 'Settings saved successfully.' })
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to save settings.'
@@ -222,6 +305,52 @@ export function useSettings(): UseSettingsReturn {
     updateField('categories', [])
   }, [updateField])
 
+  const addProject = useCallback(() => {
+    const newProject: ProjectEntry = {
+      id: crypto.randomUUID(),
+      name: '',
+      path: '',
+      type: 'backend',
+      description: '',
+      keywords: []
+    }
+    setSettings((prev) => ({ ...prev, projects: [...prev.projects, newProject] }))
+    setTouched((prev) => ({ ...prev, projects: true }))
+  }, [])
+
+  const updateProject = useCallback((id: string, updates: Partial<ProjectEntry>) => {
+    setSettings((prev) => {
+      const index = prev.projects.findIndex((p) => p.id === id)
+      if (index !== -1) {
+        const perFieldTouched: Record<string, boolean> = {}
+        for (const key of Object.keys(updates)) {
+          perFieldTouched[`project-${index}-${key}`] = true
+        }
+        setTouched((t) => ({ ...t, projects: true, ...perFieldTouched }))
+      }
+      return {
+        ...prev,
+        projects: prev.projects.map((p) => (p.id === id ? { ...p, ...updates } : p))
+      }
+    })
+  }, [])
+
+  const removeProject = useCallback((id: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      projects: prev.projects.filter((p) => p.id !== id)
+    }))
+    setTouched((prev) => ({ ...prev, projects: true }))
+  }, [])
+
+  const checkAgentBinary = useCallback(async (): Promise<BinaryCheckResult> => {
+    return (window as any).electronAPI.checkAgentBinary() as Promise<BinaryCheckResult>
+  }, [])
+
+  const selectDirectory = useCallback(async (): Promise<string | null> => {
+    return (window as any).electronAPI.selectDirectory() as Promise<string | null>
+  }, [])
+
   return {
     settings,
     errors,
@@ -242,6 +371,11 @@ export function useSettings(): UseSettingsReturn {
     testLlmLoading,
     resetCategories,
     categoriesToText,
-    textToCategories
+    textToCategories,
+    addProject,
+    updateProject,
+    removeProject,
+    checkAgentBinary,
+    selectDirectory
   }
 }

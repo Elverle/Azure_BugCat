@@ -38,7 +38,11 @@ const baseSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'pat-test',
-  categories: ['UI', 'Backend']
+  categories: ['UI', 'Backend'],
+  agentProvider: 'none',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 
 describe('llm-service', () => {

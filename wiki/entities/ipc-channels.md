@@ -3,7 +3,7 @@ title: 'IPC Channel Constants'
 type: entity
 subtype: config
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-05-17
 sources:
 	[
 		'[[wiki/sources/ft-01-scaffold]]',
@@ -11,10 +11,11 @@ sources:
 		'[[wiki/sources/ft-10-ai-cluster-similarity]]',
 		'[[wiki/sources/ft-12-incremental-session-cache]]',
 		'[[wiki/sources/ft-13-closed-bugs-history]]',
+		'[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
 		'[[wiki/analyses/cancel-categorization-flow]]',
 		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
 	]
-tags: [electron, ipc, shared, shell, similarity, catalog]
+tags: [electron, ipc, shared, shell, similarity, catalog, agent, projects]
 lang: en
 ---
 
@@ -48,6 +49,11 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `CATALOG_CLEAR`                 | `catalog:clear`                 | Catalog      |
 | `CATALOG_GET_CLOSED`            | `catalog:get-closed`            | Catalog      |
 | `OPEN_EXTERNAL`                 | `shell:open-external`           | Shell        |
+| `AGENT_CHECK_BINARY`            | `agent:check-binary`            | Agent        |
+| `AGENT_SELECT_DIRECTORY`        | `agent:select-directory`        | Agent        |
+| `PROJECTS_GET`                  | `projects:get`                  | Projects     |
+| `PROJECTS_SET`                  | `projects:set`                  | Projects     |
+| `PROJECTS_VALIDATE_PATHS`       | `projects:validate-paths`       | Projects     |
 
 ## Type
 
@@ -59,6 +65,8 @@ export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
 
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/preload-bridge]]
+- [[wiki/entities/project-registry]]
 - [[wiki/entities/open-external-ipc]]
+- [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

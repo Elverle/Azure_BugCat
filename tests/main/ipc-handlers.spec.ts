@@ -12,7 +12,12 @@ const {
   fetchAdoAttachmentDataUrl,
   categorizeBugs,
   testLLMConnection,
-  findSimilarBugs
+  findSimilarBugs,
+  execFileMock,
+  showOpenDialog,
+  getFocusedWindow,
+  existsSyncMock,
+  statSyncMock
 } = vi.hoisted(() => ({
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
   ipcMainHandle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -25,13 +30,33 @@ const {
   fetchAdoAttachmentDataUrl: vi.fn(),
   categorizeBugs: vi.fn(),
   testLLMConnection: vi.fn(),
-  findSimilarBugs: vi.fn()
+  findSimilarBugs: vi.fn(),
+  execFileMock: vi.fn(),
+  showOpenDialog: vi.fn(),
+  getFocusedWindow: vi.fn(),
+  existsSyncMock: vi.fn(),
+  statSyncMock: vi.fn()
 }))
 
 vi.mock('electron', () => ({
   ipcMain: {
     handle: ipcMainHandle
+  },
+  dialog: {
+    showOpenDialog: showOpenDialog
+  },
+  BrowserWindow: {
+    getFocusedWindow: getFocusedWindow
   }
+}))
+
+vi.mock('child_process', () => ({
+  execFile: execFileMock
+}))
+
+vi.mock('fs', () => ({
+  existsSync: existsSyncMock,
+  statSync: statSyncMock
 }))
 
 vi.mock('@main/store', () => ({
@@ -67,7 +92,11 @@ const baseSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'pat-token',
-  categories: []
+  categories: [],
+  agentProvider: 'none',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 
 describe('registerIPCHandlers', () => {
@@ -82,6 +111,9 @@ describe('registerIPCHandlers', () => {
     categorizeBugs.mockReset()
     testLLMConnection.mockReset()
     findSimilarBugs.mockReset()
+    execFileMock.mockReset()
+    showOpenDialog.mockReset()
+    getFocusedWindow.mockReset()
     registerIPCHandlers()
   })
 
@@ -760,6 +792,140 @@ describe('registerIPCHandlers', () => {
       expect(result.closedBugs).toHaveLength(1)
       expect(result.fetchedAt).toBeNull()
       expect(result.lastClearedAt).toBeNull()
+    })
+  })
+
+  describe('AGENT_CHECK_BINARY', () => {
+    it('returns installed with version when execFile succeeds', async () => {
+      execFileMock.mockImplementation(
+        (_cmd: string, _args: string[], _opts: unknown, cb: Function) => {
+          cb(null, '1.2.3\n', '')
+        }
+      )
+
+      const result = await handlers.get(IPC_CHANNELS.AGENT_CHECK_BINARY)?.()
+
+      expect(result).toEqual({ installed: true, version: '1.2.3' })
+    })
+
+    it('returns not installed with error when execFile fails', async () => {
+      execFileMock.mockImplementation(
+        (_cmd: string, _args: string[], _opts: unknown, cb: Function) => {
+          cb(new Error('command not found'), '', '')
+        }
+      )
+
+      const result = await handlers.get(IPC_CHANNELS.AGENT_CHECK_BINARY)?.()
+
+      expect(result).toEqual({ installed: false, error: 'command not found' })
+    })
+  })
+
+  describe('AGENT_SELECT_DIRECTORY', () => {
+    it('returns selected path when dialog is confirmed', async () => {
+      getFocusedWindow.mockReturnValue({})
+      showOpenDialog.mockResolvedValue({ filePaths: ['/home/user/project'] })
+
+      const result = await handlers.get(IPC_CHANNELS.AGENT_SELECT_DIRECTORY)?.()
+
+      expect(result).toBe('/home/user/project')
+    })
+
+    it('returns null when dialog is cancelled', async () => {
+      getFocusedWindow.mockReturnValue({})
+      showOpenDialog.mockResolvedValue({ filePaths: [] })
+
+      const result = await handlers.get(IPC_CHANNELS.AGENT_SELECT_DIRECTORY)?.()
+
+      expect(result).toBeNull()
+    })
+  })
+
+  describe('PROJECTS_GET and PROJECTS_SET', () => {
+    it('returns projects array from settings', async () => {
+      const projects = [
+        {
+          id: 'p1',
+          name: 'Backend',
+          path: '/app/backend',
+          type: 'backend',
+          description: '',
+          keywords: []
+        }
+      ]
+      storeGet.mockReturnValueOnce({ ...baseSettings, projects })
+
+      const result = await handlers.get(IPC_CHANNELS.PROJECTS_GET)?.()
+
+      expect(result).toEqual(projects)
+    })
+
+    it('returns empty array when settings has no projects', async () => {
+      storeGet.mockReturnValueOnce({ ...baseSettings, projects: undefined })
+
+      const result = await handlers.get(IPC_CHANNELS.PROJECTS_GET)?.()
+
+      expect(result).toEqual([])
+    })
+
+    it('updates settings.projects in store', async () => {
+      const existingSettings = { ...baseSettings }
+      storeGet.mockReturnValueOnce(existingSettings)
+      const newProjects = [
+        {
+          id: 'p1',
+          name: 'Frontend',
+          path: '/app/frontend',
+          type: 'frontend',
+          description: 'UI',
+          keywords: ['react']
+        }
+      ]
+
+      await handlers.get(IPC_CHANNELS.PROJECTS_SET)?.({}, newProjects)
+
+      expect(storeSet).toHaveBeenCalledWith(
+        'settings',
+        expect.objectContaining({ projects: newProjects })
+      )
+    })
+  })
+
+  describe('PROJECTS_VALIDATE_PATHS', () => {
+    it('returns null for valid directory paths', async () => {
+      existsSyncMock.mockReturnValue(true)
+      statSyncMock.mockReturnValue({ isDirectory: () => true })
+
+      const result = await handlers.get(IPC_CHANNELS.PROJECTS_VALIDATE_PATHS)?.({}, ['/valid/path'])
+
+      expect(result).toEqual({ '/valid/path': null })
+    })
+
+    it('returns error for non-existent paths', async () => {
+      existsSyncMock.mockReturnValue(false)
+
+      const result = await handlers.get(IPC_CHANNELS.PROJECTS_VALIDATE_PATHS)?.({}, [
+        '/missing/path'
+      ])
+
+      expect(result).toEqual({ '/missing/path': 'Path does not exist' })
+    })
+
+    it('returns error for paths that are not directories', async () => {
+      existsSyncMock.mockReturnValue(true)
+      statSyncMock.mockReturnValue({ isDirectory: () => false })
+
+      const result = await handlers.get(IPC_CHANNELS.PROJECTS_VALIDATE_PATHS)?.({}, [
+        '/some/file.txt'
+      ])
+
+      expect(result).toEqual({ '/some/file.txt': 'Path is not a directory' })
+    })
+
+    it('returns error for empty paths', async () => {
+      const result = await handlers.get(IPC_CHANNELS.PROJECTS_VALIDATE_PATHS)?.({}, ['', '  '])
+
+      expect(result).toEqual({ '': 'Path is required', '  ': 'Path is required' })
     })
   })
 })

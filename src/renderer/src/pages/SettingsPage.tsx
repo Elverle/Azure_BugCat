@@ -3,10 +3,14 @@ import { Shield, Loader2, CheckCircle2, XCircle, X, AlertTriangle } from 'lucide
 import { useSettings } from '@renderer/hooks/useSettings'
 import { AdoConnectionSection } from '@renderer/components/settings/AdoConnectionSection'
 import { LlmProviderSection } from '@renderer/components/settings/LlmProviderSection'
+import { AgentProviderSection } from '@renderer/components/settings/AgentProviderSection'
+import { ProjectRegistrySection } from '@renderer/components/settings/ProjectRegistrySection'
+import { ArchitectureContextSection } from '@renderer/components/settings/ArchitectureContextSection'
 import { CategoriesSection } from '@renderer/components/settings/CategoriesSection'
 import { Button } from '@renderer/components/ui/button'
 import { ConfirmDialog } from '@renderer/components/ui/confirm-dialog'
 import { cn } from '@renderer/lib/utils'
+import type { BinaryCheckResult } from '@shared/types'
 
 export function SettingsPage() {
   const {
@@ -29,7 +33,12 @@ export function SettingsPage() {
     testLlmLoading,
     resetCategories,
     categoriesToText,
-    textToCategories
+    textToCategories,
+    addProject,
+    updateProject,
+    removeProject,
+    checkAgentBinary,
+    selectDirectory
   } = useSettings()
 
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -42,6 +51,18 @@ export function SettingsPage() {
     type: 'success' | 'error'
     message: string
   } | null>(null)
+  const [binaryCheckResult, setBinaryCheckResult] = useState<BinaryCheckResult | null>(null)
+  const [binaryCheckLoading, setBinaryCheckLoading] = useState(false)
+
+  async function handleCheckBinary(): Promise<void> {
+    setBinaryCheckLoading(true)
+    try {
+      const result = await checkAgentBinary()
+      setBinaryCheckResult(result)
+    } finally {
+      setBinaryCheckLoading(false)
+    }
+  }
 
   // Auto-dismiss success saveResult after 3 seconds
   useEffect(() => {
@@ -164,6 +185,33 @@ export function SettingsPage() {
         onTestConnection={testLlmConnection}
         testResult={testLlmResult}
         testLoading={testLlmLoading}
+      />
+
+      <AgentProviderSection
+        settings={settings}
+        errors={errors}
+        touched={touched}
+        onFieldChange={updateField}
+        onCheckBinary={handleCheckBinary}
+        binaryCheckResult={binaryCheckResult}
+        binaryCheckLoading={binaryCheckLoading}
+      />
+
+      <ProjectRegistrySection
+        projects={settings.projects}
+        errors={errors}
+        touched={touched}
+        onAddProject={addProject}
+        onUpdateProject={updateProject}
+        onRemoveProject={removeProject}
+        onSelectDirectory={selectDirectory}
+      />
+
+      <ArchitectureContextSection
+        settings={settings}
+        errors={errors}
+        touched={touched}
+        onFieldChange={updateField}
       />
 
       <CategoriesSection

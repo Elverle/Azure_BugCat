@@ -3,7 +3,7 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-05-17
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -13,9 +13,10 @@ sources:
     '[[wiki/sources/ft-11-openrouter-provider]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/sources/ft-13-closed-bugs-history]]',
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
-tags: [typescript, types, shared, domain-model, catalog]
+tags: [typescript, types, shared, domain-model, catalog, settings, agent]
 lang: en
 ---
 
@@ -31,10 +32,12 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Core types
 
-| Type              | Purpose                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------ |
-| `LLMProviderType` | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini' \| 'openrouter'`                  |
-| `ErrorCode`       | Union of known error codes (ADO*\*, LLM*\_, `OPERATION_CANCELLED`, STORE\_\_, UNKNOWN\_\*) |
+| Type                | Purpose                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------ |
+| `LLMProviderType`   | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini' \| 'openrouter'`                  |
+| `AgentProviderType` | Union: `'claude-sdk' \| 'codex-sdk' \| 'copilot-sdk' \| 'none'`                            |
+| `ProjectType`       | Union: `'backend' \| 'frontend' \| 'shared'`                                               |
+| `ErrorCode`         | Union of known error codes (ADO*\*, LLM*\_, `OPERATION_CANCELLED`, STORE\_\_, UNKNOWN\_\*) |
 
 ### Bug types
 
@@ -49,10 +52,12 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Configuration
 
-| Type          | Purpose                                                                                                                   |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `AppSettings` | Full settings object, including shared `llmModel`, optional generic `baseUrl`, and the selected `llmProvider`             |
-| `SessionData` | Open-snapshot bug cache with fetch/categorize timestamps, optional `lastFetchNewCount`, plus optional `similarityResults` |
+| Type                | Purpose                                                                                                                       |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `ProjectEntry`      | One registered local project with path, type, description, and keywords                                                       |
+| `CopilotByokConfig` | Narrow helper shape for Copilot bring-your-own-key configuration                                                              |
+| `AppSettings`       | Full settings object, now including agent-provider state, project registry, architecture context, concurrency, and LLM fields |
+| `SessionData`       | Open-snapshot bug cache with fetch/categorize timestamps, optional `lastFetchNewCount`, plus optional `similarityResults`     |
 
 ### Error & Progress
 
@@ -79,9 +84,10 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Connection Testing
 
-| Type                   | Purpose                                                              |
-| ---------------------- | -------------------------------------------------------------------- |
-| `TestConnectionResult` | Structured response from test connection IPC: `{ success, message }` |
+| Type                   | Purpose                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------- |
+| `TestConnectionResult` | Structured response from test connection IPC: `{ success, message }`             |
+| `BinaryCheckResult`    | Structured response from `agent:check-binary`: `{ installed, version?, error? }` |
 
 _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]] and consumed by [[wiki/entities/use-settings-hook]].
 
@@ -112,6 +118,12 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `CatalogMetadata.lastClearedAt` now preserves the last explicit history cleanup timestamp so historical KPIs can declare the current counting baseline.
 - `ClosedCatalogSnapshot` is the renderer-safe FT-13 read model that combines the filtered closed-only slice with `fetchedAt` and `lastClearedAt`.
 
+## FT-14A Notes
+
+- `AppSettings` now persists the entire agent-session configuration foundation: `agentProvider`, `agentApiKey`, `agentModel`, `copilotByokEnabled`, `copilotByokProvider`, `copilotByokApiKey`, `projects`, `architectureContext`, and `maxConcurrentSessions`.
+- `ProjectEntry` is deliberately lightweight: FT-14A stores operator-supplied metadata only and does not infer repository status or language details from the path.
+- `BinaryCheckResult` keeps the Codex CLI check structured and non-throwing across the IPC boundary.
+
 ## Cancellation Notes
 
 - `ErrorCode` now includes `OPERATION_CANCELLED` so intentional user aborts can be distinguished from `LLM_TIMEOUT`.
@@ -121,5 +133,7 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 
 - [[wiki/entities/electron-store]] — persists `AppSettings`, `SessionData`, and `BugCatalog`
 - [[wiki/entities/ipc-handlers]] — serves settings/session over IPC
+- [[wiki/entities/project-registry]]
+- [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

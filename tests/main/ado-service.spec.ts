@@ -23,7 +23,11 @@ const baseSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'secret',
-  categories: []
+  categories: [],
+  agentProvider: 'none',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 
 function makeWorkItem(id: number): WorkItemRaw {

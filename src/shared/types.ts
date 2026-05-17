@@ -4,6 +4,10 @@
 
 export type LLMProviderType = 'openai' | 'anthropic' | 'generic' | 'gemini' | 'openrouter'
 
+export type AgentProviderType = 'claude-sdk' | 'codex-sdk' | 'copilot-sdk' | 'none'
+
+export type ProjectType = 'backend' | 'frontend' | 'shared'
+
 export type ErrorCode =
   | 'ADO_AUTH_ERROR'
   | 'ADO_NOT_FOUND'
@@ -38,6 +42,21 @@ export interface CategorizedBug extends BugItem {
   categorizedAt: string
 }
 
+export interface ProjectEntry {
+  id: string
+  name: string
+  path: string
+  type: ProjectType
+  description: string
+  keywords: string[]
+}
+
+export interface CopilotByokConfig {
+  enabled: boolean
+  provider?: LLMProviderType
+  apiKey?: string
+}
+
 export interface AppSettings {
   orgUrl: string
   projectName: string
@@ -50,6 +69,15 @@ export interface AppSettings {
   llmModel?: string
   pat: string
   categories: string[]
+  agentProvider: AgentProviderType
+  agentApiKey?: string
+  agentModel?: string
+  copilotByokEnabled?: boolean
+  copilotByokProvider?: LLMProviderType
+  copilotByokApiKey?: string
+  projects: ProjectEntry[]
+  architectureContext: string
+  maxConcurrentSessions: number
 }
 
 export interface SessionData {
@@ -131,3 +159,9 @@ export interface ClosedCatalogSnapshot {
 }
 
 export type BugCatalog = Record<number, CatalogBug>
+
+export interface BinaryCheckResult {
+  installed: boolean
+  version?: string
+  error?: string
+}

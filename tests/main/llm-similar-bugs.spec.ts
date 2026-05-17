@@ -43,7 +43,11 @@ const baseSettings: AppSettings = {
   apiKey: 'sk-test',
   baseUrl: 'https://api.example.com/v1',
   pat: 'pat-test',
-  categories: ['Costi', 'Validazioni']
+  categories: ['Costi', 'Validazioni'],
+  agentProvider: 'none',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 
 describe('findSimilarBugs', () => {

@@ -1,6 +1,6 @@
 import { computeInputSignature } from './utils/catalog-merge'
 
-export const CURRENT_SCHEMA_VERSION = 3
+export const CURRENT_SCHEMA_VERSION = 4
 
 export type Migration = {
   version: number
@@ -90,6 +90,24 @@ export const migrations: Migration[] = [
       }
 
       data.bugCatalog = catalog
+      return data
+    }
+  },
+  {
+    version: 4,
+    up: (data) => {
+      if (data.settings && typeof data.settings === 'object') {
+        const settings = data.settings as Record<string, unknown>
+        if (settings.agentProvider === undefined) settings.agentProvider = 'none'
+        if (settings.agentApiKey === undefined) settings.agentApiKey = ''
+        if (settings.agentModel === undefined) settings.agentModel = ''
+        if (settings.copilotByokEnabled === undefined) settings.copilotByokEnabled = false
+        if (settings.copilotByokProvider === undefined) settings.copilotByokProvider = undefined
+        if (settings.copilotByokApiKey === undefined) settings.copilotByokApiKey = ''
+        if (settings.projects === undefined) settings.projects = []
+        if (settings.architectureContext === undefined) settings.architectureContext = ''
+        if (settings.maxConcurrentSessions === undefined) settings.maxConcurrentSessions = 1
+      }
       return data
     }
   }

@@ -1,13 +1,16 @@
-import { ipcMain, IpcMainInvokeEvent, shell } from 'electron'
+import { ipcMain, IpcMainInvokeEvent, shell, dialog, BrowserWindow } from 'electron'
+import { execFile } from 'child_process'
 import { IPC_CHANNELS } from '../shared/ipc-channels'
 import { store } from './store'
 import {
   AppError,
   AppSettings,
+  BinaryCheckResult,
   BugCatalog,
   BugItem,
   CatalogMetadata,
   ClosedCatalogSnapshot,
+  ProjectEntry,
   SessionData,
   TestConnectionResult
 } from '../shared/types'
@@ -311,5 +314,63 @@ export function registerIPCHandlers(): void {
       throw new Error('Only https:// URLs are allowed')
     }
     await shell.openExternal(url)
+  })
+
+  // Agent
+  ipcMain.handle(IPC_CHANNELS.AGENT_CHECK_BINARY, async (): Promise<BinaryCheckResult> => {
+    return new Promise((resolve) => {
+      execFile('codex', ['--version'], { timeout: 5000 }, (error, stdout) => {
+        if (error) {
+          resolve({ installed: false, error: error.message })
+          return
+        }
+        resolve({ installed: true, version: stdout.trim() })
+      })
+    })
+  })
+
+  ipcMain.handle(IPC_CHANNELS.AGENT_SELECT_DIRECTORY, async () => {
+    const focusedWindow = BrowserWindow.getFocusedWindow()
+    const result = await dialog.showOpenDialog(focusedWindow!, { properties: ['openDirectory'] })
+    return result.filePaths[0] ?? null
+  })
+
+  // Projects
+  ipcMain.handle(IPC_CHANNELS.PROJECTS_GET, async () => {
+    const settings = store.get('settings') as AppSettings
+    return settings.projects ?? []
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PROJECTS_SET, async (_event, projects: ProjectEntry[]) => {
+    const settings = store.get('settings') as AppSettings
+    settings.projects = projects
+    store.set('settings', settings)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.PROJECTS_VALIDATE_PATHS, async (_event, paths: string[]) => {
+    const { existsSync, statSync } = await import('fs')
+    const result: Record<string, string | null> = {}
+    for (const p of paths) {
+      if (!p.trim()) {
+        result[p] = 'Path is required'
+        continue
+      }
+      if (!existsSync(p)) {
+        result[p] = 'Path does not exist'
+        continue
+      }
+      try {
+        const stat = statSync(p)
+        if (!stat.isDirectory()) {
+          result[p] = 'Path is not a directory'
+          continue
+        }
+      } catch {
+        result[p] = 'Unable to access path'
+        continue
+      }
+      result[p] = null
+    }
+    return result
   })
 }

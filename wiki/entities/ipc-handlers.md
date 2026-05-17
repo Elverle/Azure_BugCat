@@ -3,7 +3,7 @@ title: 'IPC Handlers'
 type: entity
 subtype: service
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-05-17
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -16,10 +16,11 @@ sources:
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/sources/ft-13-closed-bugs-history]]',
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
-tags: [electron, ipc, main-process, shell, catalog]
+tags: [electron, ipc, main-process, shell, catalog, agent, projects]
 lang: en
 ---
 
@@ -42,6 +43,11 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 | `session:clear`                 | ✅ Implemented | Sets `session` to `null`                                                                                                                                                                                        |
 | `catalog:clear`                 | ✅ Implemented | Sets `bugCatalog` to `null`, records `catalogMetadata.lastClearedAt`, and leaves the current `session` untouched                                                                                                |
 | `catalog:get-closed`            | ✅ Implemented | Reads `bugCatalog`, filters to entries with `closedAt !== null`, and returns that closed-only slice together with the latest `session.fetchedAt` plus `catalogMetadata.lastClearedAt` if available              |
+| `agent:check-binary`            | ✅ Implemented | Runs `codex --version` with a fixed argument list and returns `BinaryCheckResult` instead of throwing on missing CLI                                                                                            |
+| `agent:select-directory`        | ✅ Implemented | Opens an Electron directory picker and returns the selected folder path or `null`                                                                                                                               |
+| `projects:get`                  | ✅ Implemented | Returns `settings.projects ?? []` from persisted settings                                                                                                                                                       |
+| `projects:set`                  | ✅ Implemented | Replaces `settings.projects` in persisted settings                                                                                                                                                              |
+| `projects:validate-paths`       | ✅ Implemented | Checks whether each provided path exists and is a directory, returning a per-path error map                                                                                                                     |
 | `ado:fetch-bugs`                | ✅ Implemented | Validates settings, calls `fetchBugsFromQuery()`, merges results into `bugCatalog`, persists a fresh open-bug `session` plus `lastFetchNewCount`, and reuses categorization when signatures still match         |
 | `ado:test-connection`           | ✅ Implemented | Calls `testAdoConnection()`, returns `TestConnectionResult`                                                                                                                                                     |
 | `ado:fetch-attachment-data-url` | ✅ Implemented | Loads persisted settings and returns a renderer-safe attachment data URL for Azure DevOps-hosted images                                                                                                         |
@@ -57,9 +63,12 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - Only whitelisted channels are exposed — no generic `store:get`/`store:set`.
 - `settings:set` accepts `unknown` — **no runtime validation** (technical debt).
 - The shell handler uses `new URL(url)` plus protocol enforcement so the renderer cannot open arbitrary schemes.
+- `agent:check-binary` is intentionally hardcoded to `execFile('codex', ['--version'])`, so the renderer cannot turn it into arbitrary command execution.
+- Directory selection and path validation stay in the main process, which keeps direct filesystem access out of the renderer.
 - FT-08 removed the old Copilot-specific authentication branch from `llm:test-connection`; all providers now enter the same `testLLMConnection()` path once minimal required fields are present.
 - FT-10 keeps similarity analysis behind the same main-process boundary: the renderer cannot pass raw bug payloads or store writes directly, it can only request analysis against the current persisted session.
 - FT-12 keeps `bugCatalog` main-process owned; FT-13 adds only a filtered closed-history read channel, so the renderer still cannot enumerate or mutate the full catalog directly.
+- `projects:validate-paths` validates only existence plus directory-ness. It does not assert Git repository status, language, or workspace ownership.
 - Categorization cancellation is scoped per `webContents`, preventing one renderer surface from aborting another window's run.
 - Categorization status is also scoped per `webContents`, so Dashboard remount recovery reflects only the current window's work.
 - Cancelled categorization runs do not write partial `SessionData`; the existing session remains the source of truth until a full run succeeds.
@@ -81,7 +90,9 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 
 - [[wiki/entities/preload-bridge]]
 - [[wiki/entities/open-external-ipc]]
+- [[wiki/entities/project-registry]]
 - [[wiki/concepts/ipc-security-model]]
+- [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/session-persistence-lifecycle]]
 - [[wiki/topics/electron-architecture]]

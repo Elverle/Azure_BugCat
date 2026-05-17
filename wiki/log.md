@@ -2,6 +2,7 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                                   |
 | ---------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-17 | scan FT-14A                | GitHub Copilot | Scanned the Settings foundation for future agent sessions. Added FT-14A source, 4 entities, 3 concepts, and 1 topic. Updated core settings, shared types, IPC, migration, renderer, and tracker docs.   |
 | 2026-05-14 | update min-07              | GitHub Copilot | Refined Storico Chiusi with a local detail filter by bug ID/title and collapsible macro-category sections, keeping KPI cards stable while making historical rows easier to navigate.                    |
 | 2026-05-13 | update min-06              | GitHub Copilot | Refined Storico Chiusi KPIs with a persisted `lastClearedAt` baseline for history cleanup, richer bug-level detail under each macro-category, and updated docs/tests for the new renderer contract.     |
 | 2026-05-13 | scan FT-13                 | GitHub Copilot | Scanned Storico Chiusi. Created the FT-13 source, 3 renderer entities, 1 concept, and 1 topic. Updated catalog, IPC, renderer navigation, and tracker docs.                                             |
@@ -51,6 +52,37 @@ Pages created:
 Pages updated:
 
 - [[wiki/index.md]]
+
+## [2026-05-17] scan | FT-14A - Agent Configuration & Project Registry
+
+Scanned FT-14A after the Settings route gained the foundation for future agent sessions: auto-derived agent providers, Copilot BYOK mode, a Codex CLI binary check, a persisted project registry with save-time path validation, architecture context, concurrency limits, and schema v4 backfill. Also updated `feature-index.md` to register FT-14A in the delivery tracker.
+
+Pages created:
+
+- [[wiki/sources/ft-14a-agent-configuration-project-registry]]
+- [[wiki/entities/agent-provider-section]]
+- [[wiki/entities/project-registry-section]]
+- [[wiki/entities/architecture-context-section]]
+- [[wiki/entities/project-registry]]
+- [[wiki/concepts/agent-provider-auto-derivation]]
+- [[wiki/concepts/settings-sanitization-before-save]]
+- [[wiki/concepts/dynamic-collection-touched-state]]
+- [[wiki/topics/agent-session-configuration-foundation]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/settings-page]]
+- [[wiki/entities/use-settings-hook]]
+- [[wiki/entities/validation-utils]]
+- [[wiki/entities/store-migration]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/preload-bridge]]
+- [[wiki/entities/ipc-channels]]
+- [[wiki/concepts/schema-versioned-store-migration]]
+- [[wiki/concepts/settings-persistence-flow]]
+- [[wiki/topics/renderer-ui]]
 
 ## [2026-05-13] scan | FT-13 - Storico Chiusi
 

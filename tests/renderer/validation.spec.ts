@@ -1,12 +1,16 @@
 // @vitest-environment jsdom
 
 import { describe, expect, it } from 'vitest'
-import type { AppSettings } from '@shared/types'
+import type { AppSettings, ProjectEntry } from '@shared/types'
 import {
   isSettingsValid,
   validateApiKey,
+  validateArchitectureContext,
   validateIntRange,
+  validateMaxConcurrentSessions,
+  validateMaxLength,
   validateOrgUrl,
+  validateProjectEntry,
   validateSettings,
   validateUUID
 } from '@renderer/lib/validation'
@@ -20,7 +24,11 @@ const validSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'sk-test',
   pat: 'pat-token',
-  categories: ['UI']
+  categories: ['UI'],
+  agentProvider: 'none',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 
 describe('validation utils', () => {
@@ -58,5 +66,162 @@ describe('validation utils', () => {
     expect(invalidErrors.orgUrl).toBe('Organization URL is required')
     expect(invalidErrors.topN).toBe('Top N must be between 1 and 200')
     expect(invalidErrors.apiKey).toBe('API Key is required for this provider')
+  })
+})
+
+describe('validateMaxLength', () => {
+  it('returns null when value is under limit', () => {
+    expect(validateMaxLength('short', 10, 'Field')).toBeNull()
+  })
+
+  it('returns null when value is at limit', () => {
+    expect(validateMaxLength('a'.repeat(10), 10, 'Field')).toBeNull()
+  })
+
+  it('returns error when value is over limit', () => {
+    expect(validateMaxLength('a'.repeat(11), 10, 'Field')).toBe(
+      'Field must be at most 10 characters'
+    )
+  })
+})
+
+describe('validateProjectEntry', () => {
+  const validProject: ProjectEntry = {
+    id: 'p1',
+    name: 'MyProject',
+    path: '/home/user/project',
+    type: 'backend',
+    description: 'A project',
+    keywords: ['api', 'rest']
+  }
+
+  it('returns all nulls for a valid project', () => {
+    const errors = validateProjectEntry(validProject)
+    expect(errors.name).toBeNull()
+    expect(errors.path).toBeNull()
+    expect(errors.description).toBeNull()
+    expect(errors.keywords).toBeNull()
+  })
+
+  it('returns error for missing name', () => {
+    const errors = validateProjectEntry({ ...validProject, name: '' })
+    expect(errors.name).toBe('Name is required')
+  })
+
+  it('returns error for name over 60 chars', () => {
+    const errors = validateProjectEntry({ ...validProject, name: 'a'.repeat(61) })
+    expect(errors.name).toBe('Name must be at most 60 characters')
+  })
+
+  it('returns error for empty path', () => {
+    const errors = validateProjectEntry({ ...validProject, path: '' })
+    expect(errors.path).toBe('Path is required')
+  })
+
+  it('returns error for description over 300 chars', () => {
+    const errors = validateProjectEntry({ ...validProject, description: 'a'.repeat(301) })
+    expect(errors.description).toBe('Description must be at most 300 characters')
+  })
+
+  it('returns error for keyword over 30 chars', () => {
+    const errors = validateProjectEntry({ ...validProject, keywords: ['a'.repeat(31)] })
+    expect(errors.keywords).toBe('Keyword must be at most 30 characters')
+  })
+})
+
+describe('validateArchitectureContext', () => {
+  it('returns null for empty string', () => {
+    expect(validateArchitectureContext('')).toBeNull()
+  })
+
+  it('returns null for 1000 characters', () => {
+    expect(validateArchitectureContext('a'.repeat(1000))).toBeNull()
+  })
+
+  it('returns error for 1001 characters', () => {
+    expect(validateArchitectureContext('a'.repeat(1001))).toBe(
+      'Architecture context must be at most 1000 characters'
+    )
+  })
+})
+
+describe('validateMaxConcurrentSessions', () => {
+  it('returns error for 0', () => {
+    expect(validateMaxConcurrentSessions(0)).toBe('Max concurrent sessions must be between 1 and 5')
+  })
+
+  it('returns null for 1', () => {
+    expect(validateMaxConcurrentSessions(1)).toBeNull()
+  })
+
+  it('returns null for 5', () => {
+    expect(validateMaxConcurrentSessions(5)).toBeNull()
+  })
+
+  it('returns error for 6', () => {
+    expect(validateMaxConcurrentSessions(6)).toBe('Max concurrent sessions must be between 1 and 5')
+  })
+
+  it('returns error for non-integer', () => {
+    expect(validateMaxConcurrentSessions(2.5)).toBe('Max concurrent sessions must be an integer')
+  })
+})
+
+describe('validateSettings — new FT-14A fields', () => {
+  it('returns no new errors with valid new fields', () => {
+    const errors = validateSettings(validSettings)
+    expect(errors.architectureContext).toBeNull()
+    expect(errors.maxConcurrentSessions).toBeNull()
+    expect(errors.agentApiKey).toBeNull()
+  })
+
+  it('returns error for invalid architectureContext', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      architectureContext: 'a'.repeat(1001)
+    })
+    expect(errors.architectureContext).toBe('Architecture context must be at most 1000 characters')
+  })
+
+  it('does NOT require agent API key when agentProvider is copilot-sdk (subscription mode)', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      llmProvider: 'gemini',
+      agentProvider: 'copilot-sdk',
+      agentApiKey: ''
+    })
+    expect(errors.agentApiKey).toBeNull()
+  })
+
+  it('requires agent API key when agentProvider is claude-sdk and not auto-derived', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      llmProvider: 'gemini',
+      agentProvider: 'claude-sdk',
+      agentApiKey: ''
+    })
+    expect(errors.agentApiKey).toBe('Agent API Key is required')
+  })
+
+  it('requires copilotByokApiKey when copilot-sdk with BYOK enabled', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      llmProvider: 'gemini',
+      agentProvider: 'copilot-sdk',
+      copilotByokEnabled: true,
+      copilotByokApiKey: ''
+    })
+    expect(errors.copilotByokApiKey).toBe('BYOK API Key is required')
+  })
+
+  it('does NOT require copilotByokApiKey when BYOK is disabled', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      llmProvider: 'gemini',
+      agentProvider: 'copilot-sdk',
+      copilotByokEnabled: false,
+      copilotByokApiKey: ''
+    })
+    expect(errors.copilotByokApiKey).toBeNull()
   })
 })

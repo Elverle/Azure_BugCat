@@ -14,7 +14,11 @@ const baseSettings: AppSettings = {
   llmProvider: 'openai',
   apiKey: 'secret-key',
   pat: 'pat-token',
-  categories: []
+  categories: [],
+  agentProvider: 'none',
+  projects: [],
+  architectureContext: '',
+  maxConcurrentSessions: 1
 }
 
 describe('LlmProviderSection', () => {

@@ -46,7 +46,17 @@ const electronAPI = {
   getCatalogClosed: () => ipcRenderer.invoke(IPC_CHANNELS.CATALOG_GET_CLOSED),
 
   // Shell
-  openExternal: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url)
+  openExternal: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url),
+
+  // Agent
+  checkAgentBinary: () => ipcRenderer.invoke(IPC_CHANNELS.AGENT_CHECK_BINARY),
+  selectDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.AGENT_SELECT_DIRECTORY),
+
+  // Projects
+  getProjects: () => ipcRenderer.invoke(IPC_CHANNELS.PROJECTS_GET),
+  setProjects: (projects: unknown) => ipcRenderer.invoke(IPC_CHANNELS.PROJECTS_SET, projects),
+  validateProjectPaths: (paths: string[]) =>
+    ipcRenderer.invoke(IPC_CHANNELS.PROJECTS_VALIDATE_PATHS, paths)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI)

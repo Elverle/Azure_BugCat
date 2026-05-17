@@ -13,15 +13,16 @@ describe('store-migration', () => {
   })
 
   describe('exports', () => {
-    it('should export CURRENT_SCHEMA_VERSION as 3', () => {
-      expect(CURRENT_SCHEMA_VERSION).toBe(3)
+    it('should export CURRENT_SCHEMA_VERSION as 4', () => {
+      expect(CURRENT_SCHEMA_VERSION).toBe(4)
     })
 
-    it('should export migrations array with three entries', () => {
-      expect(migrations).toHaveLength(3)
+    it('should export migrations array with four entries', () => {
+      expect(migrations).toHaveLength(4)
       expect(migrations[0].version).toBe(1)
       expect(migrations[1].version).toBe(2)
       expect(migrations[2].version).toBe(3)
+      expect(migrations[3].version).toBe(4)
     })
   })
 
@@ -273,7 +274,7 @@ describe('store-migration', () => {
       expect(catalog[20].lastSimilarityGroupAt).toBeNull()
     })
 
-    it('runs all migrations from v0 to v3 cleanly', () => {
+    it('runs all migrations from v0 to v4 cleanly', () => {
       store.has.mockReturnValue(false)
       store.get.mockImplementation((key: string) => {
         if (key === 'settings')
@@ -287,10 +288,14 @@ describe('store-migration', () => {
 
       expect(store.set).toHaveBeenCalledWith(
         'settings',
-        expect.objectContaining({ llmProvider: 'openai' })
+        expect.objectContaining({
+          llmProvider: 'openai',
+          agentProvider: 'none',
+          maxConcurrentSessions: 1
+        })
       )
       expect(store.set).toHaveBeenCalledWith('bugCatalog', null)
-      expect(store.set).toHaveBeenCalledWith('schemaVersion', 3)
+      expect(store.set).toHaveBeenCalledWith('schemaVersion', 4)
     })
 
     it('migrateStore persists bugCatalog key during migration', () => {

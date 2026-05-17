@@ -29,3 +29,4 @@ Track every deliverable here using explicit prefixes:
 | 19  | FT-13   | Storico Chiusi: pagina KPI per bug storici closed/done                 | Complete |
 | 20  | min-06  | Baseline pulizia storico e dettaglio bug nei KPI chiusi (FT-13)        | Complete |
 | 21  | min-07  | Filtro dettaglio e collapse per categoria nello storico chiusi (FT-13) | Complete |
+| 22  | FT-14A  | Agent Configuration & Project Registry                                 | Complete |

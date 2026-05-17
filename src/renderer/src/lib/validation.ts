@@ -1,4 +1,4 @@
-import type { AppSettings, LLMProviderType } from '@shared/types'
+import type { AppSettings, LLMProviderType, ProjectEntry } from '@shared/types'
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
@@ -83,8 +83,42 @@ export function validateBaseUrl(
   return null
 }
 
+export function validateMaxLength(value: string, max: number, fieldName: string): string | null {
+  if (value.length > max) {
+    return `${fieldName} must be at most ${max} characters`
+  }
+  return null
+}
+
+export function validateProjectEntry(project: ProjectEntry): Record<string, string | null> {
+  const errors: Record<string, string | null> = {
+    name: validateRequired(project.name, 'Name') ?? validateMaxLength(project.name, 60, 'Name'),
+    path: validateRequired(project.path, 'Path'),
+    description: project.description
+      ? validateMaxLength(project.description, 300, 'Description')
+      : null,
+    keywords: null
+  }
+  for (const keyword of project.keywords) {
+    const kwError = validateMaxLength(keyword, 30, 'Keyword')
+    if (kwError) {
+      errors.keywords = kwError
+      break
+    }
+  }
+  return errors
+}
+
+export function validateArchitectureContext(value: string): string | null {
+  return validateMaxLength(value, 1000, 'Architecture context')
+}
+
+export function validateMaxConcurrentSessions(value: number): string | null {
+  return validateIntRange(value, 1, 5, 'Max concurrent sessions')
+}
+
 export function validateSettings(settings: AppSettings): Record<string, string | null> {
-  return {
+  const errors: Record<string, string | null> = {
     orgUrl: validateOrgUrl(settings.orgUrl),
     projectName: validateRequired(settings.projectName, 'Project Name'),
     queryId: validateUUID(settings.queryId),
@@ -92,8 +126,39 @@ export function validateSettings(settings: AppSettings): Record<string, string |
     chunkSize: validateIntRange(settings.chunkSize, 5, 30, 'Chunk Size'),
     apiKey: validateApiKey(settings.apiKey, settings.llmProvider),
     baseUrl: validateBaseUrl(settings.baseUrl, settings.llmProvider),
-    pat: validateRequired(settings.pat, 'Personal Access Token')
+    pat: validateRequired(settings.pat, 'Personal Access Token'),
+    architectureContext: validateArchitectureContext(settings.architectureContext),
+    maxConcurrentSessions: validateMaxConcurrentSessions(settings.maxConcurrentSessions)
   }
+
+  // Agent API key: required only when agentProvider is claude-sdk or codex-sdk and not auto-derived
+  const autoDerived = settings.llmProvider === 'anthropic' || settings.llmProvider === 'openai'
+  if (
+    settings.agentProvider !== 'none' &&
+    settings.agentProvider !== 'copilot-sdk' &&
+    !autoDerived
+  ) {
+    errors.agentApiKey = validateRequired(settings.agentApiKey ?? '', 'Agent API Key')
+  } else {
+    errors.agentApiKey = null
+  }
+
+  // BYOK validation: when copilot-sdk with BYOK enabled, require the BYOK API key
+  if (settings.agentProvider === 'copilot-sdk' && settings.copilotByokEnabled) {
+    errors.copilotByokApiKey = validateRequired(settings.copilotByokApiKey ?? '', 'BYOK API Key')
+  } else {
+    errors.copilotByokApiKey = null
+  }
+
+  // Project-level validation
+  for (let i = 0; i < settings.projects.length; i++) {
+    const projectErrors = validateProjectEntry(settings.projects[i])
+    for (const [field, error] of Object.entries(projectErrors)) {
+      errors[`project-${i}-${field}`] = error
+    }
+  }
+
+  return errors
 }
 
 export function isSettingsValid(errors: Record<string, string | null>): boolean {
