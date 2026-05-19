@@ -193,14 +193,14 @@ describe('validateSettings — new FT-14A fields', () => {
     expect(errors.agentApiKey).toBeNull()
   })
 
-  it('requires agent API key when agentProvider is claude-sdk and not auto-derived', () => {
+  it('does NOT require agent API key when agentProvider is claude-sdk (uses local config)', () => {
     const errors = validateSettings({
       ...validSettings,
       llmProvider: 'gemini',
       agentProvider: 'claude-sdk',
       agentApiKey: ''
     })
-    expect(errors.agentApiKey).toBe('Agent API Key is required')
+    expect(errors.agentApiKey).toBeNull()
   })
 
   it('requires copilotByokApiKey when copilot-sdk with BYOK enabled', () => {
@@ -209,9 +209,38 @@ describe('validateSettings — new FT-14A fields', () => {
       llmProvider: 'gemini',
       agentProvider: 'copilot-sdk',
       copilotByokEnabled: true,
+      copilotByokProvider: 'openai',
       copilotByokApiKey: ''
     })
     expect(errors.copilotByokApiKey).toBe('BYOK API Key is required')
+  })
+
+  it('requires BYOK base URL for generic Copilot providers', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      llmProvider: 'gemini',
+      agentProvider: 'copilot-sdk',
+      copilotByokEnabled: true,
+      copilotByokProvider: 'generic',
+      copilotByokApiKey: 'test-key',
+      copilotByokBaseUrl: ''
+    })
+
+    expect(errors.copilotByokBaseUrl).toBe('BYOK Base URL is required for this provider')
+  })
+
+  it('does NOT require BYOK base URL for OpenAI Copilot providers', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      llmProvider: 'gemini',
+      agentProvider: 'copilot-sdk',
+      copilotByokEnabled: true,
+      copilotByokProvider: 'openai',
+      copilotByokApiKey: 'test-key',
+      copilotByokBaseUrl: ''
+    })
+
+    expect(errors.copilotByokBaseUrl).toBeNull()
   })
 
   it('does NOT require copilotByokApiKey when BYOK is disabled', () => {

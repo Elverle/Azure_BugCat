@@ -3,7 +3,7 @@ title: 'IPC Handlers'
 type: entity
 subtype: service
 created: 2026-04-29
-updated: 2026-05-17
+updated: 2026-05-18
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -17,6 +17,7 @@ sources:
     '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -45,6 +46,9 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 | `catalog:get-closed`            | ✅ Implemented | Reads `bugCatalog`, filters to entries with `closedAt !== null`, and returns that closed-only slice together with the latest `session.fetchedAt` plus `catalogMetadata.lastClearedAt` if available              |
 | `agent:check-binary`            | ✅ Implemented | Runs `codex --version` with a fixed argument list and returns `BinaryCheckResult` instead of throwing on missing CLI                                                                                            |
 | `agent:select-directory`        | ✅ Implemented | Opens an Electron directory picker and returns the selected folder path or `null`                                                                                                                               |
+| `agent:start`                   | ✅ Implemented | Resolves the current bug, selected FT-14A project, and settings, builds a prompt, selects a runner, starts the main-process session, and returns `{ sessionId, agentProvider }`                                 |
+| `agent:abort`                   | ✅ Implemented | Aborts the active FT-14B session when the requested session ID still matches the running session                                                                                                                |
+| `agent:get-session`             | ✅ Implemented | Returns the current in-memory FT-14B session so renderer remounts can reconnect                                                                                                                                 |
 | `projects:get`                  | ✅ Implemented | Returns `settings.projects ?? []` from persisted settings                                                                                                                                                       |
 | `projects:set`                  | ✅ Implemented | Replaces `settings.projects` in persisted settings                                                                                                                                                              |
 | `projects:validate-paths`       | ✅ Implemented | Checks whether each provided path exists and is a directory, returning a per-path error map                                                                                                                     |
@@ -65,6 +69,7 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - The shell handler uses `new URL(url)` plus protocol enforcement so the renderer cannot open arbitrary schemes.
 - `agent:check-binary` is intentionally hardcoded to `execFile('codex', ['--version'])`, so the renderer cannot turn it into arbitrary command execution.
 - Directory selection and path validation stay in the main process, which keeps direct filesystem access out of the renderer.
+- FT-14B keeps SDK clients and abort controllers in the main process; the renderer only requests start/abort and receives normalized event streams.
 - FT-08 removed the old Copilot-specific authentication branch from `llm:test-connection`; all providers now enter the same `testLLMConnection()` path once minimal required fields are present.
 - FT-10 keeps similarity analysis behind the same main-process boundary: the renderer cannot pass raw bug payloads or store writes directly, it can only request analysis against the current persisted session.
 - FT-12 keeps `bugCatalog` main-process owned; FT-13 adds only a filtered closed-history read channel, so the renderer still cannot enumerate or mutate the full catalog directly.
@@ -75,6 +80,7 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - `session:clear` and `catalog:clear` intentionally have different blast radii, which lets operators reset the open snapshot without losing historical categorization reuse.
 - `catalog:get-closed` reuses `session.fetchedAt` as the renderer-facing "last update" marker for FT-13, and now also forwards the persisted history cleanup baseline without exposing the mutable session snapshot itself.
 - `toRendererError()` converts plain thrown objects into real `Error` instances before they cross the IPC boundary, preserving human-readable messages and error codes for the renderer.
+- `agent:start` currently rejects anything other than `mode === 'analyze'`, and Claude runs with read-only `Read` / `Glob` / `Grep` tools only.
 
 ## Dependencies
 
@@ -84,6 +90,9 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - [[wiki/entities/llm-service]] — `categorizeBugs`, `testLLMConnection`
 - [[wiki/entities/similarity-service]] — `findSimilarBugs`
 - [[wiki/entities/catalog-merge-utility]] — signature computation plus fetch/categorize/similarity catalog updates
+- [[wiki/entities/agent-session-manager]]
+- [[wiki/entities/agent-runner-factory]]
+- [[wiki/entities/agent-prompt-builder]]
 - [[wiki/entities/open-external-ipc]]
 
 ## See also
@@ -93,6 +102,7 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - [[wiki/entities/project-registry]]
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/agent-session-configuration-foundation]]
+- [[wiki/topics/agent-analysis-sessions]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/session-persistence-lifecycle]]
 - [[wiki/topics/electron-architecture]]

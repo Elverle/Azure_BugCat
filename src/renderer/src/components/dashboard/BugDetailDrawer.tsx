@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { X, ChevronLeft, ChevronRight, Bot, ExternalLink } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Bot, ExternalLink, Loader2 } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
 import { getStatusBadgeClasses } from '@renderer/lib/badge-colors'
@@ -23,6 +23,9 @@ interface BugDetailDrawerProps {
   hasNext: boolean
   onViewInAdo: () => void
   adoLinkEnabled: boolean
+  onAnalyze?: (bugId: number, projectId: string) => void
+  projects?: Array<{ id: string; name: string; path: string }>
+  isAnalyzing?: boolean
 }
 
 export default function BugDetailDrawer({
@@ -38,7 +41,10 @@ export default function BugDetailDrawer({
   hasPrev,
   hasNext,
   onViewInAdo,
-  adoLinkEnabled
+  adoLinkEnabled,
+  onAnalyze,
+  projects,
+  isAnalyzing
 }: BugDetailDrawerProps): JSX.Element {
   const drawerRef = useRef<HTMLDivElement>(null)
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null)
@@ -324,6 +330,15 @@ export default function BugDetailDrawer({
 
           {/* Footer */}
           <div className="p-4 border-t border-gray-200 bg-gray-50">
+            {/* Analyze button */}
+            {onAnalyze && bug && (
+              <AnalyzeButton
+                bugId={bug.id}
+                projects={projects ?? []}
+                onAnalyze={onAnalyze}
+                isAnalyzing={isAnalyzing ?? false}
+              />
+            )}
             <button
               onClick={onViewInAdo}
               disabled={!adoLinkEnabled}
@@ -334,6 +349,58 @@ export default function BugDetailDrawer({
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+function AnalyzeButton({
+  bugId,
+  projects,
+  onAnalyze,
+  isAnalyzing
+}: {
+  bugId: number
+  projects: Array<{ id: string; name: string; path: string }>
+  onAnalyze: (bugId: number, projectId: string) => void
+  isAnalyzing: boolean
+}): JSX.Element {
+  const [selectedProjectId, setSelectedProjectId] = useState('')
+
+  if (projects.length === 0) {
+    return (
+      <p className="text-xs text-gray-400 text-center mb-2">
+        Configura almeno un progetto in Settings per abilitare l&apos;analisi.
+      </p>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      <select
+        value={selectedProjectId}
+        onChange={(e) => setSelectedProjectId(e.target.value)}
+        className="flex-1 text-sm border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        disabled={isAnalyzing}
+      >
+        <option value="">Seleziona progetto...</option>
+        {projects.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+      <button
+        onClick={() => {
+          if (selectedProjectId) {
+            onAnalyze(bugId, selectedProjectId)
+          }
+        }}
+        disabled={!selectedProjectId || isAnalyzing}
+        className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+      >
+        {isAnalyzing ? <Loader2 size={14} className="animate-spin" /> : <Bot size={14} />}
+        Analizza
+      </button>
     </div>
   )
 }

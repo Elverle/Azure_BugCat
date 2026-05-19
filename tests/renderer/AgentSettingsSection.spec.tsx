@@ -84,6 +84,60 @@ describe('AgentProviderSection', () => {
     expect(screen.getByText(/SDK in public preview/)).toBeInTheDocument()
   })
 
+  it('shows the agent model field when agentProvider is copilot-sdk', () => {
+    render(
+      <AgentProviderSection
+        {...defaultProps}
+        settings={{
+          ...baseSettings,
+          llmProvider: 'gemini',
+          agentProvider: 'copilot-sdk',
+          agentModel: 'claude-sonnet-4-6'
+        }}
+      />
+    )
+
+    expect(screen.getByLabelText(/Modello agente/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/non riusa un vecchio valore rimasto da Claude Code SDK/i)
+    ).toBeInTheDocument()
+  })
+
+  it('updates the agent model field when typing with copilot-sdk selected', () => {
+    const onFieldChange = vi.fn()
+
+    render(
+      <AgentProviderSection
+        {...defaultProps}
+        onFieldChange={onFieldChange}
+        settings={{ ...baseSettings, llmProvider: 'gemini', agentProvider: 'copilot-sdk' }}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText(/Modello agente/), {
+      target: { value: 'gpt-4.1' }
+    })
+
+    expect(onFieldChange).toHaveBeenCalledWith('agentModel', 'gpt-4.1')
+  })
+
+  it('shows BYOK base URL field when Copilot BYOK is enabled', () => {
+    render(
+      <AgentProviderSection
+        {...defaultProps}
+        settings={{
+          ...baseSettings,
+          llmProvider: 'gemini',
+          agentProvider: 'copilot-sdk',
+          copilotByokEnabled: true,
+          copilotByokProvider: 'generic'
+        }}
+      />
+    )
+
+    expect(screen.getByLabelText('Base URL BYOK')).toBeInTheDocument()
+  })
+
   it('calls onCheckBinary when CLI check button is clicked', async () => {
     const onCheckBinary = vi.fn().mockResolvedValue(undefined)
 

@@ -1,7 +1,19 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { List, Layers, Bug, Sparkles, Play, AlertTriangle, Loader2, XCircle } from 'lucide-react'
+import {
+  List,
+  Layers,
+  Bug,
+  Sparkles,
+  Play,
+  AlertTriangle,
+  Loader2,
+  XCircle,
+  Bot
+} from 'lucide-react'
 import { useDashboard } from '@renderer/hooks/useDashboard'
 import { useAiCluster } from '@renderer/hooks/useAiCluster'
+import { useAgentSession } from '@renderer/hooks/useAgentSession'
+import { SessionsPanel } from '@renderer/components/dashboard/SessionsPanel'
 import { useBugDrawer } from '@renderer/hooks/useBugDrawer'
 import { DashboardHeader } from '@renderer/components/dashboard/DashboardHeader'
 import { ConfirmDialog } from '@renderer/components/ui/confirm-dialog'
@@ -29,7 +41,7 @@ import {
 import { cn } from '@renderer/lib/utils'
 import type { AppSettings, CategorizedBug } from '@shared/types'
 
-type ViewMode = 'table' | 'card' | 'similarity'
+type ViewMode = 'table' | 'card' | 'similarity' | 'sessions'
 
 const DEFAULT_DRAWER_WIDTH = 400
 const MIN_DRAWER_WIDTH = 400
@@ -54,6 +66,8 @@ export function DashboardPage(): JSX.Element {
     clearCategorizeError
   } = useDashboard()
 
+  const { session: agentSession, startSession, abortSession, clearSession } = useAgentSession()
+
   const [filterState, setFilterState] = useState<FilterState>(EMPTY_FILTER_STATE)
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE)
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
@@ -65,6 +79,7 @@ export function DashboardPage(): JSX.Element {
     orgUrl: '',
     projectName: ''
   })
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; path: string }>>([])
 
   // Computed values
   const filteredBugs = useMemo(
@@ -142,6 +157,9 @@ export function DashboardPage(): JSX.Element {
       const settings = s as AppSettings | null
       if (settings) {
         setAdoSettings({ orgUrl: settings.orgUrl, projectName: settings.projectName })
+        if (settings.projects) {
+          setProjects(settings.projects.map((p) => ({ id: p.id, name: p.name, path: p.path })))
+        }
       }
     })
   }, [])
@@ -203,6 +221,14 @@ export function DashboardPage(): JSX.Element {
       // Silently handled — URL validation in main process prevents invalid links
     })
   }, [selectedBug, adoSettings, adoLinkEnabled])
+
+  const handleAnalyze = useCallback(
+    async (bugId: number, projectId: string) => {
+      await startSession(bugId, projectId)
+      setViewMode('sessions')
+    },
+    [startSession]
+  )
 
   const handleSimilarityBugClick = useCallback(
     (bugId: number) => {
@@ -295,6 +321,21 @@ export function DashboardPage(): JSX.Element {
               <Sparkles className="w-4 h-4 mr-2 inline" />
               Similarità (Beta)
             </button>
+            <button
+              onClick={() => setTab('sessions')}
+              className={cn(
+                'whitespace-nowrap pb-3 px-1 border-b-2 font-medium text-sm',
+                viewMode === 'sessions'
+                  ? 'border-indigo-600 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              )}
+            >
+              <Bot className="w-4 h-4 mr-2 inline" />
+              Sessioni
+              {agentSession?.status === 'running' && (
+                <span className="ml-1.5 inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              )}
+            </button>
           </nav>
         </div>
 
@@ -316,7 +357,9 @@ export function DashboardPage(): JSX.Element {
         )}
 
         {/* Bug list */}
-        {viewMode === 'similarity' ? (
+        {viewMode === 'sessions' ? (
+          <SessionsPanel session={agentSession} onAbort={abortSession} />
+        ) : viewMode === 'similarity' ? (
           <DashboardSimilaritySection
             key={`${sessionInfo.fetchedAt ?? 'none'}-${sessionInfo.categorizedAt ?? 'none'}`}
             bugs={bugs}
@@ -386,6 +429,9 @@ export function DashboardPage(): JSX.Element {
         hasNext={hasNext}
         onViewInAdo={handleViewInAdo}
         adoLinkEnabled={adoLinkEnabled}
+        onAnalyze={handleAnalyze}
+        projects={projects}
+        isAnalyzing={agentSession?.status === 'running'}
       />
 
       <ConfirmDialog

@@ -104,6 +104,7 @@ export const migrations: Migration[] = [
         if (settings.copilotByokEnabled === undefined) settings.copilotByokEnabled = false
         if (settings.copilotByokProvider === undefined) settings.copilotByokProvider = undefined
         if (settings.copilotByokApiKey === undefined) settings.copilotByokApiKey = ''
+        if (settings.copilotByokBaseUrl === undefined) settings.copilotByokBaseUrl = ''
         if (settings.projects === undefined) settings.projects = []
         if (settings.architectureContext === undefined) settings.architectureContext = ''
         if (settings.maxConcurrentSessions === undefined) settings.maxConcurrentSessions = 1

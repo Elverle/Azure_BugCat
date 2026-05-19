@@ -3,7 +3,7 @@ title: 'Preload Bridge (contextBridge)'
 type: entity
 subtype: middleware
 created: 2026-04-29
-updated: 2026-05-17
+updated: 2026-05-18
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -12,6 +12,7 @@ sources:
     '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -53,6 +54,12 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 | `openExternal(url)`              | `shell:open-external`           | invoke                   |
 | `checkAgentBinary()`             | `agent:check-binary`            | invoke                   |
 | `selectDirectory()`              | `agent:select-directory`        | invoke                   |
+| `agentStart(payload)`            | `agent:start`                   | invoke                   |
+| `agentAbort(payload)`            | `agent:abort`                   | invoke                   |
+| `agentGetSession()`              | `agent:get-session`             | invoke                   |
+| `onAgentChunk(cb)`               | `agent:chunk`                   | on (returns unsubscribe) |
+| `onAgentCompleted(cb)`           | `agent:completed`               | on (returns unsubscribe) |
+| `onAgentError(cb)`               | `agent:error`                   | on (returns unsubscribe) |
 | `getProjects()`                  | `projects:get`                  | invoke                   |
 | `setProjects(projects)`          | `projects:set`                  | invoke                   |
 | `validateProjectPaths(paths)`    | `projects:validate-paths`       | invoke                   |
@@ -82,15 +89,18 @@ declare global {
 - Cancellation remains explicit and whitelisted: the renderer can only abort the current categorization run through the dedicated method, not by touching arbitrary process state.
 - The status method is read-only and window-scoped: the renderer can query whether its own categorization is still active without receiving access to the controller itself.
 - FT-14A keeps privileged binary and filesystem actions in the same narrow bridge style: the renderer can request a fixed CLI check, a directory picker, and path validation, but cannot access `fs` or spawn arbitrary commands directly.
+- FT-14B follows the same pattern for agent sessions: the renderer cannot instantiate SDK clients or subscribe to arbitrary IPC channels, only to the dedicated chunk/completed/error streams exposed here.
 
 ## See also
 
 - [[wiki/entities/ipc-handlers]] — main-process counterpart
 - [[wiki/entities/ipc-channels]] — channel constant definitions
 - [[wiki/entities/project-registry]]
+- [[wiki/entities/use-agent-session-hook]]
 - [[wiki/entities/open-external-ipc]]
 - [[wiki/entities/use-ai-cluster-hook]]
 - [[wiki/topics/agent-session-configuration-foundation]]
+- [[wiki/topics/agent-analysis-sessions]]
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/electron-architecture]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

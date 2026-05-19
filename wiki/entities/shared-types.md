@@ -3,7 +3,7 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-17
+updated: 2026-05-18
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -14,6 +14,7 @@ sources:
     '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [typescript, types, shared, domain-model, catalog, settings, agent]
@@ -32,12 +33,12 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Core types
 
-| Type                | Purpose                                                                                    |
-| ------------------- | ------------------------------------------------------------------------------------------ |
-| `LLMProviderType`   | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini' \| 'openrouter'`                  |
-| `AgentProviderType` | Union: `'claude-sdk' \| 'codex-sdk' \| 'copilot-sdk' \| 'none'`                            |
-| `ProjectType`       | Union: `'backend' \| 'frontend' \| 'shared'`                                               |
-| `ErrorCode`         | Union of known error codes (ADO*\*, LLM*\_, `OPERATION_CANCELLED`, STORE\_\_, UNKNOWN\_\*) |
+| Type                | Purpose                                                                                                                                                       |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `LLMProviderType`   | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini' \| 'openrouter'`                                                                                     |
+| `AgentProviderType` | Union: `'claude-sdk' \| 'codex-sdk' \| 'copilot-sdk' \| 'none'`                                                                                               |
+| `ProjectType`       | Union: `'backend' \| 'frontend' \| 'shared'`                                                                                                                  |
+| `ErrorCode`         | Union of known error codes, now including FT-14B agent-session failures such as `AGENT_NOT_CONFIGURED`, `AGENT_SESSION_ACTIVE`, and `AGENT_SESSION_NOT_FOUND` |
 
 ### Bug types
 
@@ -89,6 +90,20 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | `TestConnectionResult` | Structured response from test connection IPC: `{ success, message }`             |
 | `BinaryCheckResult`    | Structured response from `agent:check-binary`: `{ installed, version?, error? }` |
 
+### Agent sessions
+
+| Type                    | Purpose                                                                 |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `SessionMode`           | Session intent union, currently `'analyze' \| 'fix'`                    |
+| `AgentChunkType`        | Chunk classification: `text`, `tool_use`, `tool_result`, `status`       |
+| `AgentChunk`            | Streamed renderer-facing log event with `sessionId`, text, and metadata |
+| `AgentSessionStatus`    | Session state union: `running`, `completed`, `aborted`, `error`         |
+| `AgentSession`          | Full FT-14B live session snapshot                                       |
+| `AgentStartPayload`     | Start request: `{ bugId, mode, primaryProjectId }`                      |
+| `AgentAbortPayload`     | Abort request: `{ sessionId }`                                          |
+| `AgentCompletedPayload` | Completion event: `{ sessionId, report }`                               |
+| `AgentErrorPayload`     | Error event: `{ sessionId, error }`                                     |
+
 _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]] and consumed by [[wiki/entities/use-settings-hook]].
 
 ## FT-08 Notes
@@ -124,6 +139,12 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `ProjectEntry` is deliberately lightweight: FT-14A stores operator-supplied metadata only and does not infer repository status or language details from the path.
 - `BinaryCheckResult` keeps the Codex CLI check structured and non-throwing across the IPC boundary.
 
+## FT-14B Notes
+
+- `AgentSession` is intentionally renderer-safe but main-process owned; reconnect works by sending the current snapshot across IPC rather than persisting session runtime state to `electron-store`.
+- `SessionMode` already reserves `'fix'` for future work even though FT-14B currently supports only `analyze`.
+- `AgentChunk` exists so Claude, Codex, and Copilot can stream into one UI model despite very different native SDK event schemas.
+
 ## Cancellation Notes
 
 - `ErrorCode` now includes `OPERATION_CANCELLED` so intentional user aborts can be distinguished from `LLM_TIMEOUT`.
@@ -135,5 +156,6 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - [[wiki/entities/ipc-handlers]] — serves settings/session over IPC
 - [[wiki/entities/project-registry]]
 - [[wiki/topics/agent-session-configuration-foundation]]
+- [[wiki/topics/agent-analysis-sessions]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

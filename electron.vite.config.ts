@@ -5,7 +5,10 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   main: {
     build: {
-      externalizeDeps: { exclude: ['electron-store', '@openrouter/sdk'] }
+      externalizeDeps: { exclude: ['electron-store', '@openrouter/sdk'] },
+      rollupOptions: {
+        external: ['@anthropic-ai/claude-agent-sdk', '@openai/codex-sdk', '@github/copilot-sdk']
+      }
     }
   },
   preload: {},

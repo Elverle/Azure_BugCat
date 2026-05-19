@@ -41,6 +41,14 @@ export const IPC_CHANNELS = {
   AGENT_CHECK_BINARY: 'agent:check-binary',
   AGENT_SELECT_DIRECTORY: 'agent:select-directory',
 
+  // Agent Sessions
+  AGENT_START: 'agent:start',
+  AGENT_ABORT: 'agent:abort',
+  AGENT_GET_SESSION: 'agent:get-session',
+  AGENT_CHUNK: 'agent:chunk',
+  AGENT_COMPLETED: 'agent:completed',
+  AGENT_ERROR: 'agent:error',
+
   // Projects
   PROJECTS_GET: 'projects:get',
   PROJECTS_SET: 'projects:set',

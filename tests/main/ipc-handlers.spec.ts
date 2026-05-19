@@ -17,7 +17,11 @@ const {
   showOpenDialog,
   getFocusedWindow,
   existsSyncMock,
-  statSyncMock
+  statSyncMock,
+  sessionManagerStartMock,
+  sessionManagerAbortMock,
+  createRunnerMock,
+  buildAnalyzePromptMock
 } = vi.hoisted(() => ({
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
   ipcMainHandle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -35,7 +39,11 @@ const {
   showOpenDialog: vi.fn(),
   getFocusedWindow: vi.fn(),
   existsSyncMock: vi.fn(),
-  statSyncMock: vi.fn()
+  statSyncMock: vi.fn(),
+  sessionManagerStartMock: vi.fn().mockReturnValue('test-session-id'),
+  sessionManagerAbortMock: vi.fn().mockReturnValue(true),
+  createRunnerMock: vi.fn().mockReturnValue({ run: vi.fn() }),
+  buildAnalyzePromptMock: vi.fn().mockReturnValue('mock analysis prompt')
 }))
 
 vi.mock('electron', () => ({
@@ -81,6 +89,29 @@ vi.mock('@main/llm', () => ({
   findSimilarBugs
 }))
 
+// Mock agent module to prevent SDK resolution errors and enable agent handler tests
+vi.mock('@main/agent', () => {
+  class MockSessionManager {
+    start = sessionManagerStartMock
+    abort = sessionManagerAbortMock
+    getSession = vi.fn()
+    isRunning = vi.fn().mockReturnValue(false)
+    clear = vi.fn()
+  }
+  class AgentNotConfiguredError extends Error {
+    constructor(msg = 'Not configured') {
+      super(msg)
+      this.name = 'AgentNotConfiguredError'
+    }
+  }
+  return {
+    SessionManager: MockSessionManager,
+    createRunner: createRunnerMock,
+    buildAnalyzePrompt: buildAnalyzePromptMock,
+    AgentNotConfiguredError
+  }
+})
+
 import { registerIPCHandlers } from '../../src/main/ipc-handlers'
 
 const baseSettings: AppSettings = {
@@ -114,6 +145,10 @@ describe('registerIPCHandlers', () => {
     execFileMock.mockReset()
     showOpenDialog.mockReset()
     getFocusedWindow.mockReset()
+    sessionManagerStartMock.mockReset().mockReturnValue('test-session-id')
+    sessionManagerAbortMock.mockReset().mockReturnValue(true)
+    createRunnerMock.mockReset().mockReturnValue({ run: vi.fn() })
+    buildAnalyzePromptMock.mockReset().mockReturnValue('mock analysis prompt')
     registerIPCHandlers()
   })
 
@@ -926,6 +961,128 @@ describe('registerIPCHandlers', () => {
       const result = await handlers.get(IPC_CHANNELS.PROJECTS_VALIDATE_PATHS)?.({}, ['', '  '])
 
       expect(result).toEqual({ '': 'Path is required', '  ': 'Path is required' })
+    })
+  })
+
+  describe('AGENT_START', () => {
+    const agentSettings: AppSettings = {
+      ...baseSettings,
+      llmProvider: 'openrouter',
+      agentProvider: 'claude-sdk',
+      agentApiKey: 'agent-key-test',
+      projects: [
+        {
+          id: 'proj-1',
+          name: 'TestProject',
+          path: '/test/path',
+          type: 'backend',
+          description: '',
+          keywords: []
+        }
+      ]
+    }
+
+    const sessionBugs = [
+      {
+        id: 42,
+        title: 'Test Bug',
+        description: 'desc',
+        state: 'Active',
+        macroCategory: '',
+        subCategory: '',
+        categoryReason: '',
+        categorizedAt: ''
+      }
+    ]
+
+    it('starts an agent session and returns sessionId with agentProvider', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return agentSettings
+        if (key === 'session') return { bugs: sessionBugs }
+        return null
+      })
+      sessionManagerStartMock.mockReturnValue('new-session-id')
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_START)
+      const result = await handler!(
+        { sender: { send: vi.fn() } },
+        {
+          bugId: 42,
+          mode: 'analyze',
+          primaryProjectId: 'proj-1'
+        }
+      )
+
+      expect(result).toEqual({ sessionId: 'new-session-id', agentProvider: 'claude-sdk' })
+      expect(sessionManagerStartMock).toHaveBeenCalled()
+    })
+
+    it('throws when bug is not found in session', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return agentSettings
+        if (key === 'session') return { bugs: [] }
+        return null
+      })
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_START)
+      await expect(
+        handler!(
+          { sender: { send: vi.fn() } },
+          {
+            bugId: 999,
+            mode: 'analyze',
+            primaryProjectId: 'proj-1'
+          }
+        )
+      ).rejects.toMatchObject({ code: 'STORE_ERROR' })
+    })
+
+    it('throws when agent API key is missing', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings')
+          return {
+            ...agentSettings,
+            agentApiKey: '',
+            apiKey: '',
+            agentProvider: 'codex-sdk',
+            llmProvider: 'openrouter'
+          }
+        if (key === 'session') return { bugs: sessionBugs }
+        return null
+      })
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_START)
+      await expect(
+        handler!(
+          { sender: { send: vi.fn() } },
+          {
+            bugId: 42,
+            mode: 'analyze',
+            primaryProjectId: 'proj-1'
+          }
+        )
+      ).rejects.toMatchObject({ code: 'AGENT_NOT_CONFIGURED' })
+    })
+  })
+
+  describe('AGENT_ABORT', () => {
+    it('aborts a running session', async () => {
+      sessionManagerAbortMock.mockReturnValue(true)
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_ABORT)
+      const result = await handler!({}, { sessionId: 'some-session-id' })
+
+      expect(result).toEqual({ aborted: true })
+      expect(sessionManagerAbortMock).toHaveBeenCalledWith('some-session-id')
+    })
+
+    it('throws when session is not found', async () => {
+      sessionManagerAbortMock.mockReturnValue(false)
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_ABORT)
+      await expect(handler!({}, { sessionId: 'nonexistent' })).rejects.toMatchObject({
+        code: 'AGENT_SESSION_NOT_FOUND'
+      })
     })
   })
 })

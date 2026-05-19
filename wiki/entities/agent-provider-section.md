@@ -3,15 +3,19 @@ title: 'Agent Provider Section'
 type: entity
 subtype: component
 created: 2026-05-17
-updated: 2026-05-17
-sources: ['[[wiki/sources/ft-14a-agent-configuration-project-registry]]']
+updated: 2026-05-18
+sources:
+  [
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14b-agent-sessions]]'
+  ]
 tags: [react, component, settings, agent, byok]
 lang: en
 ---
 
 ## Description
 
-Settings card that configures which agent runtime should be used for future agent sessions. It combines auto-derived provider badges, manual provider selection for non-derived LLMs, optional manual credentials/model inputs, Copilot BYOK controls, and a Codex CLI installation check.
+Settings card that configures which agent runtime should be used for agent sessions. It combines auto-derived provider badges, manual provider selection for non-derived LLMs, optional manual credentials/model inputs, Copilot BYOK controls, and a Codex CLI installation check.
 
 ## Location
 
@@ -37,9 +41,14 @@ interface AgentProviderSectionProps {
 - Shows a non-editable `Codex CLI (automatico)` badge when `llmProvider === 'openai'`.
 - Falls back to a manual dropdown only for `gemini`, `generic`, and `openrouter` LLM selections.
 - Shows `agentApiKey` and `agentModel` only when the effective provider is a manual SDK provider other than `copilot-sdk` and `none`.
+- Marks the Claude SDK API key as optional and clarifies that local Claude Code auth/config can satisfy FT-14B when that field is blank.
 - Shows a `Verifica installazione CLI` action when the effective provider is `codex-sdk`; the result banner comes from `BinaryCheckResult` returned by main-process IPC.
 - Shows the Copilot preview warning and subscription/BYOK mode switch only when the effective provider is `copilot-sdk`.
-- Reveals `copilotByokProvider` and `copilotByokApiKey` only when BYOK mode is enabled.
+- Reveals `copilotByokProvider`, `copilotByokBaseUrl`, and `copilotByokApiKey` only when BYOK mode is enabled.
+- Marks the Copilot BYOK base URL as optional only for providers where BugCat can infer a safe default endpoint (`openai`, `anthropic`, `openrouter`); generic and Gemini-compatible modes require an explicit URL.
+- Explains that Copilot BYOK is wired through the SDK `SessionConfig.provider` object, not through `CopilotClientOptions`.
+- Shows `agentModel` for Copilot SDK as well, so the persisted session model is visible and editable instead of remaining hidden after switching from another provider such as Claude Code SDK.
+- Clarifies that the Copilot model field is optional: when blank, BugCat falls back to the runner default for the selected Copilot mode/provider.
 
 ## Dependencies
 
@@ -57,3 +66,4 @@ interface AgentProviderSectionProps {
 - [[wiki/concepts/agent-provider-auto-derivation]]
 - [[wiki/concepts/settings-sanitization-before-save]]
 - [[wiki/topics/agent-session-configuration-foundation]]
+- [[wiki/topics/agent-analysis-sessions]]

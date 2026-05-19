@@ -65,8 +65,16 @@ export function validateBaseUrl(
   if (provider !== 'generic') {
     return null
   }
+  return validateUrlValue(value, 'Base URL', true)
+}
+
+function validateUrlValue(
+  value: string | undefined,
+  fieldName: string,
+  required: boolean
+): string | null {
   if (!value || value.trim().length === 0) {
-    return 'Base URL is required for Generic provider'
+    return required ? `${fieldName} is required for this provider` : null
   }
   let parsed: URL
   try {
@@ -131,11 +139,12 @@ export function validateSettings(settings: AppSettings): Record<string, string |
     maxConcurrentSessions: validateMaxConcurrentSessions(settings.maxConcurrentSessions)
   }
 
-  // Agent API key: required only when agentProvider is claude-sdk or codex-sdk and not auto-derived
+  // Agent API key: required only for codex-sdk when not auto-derived; optional for claude-sdk
   const autoDerived = settings.llmProvider === 'anthropic' || settings.llmProvider === 'openai'
   if (
     settings.agentProvider !== 'none' &&
     settings.agentProvider !== 'copilot-sdk' &&
+    settings.agentProvider !== 'claude-sdk' &&
     !autoDerived
   ) {
     errors.agentApiKey = validateRequired(settings.agentApiKey ?? '', 'Agent API Key')
@@ -143,11 +152,26 @@ export function validateSettings(settings: AppSettings): Record<string, string |
     errors.agentApiKey = null
   }
 
-  // BYOK validation: when copilot-sdk with BYOK enabled, require the BYOK API key
+  // BYOK validation: when copilot-sdk with BYOK enabled, require provider and API key.
+  // Base URL is optional only for providers where BugCat can infer a safe default.
   if (settings.agentProvider === 'copilot-sdk' && settings.copilotByokEnabled) {
+    errors.copilotByokProvider = validateRequired(
+      settings.copilotByokProvider ?? '',
+      'BYOK Provider'
+    )
     errors.copilotByokApiKey = validateRequired(settings.copilotByokApiKey ?? '', 'BYOK API Key')
+
+    const requiresExplicitBaseUrl =
+      settings.copilotByokProvider === 'generic' || settings.copilotByokProvider === 'gemini'
+    errors.copilotByokBaseUrl = validateUrlValue(
+      settings.copilotByokBaseUrl,
+      'BYOK Base URL',
+      requiresExplicitBaseUrl
+    )
   } else {
+    errors.copilotByokProvider = null
     errors.copilotByokApiKey = null
+    errors.copilotByokBaseUrl = null
   }
 
   // Project-level validation

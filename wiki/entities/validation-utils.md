@@ -3,12 +3,13 @@ title: 'Validation Utilities'
 type: entity
 subtype: library
 created: 2026-04-29
-updated: 2026-05-17
+updated: 2026-05-18
 sources:
 	[
 		'[[wiki/sources/ft-02-settings]]',
 		'[[wiki/sources/ft-08-generic-provider]]',
-		'[[wiki/sources/ft-14a-agent-configuration-project-registry]]'
+		'[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+		'[[wiki/sources/ft-14b-agent-sessions]]'
 	]
 tags: [typescript, validation, pure-functions, settings, projects]
 lang: en
@@ -16,7 +17,7 @@ lang: en
 
 ## Description
 
-Pure validation functions for Settings fields. No React dependencies, no IPC side effects, and every validator returns `string | null` so the hook can aggregate errors consistently. FT-14A extends the module with project-entry, architecture-context, concurrency, and conditional agent/BYOK validation.
+Pure validation functions for Settings fields. No React dependencies, no IPC side effects, and every validator returns `string | null` so the hook can aggregate errors consistently. FT-14A extends the module with project-entry, architecture-context, concurrency, and conditional agent/BYOK validation, while FT-14B refines the agent-key rules for the Claude runtime.
 
 ## Location
 
@@ -39,10 +40,10 @@ Pure validation functions for Settings fields. No React dependencies, no IPC sid
 
 ## Aggregate Functions
 
-| Function                     | Purpose                                                                  |
-| ---------------------------- | ------------------------------------------------------------------------ |
-| `validateSettings(settings)` | Runs all validators and emits flat keys, including `project-{i}-{field}` |
-| `isSettingsValid(errors)`    | Returns `true` if all error values are `null`                            |
+| Function                     | Purpose                                                                                                        |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `validateSettings(settings)` | Runs all validators and emits flat keys, including `project-{i}-{field}` and FT-14B-aware agent-key conditions |
+| `isSettingsValid(errors)`    | Returns `true` if all error values are `null`                                                                  |
 
 ## Regex Patterns
 
@@ -61,8 +62,14 @@ const ADO_ORG_URL_REGEX = /^https:\/\/(dev\.azure\.com\/[^/\s]+|[^/\s]+\.visuals
 - `copilotByokApiKey` becomes required only when `agentProvider === 'copilot-sdk'` and `copilotByokEnabled === true`.
 - Project-entry errors are flattened into the same record as top-level Settings errors, which keeps the `useSettings` API unchanged.
 
+## FT-14B Notes
+
+- Manual `claude-sdk` selection no longer forces `agentApiKey`; the runner may fall back to local Claude Code authentication.
+- Manual `codex-sdk` selection still requires an agent API key unless OpenAI auto-derivation is already in effect.
+
 ## See also
 
 - [[wiki/entities/use-settings-hook]] — consumer
 - [[wiki/concepts/form-validation-pattern]]
 - [[wiki/concepts/dynamic-collection-touched-state]]
+- [[wiki/topics/agent-analysis-sessions]]

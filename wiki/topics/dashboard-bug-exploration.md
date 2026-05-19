@@ -2,11 +2,12 @@
 title: 'Dashboard Bug Exploration'
 type: topic
 created: 2026-04-30
-updated: 2026-05-03
+updated: 2026-05-18
 sources:
   [
     '[[wiki/sources/ft-05-dashboard]]',
     '[[wiki/sources/ft-06-bug-detail-drawer]]',
+    '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -16,7 +17,7 @@ lang: en
 
 ## Overview
 
-The dashboard is the main triage workspace of the app. It consumes the cached `SessionData` produced by FT-03 and FT-04, then gives operators a fast way to inspect bug volume, narrow the dataset, switch between list, cluster-oriented, and similarity-analysis views, drill into one bug with a persistent side drawer, and rerun categorization from the same screen.
+The dashboard is the main triage workspace of the app. It consumes the cached `SessionData` produced by FT-03 and FT-04, then gives operators a fast way to inspect bug volume, narrow the dataset, switch between list, cluster-oriented, similarity-analysis, and FT-14B agent-session views, drill into one bug with a persistent side drawer, and launch deeper per-bug investigation from the same screen.
 
 ## End-to-End Flow
 
@@ -53,6 +54,12 @@ DashboardHeader actions
 - Shows a guided state before categorization, progress while `llm:find-similar` is running, and category-level result sections afterwards.
 - Uses [[wiki/entities/ai-cluster-category-section]] and [[wiki/entities/similarity-group-card]] to show grouped matches, including a dedicated `Motivazione` panel for each similarity group.
 
+### Sessioni
+
+- Uses [[wiki/entities/use-agent-session-hook]] to reconnect to the main-process session, stream new chunks, and surface abort/error/completion transitions.
+- Renders [[wiki/entities/sessions-panel]] as a dedicated dashboard tab rather than overloading the drawer with long-running session output.
+- Acts as the target view after the bug drawer `Analizza` action starts a session.
+
 ## Interaction Model
 
 - Session hydration and action state come from [[wiki/entities/use-dashboard-hook]].
@@ -63,12 +70,14 @@ DashboardHeader actions
 - Derivation rules are centralized in [[wiki/entities/dashboard-utils]] and summarized in [[wiki/concepts/dashboard-derivation-pipeline]].
 - Visual encoding of statuses and categories comes from [[wiki/entities/badge-color-utilities]].
 - Clicking a row in [[wiki/entities/bug-table]] or a card in [[wiki/entities/bug-card]] opens [[wiki/entities/bug-detail-drawer]] for the currently visible bug.
+- The drawer footer can now launch a project-scoped FT-14B analysis session and immediately switch the dashboard into the `Sessioni` tab.
 - [[wiki/entities/use-bug-drawer-hook]] keeps previous/next navigation aligned with the active filtered and sorted list, and closes the drawer if the selected bug disappears from that list.
 - The drawer's click-outside close behavior follows [[wiki/concepts/click-outside-exclusion-pattern]].
 - Accessibility behavior for listbox, drill-down controls, table sorting, and accordions follows [[wiki/concepts/accessible-collection-controls]].
 - The external work item action delegates to [[wiki/entities/open-external-ipc]] instead of opening browser URLs directly from the renderer.
 - Intentional categorization cancellation is silent in the UI: it clears progress and restores the previous session-backed dataset without opening the blocking error modal reserved for real provider failures.
 - Real categorization failures now surface readable messages because the main process converts structured error payloads into proper `Error` objects before returning them through IPC.
+- FT-14B session state can survive tab switches and route remounts because the actual session lifecycle stays in the main process and the renderer reconnects through `agent:get-session`.
 
 ## Related Components
 
@@ -82,12 +91,15 @@ DashboardHeader actions
 - [[wiki/entities/group-accordion]]
 - [[wiki/entities/use-bug-drawer-hook]]
 - [[wiki/entities/use-ai-cluster-hook]]
+- [[wiki/entities/use-agent-session-hook]]
 - [[wiki/entities/ai-cluster-category-section]]
 - [[wiki/entities/similarity-group-card]]
+- [[wiki/entities/sessions-panel]]
 
 ## See also
 
 - [[wiki/topics/renderer-ui]]
 - [[wiki/topics/llm-categorization-pipeline]]
+- [[wiki/topics/agent-analysis-sessions]]
 - [[wiki/concepts/dashboard-derivation-pipeline]]
 - [[wiki/concepts/click-outside-exclusion-pattern]]

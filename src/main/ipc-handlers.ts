@@ -22,6 +22,14 @@ import {
   mergeCategorization,
   updateCatalogSimilarityMetadata
 } from './utils/catalog-merge'
+import { SessionManager, createRunner, buildAnalyzePrompt, AgentNotConfiguredError } from './agent'
+import type {
+  AgentStartPayload,
+  AgentAbortPayload,
+  CategorizedBug,
+  AgentChunk,
+  AppError as AppErrorType
+} from '../shared/types'
 
 function isAppError(error: unknown): error is AppError {
   return (
@@ -59,6 +67,60 @@ function toRendererError(error: unknown): Error {
   }
 
   return new Error(typeof error === 'string' && error.trim() ? error : 'Errore sconosciuto')
+}
+
+function resolveAgentApiKey(settings: AppSettings): string | undefined {
+  // If using main LLM provider's key (Anthropic or OpenAI auto-mapping)
+  if (settings.llmProvider === 'anthropic' || settings.llmProvider === 'openai') {
+    return settings.apiKey
+  }
+  // For explicit agent provider selection
+  if (settings.agentProvider === 'copilot-sdk') {
+    return settings.copilotByokEnabled ? settings.copilotByokApiKey : undefined
+  }
+  return settings.agentApiKey || settings.apiKey
+}
+
+function resolveCopilotByokProvider(settings: AppSettings): AppSettings['llmProvider'] | undefined {
+  if (settings.agentProvider !== 'copilot-sdk' || !settings.copilotByokEnabled) {
+    return undefined
+  }
+
+  return settings.copilotByokProvider
+}
+
+function resolveCopilotByokBaseUrl(settings: AppSettings): string | undefined {
+  if (settings.agentProvider !== 'copilot-sdk' || !settings.copilotByokEnabled) {
+    return undefined
+  }
+
+  const explicitBaseUrl = settings.copilotByokBaseUrl?.trim()
+  if (explicitBaseUrl) {
+    return explicitBaseUrl
+  }
+
+  if (settings.copilotByokProvider === settings.llmProvider && settings.baseUrl?.trim()) {
+    return settings.baseUrl.trim()
+  }
+
+  switch (settings.copilotByokProvider) {
+    case 'openai':
+      return 'https://api.openai.com/v1'
+    case 'anthropic':
+      return 'https://api.anthropic.com'
+    case 'openrouter':
+      return 'https://openrouter.ai/api/v1'
+    default:
+      return undefined
+  }
+}
+
+function resolveAgentProviderType(
+  settings: AppSettings
+): import('../shared/types').AgentProviderType {
+  if (settings.llmProvider === 'anthropic') return 'claude-sdk'
+  if (settings.llmProvider === 'openai') return 'codex-sdk'
+  return settings.agentProvider
 }
 
 export function registerIPCHandlers(): void {
@@ -372,5 +434,122 @@ export function registerIPCHandlers(): void {
       result[p] = null
     }
     return result
+  })
+
+  // Agent Sessions
+  const sessionManager = new SessionManager()
+
+  ipcMain.handle(IPC_CHANNELS.AGENT_START, async (event: IpcMainInvokeEvent, payload: unknown) => {
+    try {
+      const { bugId, mode, primaryProjectId } = payload as AgentStartPayload
+
+      if (mode !== 'analyze') {
+        throw {
+          code: 'AGENT_NOT_CONFIGURED',
+          message: 'Solo la modalità Analyze è supportata in questa versione'
+        }
+      }
+
+      const settings = store.get('settings') as AppSettings | null
+      if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
+
+      // Resolve bug from session
+      const session = store.get('session') as SessionData | null
+      const bug = session?.bugs?.find((b) => b.id === bugId) as CategorizedBug | undefined
+      if (!bug) throw { code: 'STORE_ERROR', message: `Bug ${bugId} non trovato in sessione` }
+
+      // Resolve project from settings
+      const project = settings.projects?.find((p) => p.id === primaryProjectId)
+      if (!project)
+        throw { code: 'STORE_ERROR', message: `Progetto ${primaryProjectId} non trovato` }
+
+      const agentProvider = resolveAgentProviderType(settings)
+      const resolvedApiKey = resolveAgentApiKey(settings)
+      const resolvedBaseUrl = resolveCopilotByokBaseUrl(settings)
+      const resolvedByokProvider = resolveCopilotByokProvider(settings)
+
+      if (agentProvider === 'copilot-sdk' && settings.copilotByokEnabled) {
+        if (!resolvedByokProvider) {
+          throw { code: 'AGENT_NOT_CONFIGURED', message: 'Provider BYOK Copilot mancante' }
+        }
+        if (!resolvedApiKey) {
+          throw { code: 'AGENT_NOT_CONFIGURED', message: 'API Key BYOK Copilot mancante' }
+        }
+        if (!resolvedBaseUrl) {
+          throw { code: 'AGENT_NOT_CONFIGURED', message: 'Base URL BYOK Copilot mancante' }
+        }
+      } else if (
+        !resolvedApiKey &&
+        agentProvider !== 'claude-sdk' &&
+        agentProvider !== 'copilot-sdk'
+      ) {
+        throw { code: 'AGENT_NOT_CONFIGURED', message: 'API Key agente mancante' }
+      }
+
+      // Create runner
+      let runner
+      try {
+        runner = createRunner(settings)
+      } catch (err) {
+        if (err instanceof AgentNotConfiguredError) {
+          throw { code: 'AGENT_NOT_CONFIGURED', message: err.message }
+        }
+        throw err
+      }
+
+      // Build prompt
+      const prompt = buildAnalyzePrompt(bug, project, settings.architectureContext ?? '')
+
+      // Start session (fire-and-forget)
+      const sessionId = sessionManager.start(
+        bugId,
+        mode,
+        primaryProjectId,
+        agentProvider,
+        runner,
+        prompt,
+        {
+          primaryPath: project.path,
+          mode,
+          apiKey: resolvedApiKey,
+          baseUrl: resolvedBaseUrl,
+          providerType: resolvedByokProvider,
+          model: settings.agentModel
+        },
+        (chunk: AgentChunk) => {
+          event.sender.send(IPC_CHANNELS.AGENT_CHUNK, chunk)
+        },
+        (sid: string, report: string) => {
+          event.sender.send(IPC_CHANNELS.AGENT_COMPLETED, { sessionId: sid, report })
+        },
+        (sid: string, error: AppErrorType) => {
+          event.sender.send(IPC_CHANNELS.AGENT_ERROR, { sessionId: sid, error })
+        }
+      )
+
+      return { sessionId, agentProvider }
+    } catch (error: unknown) {
+      throw toRendererError(error)
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.AGENT_ABORT, async (_event, payload: unknown) => {
+    try {
+      const { sessionId } = payload as AgentAbortPayload
+      const aborted = sessionManager.abort(sessionId)
+      if (!aborted) {
+        throw {
+          code: 'AGENT_SESSION_NOT_FOUND',
+          message: 'Sessione non trovata o non in esecuzione'
+        }
+      }
+      return { aborted: true }
+    } catch (error: unknown) {
+      throw toRendererError(error)
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.AGENT_GET_SESSION, async () => {
+    return sessionManager.getSession()
   })
 }

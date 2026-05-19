@@ -20,6 +20,10 @@ export type ErrorCode =
   | 'LLM_PARSE_ERROR'
   | 'STORE_ERROR'
   | 'UNKNOWN_ERROR'
+  | 'AGENT_NOT_CONFIGURED'
+  | 'AGENT_SESSION_ACTIVE'
+  | 'AGENT_SESSION_NOT_FOUND'
+  | 'AGENT_BINARY_MISSING'
 
 export interface BugItem {
   id: number
@@ -55,6 +59,7 @@ export interface CopilotByokConfig {
   enabled: boolean
   provider?: LLMProviderType
   apiKey?: string
+  baseUrl?: string
 }
 
 export interface AppSettings {
@@ -75,6 +80,7 @@ export interface AppSettings {
   copilotByokEnabled?: boolean
   copilotByokProvider?: LLMProviderType
   copilotByokApiKey?: string
+  copilotByokBaseUrl?: string
   projects: ProjectEntry[]
   architectureContext: string
   maxConcurrentSessions: number
@@ -164,4 +170,56 @@ export interface BinaryCheckResult {
   installed: boolean
   version?: string
   error?: string
+}
+
+// ============================================
+// Agent Sessions Types
+// ============================================
+
+export type SessionMode = 'analyze' | 'fix'
+
+export type AgentChunkType = 'text' | 'tool_use' | 'tool_result' | 'status'
+
+export interface AgentChunk {
+  sessionId: string
+  type: AgentChunkType
+  content: string
+  timestamp: string
+  toolName?: string
+}
+
+export type AgentSessionStatus = 'running' | 'completed' | 'aborted' | 'error'
+
+export interface AgentSession {
+  id: string
+  bugId: number
+  mode: SessionMode
+  primaryProjectId: string
+  agentProvider: AgentProviderType
+  status: AgentSessionStatus
+  startedAt: string
+  completedAt?: string
+  report?: string
+  error?: AppError
+  chunks: AgentChunk[]
+}
+
+export interface AgentStartPayload {
+  bugId: number
+  mode: SessionMode
+  primaryProjectId: string
+}
+
+export interface AgentAbortPayload {
+  sessionId: string
+}
+
+export interface AgentCompletedPayload {
+  sessionId: string
+  report: string
+}
+
+export interface AgentErrorPayload {
+  sessionId: string
+  error: AppError
 }

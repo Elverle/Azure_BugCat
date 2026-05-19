@@ -39,6 +39,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 12  | FT-12  | Incremental Session Cache e Re-Categorizzazione Selettiva | Done   |
 | 13  | FT-13  | Storico Chiusi - KPI storici per bug closed/done          | Done   |
 | 14  | FT-14A | Agent Configuration & Project Registry                    | Done   |
+| 15  | FT-14B | Agent Sessions end-to-end per analisi bug                 | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -58,6 +59,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-12-incremental-session-cache]] — FT-12 incremental persistence: bugCatalog history, signature-based fetch merge, selective categorization, migration v3 backfill, and dual cleanup controls (2026-05-13)
 - [[wiki/sources/ft-13-closed-bugs-history]] — FT-13 closed-history analytics: filtered catalog IPC, cleanup-baseline metadata, bug-level category detail, local row filtering, and resilient renderer states (2026-05-13)
 - [[wiki/sources/ft-14a-agent-configuration-project-registry]] — FT-14A settings foundation for agent-provider derivation, project registry, architecture context, save-time sanitization, and schema v4 backfill (2026-05-17)
+- [[wiki/sources/ft-14b-agent-sessions]] — FT-14B agent sessions: single-bug analyze runs with SDK-backed streaming logs, reconnect, abort, and Markdown reports (2026-05-18)
 
 ## Entities
 
@@ -86,6 +88,12 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/use-settings-hook]] — Central settings state management hook (FT-02)
 - [[wiki/entities/validation-utils]] — Pure validation functions for settings fields (FT-02)
 - [[wiki/entities/project-registry]] — Persisted registry of local projects for future agent sessions (FT-14A)
+- [[wiki/entities/agent-session-manager]] — Main-process single-session lifecycle coordinator for agent runs (FT-14B)
+- [[wiki/entities/agent-runner-factory]] — Resolves settings into Claude, Codex, or Copilot SDK runners (FT-14B)
+- [[wiki/entities/agent-prompt-builder]] — Builds the single-project analysis prompt from bug, project, and architecture context (FT-14B)
+- [[wiki/entities/claude-sdk-runner]] — Claude Code SDK adapter with read-only tools and linked abort handling (FT-14B)
+- [[wiki/entities/codex-sdk-runner]] — Codex SDK adapter using read-only sandbox mode (FT-14B)
+- [[wiki/entities/copilot-sdk-runner]] — Copilot SDK adapter with explicit client startup and streamed deltas (FT-14B)
 - [[wiki/entities/ado-types]] — ADO interfaces, QueryStrategy, constants (FT-03)
 - [[wiki/entities/ado-client]] — Low-level ADO HTTP client with auth and error mapping (FT-03)
 - [[wiki/entities/ado-service]] — ADO orchestration: validate → query → batch → map (FT-03)
@@ -123,7 +131,9 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/use-dashboard-hook]] — Renderer hook for session hydration, fetch/categorize actions, and progress subscription (FT-05)
 - [[wiki/entities/use-closed-bug-kpis-hook]] — Renderer hook for loading and deriving closed-history KPIs from a filtered catalog slice (FT-13)
 - [[wiki/entities/use-ai-cluster-hook]] — Renderer hook for similarity hydration, analysis progress, and stale detection (FT-10)
+- [[wiki/entities/use-agent-session-hook]] — Renderer hook for agent-session reconnect, streaming updates, abort, and IPC error fidelity (FT-14B)
 - [[wiki/entities/dashboard-utils]] — Pure filter/sort/group/KPI utilities for the dashboard (FT-05)
+- [[wiki/entities/sessions-panel]] — Dashboard sessions view with streamed logs and Markdown final report (FT-14B)
 - [[wiki/entities/closed-bug-kpis-utility]] — Pure KPI aggregation helpers for historical closed bugs (FT-13)
 - [[wiki/entities/date-format-utility]] — Pure `formatDate()` helper for renderer session timestamps (FT-07)
 - [[wiki/entities/badge-color-utilities]] — Deterministic badge and tint color helpers for status/categories (FT-05)
@@ -151,12 +161,16 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/concepts/click-outside-exclusion-pattern]] — Document-level outside-click closing with `data-bug-click` exclusion markers (FT-06)
 - [[wiki/concepts/catalog-backed-selective-re-categorization]] — Dual-layer persistence pattern that reuses categorization only when catalog signatures still match current open-bug inputs (FT-12)
 - [[wiki/concepts/renderer-safe-closed-catalog-projection]] — Read-model pattern that exposes only closed historical bugs and fetch metadata to the renderer (FT-13)
+- [[wiki/concepts/single-active-agent-session-lifecycle]] — Main-process single-session model with bounded chunk retention and stale-callback protection (FT-14B)
+- [[wiki/concepts/streaming-agent-session-ipc]] — Hybrid invoke/event IPC pattern for reconnectable agent-session streams (FT-14B)
+- [[wiki/concepts/read-only-agent-analysis-sandboxing]] — Analyze-only provider constraints for early agent integration (FT-14B)
 
 ## Topics
 
 - [[wiki/topics/electron-architecture]] — Three-process architecture, source structure, data flow
 - [[wiki/topics/renderer-ui]] — React SPA: HashRouter routing, component tree, styling stack
 - [[wiki/topics/agent-session-configuration-foundation]] — Settings-driven foundation for future agent-session execution: provider derivation, project registry, architecture context, and concurrency limits
+- [[wiki/topics/agent-analysis-sessions]] — End-to-end bug analysis flow from drawer action to streamed session logs and final Markdown report
 - [[wiki/topics/llm-categorization-pipeline]] — End-to-end LLM categorization: IPC → chunking → provider → validation → progressive results
 - [[wiki/topics/ai-cluster-similar-bug-detection]] — End-to-end similar-bug detection: dashboard tab → session gate → IPC → per-category LLM analysis → persisted results
 - [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, drawer drill-down, and categorization actions together

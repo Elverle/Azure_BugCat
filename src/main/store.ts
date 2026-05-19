@@ -42,6 +42,7 @@ export const store = new Store({
       copilotByokEnabled: false,
       copilotByokProvider: undefined,
       copilotByokApiKey: '',
+      copilotByokBaseUrl: '',
       projects: [],
       architectureContext: '',
       maxConcurrentSessions: 1

@@ -37,11 +37,28 @@ export function AgentProviderSection({
       ? 'codex-sdk'
       : settings.agentProvider
 
-  const showManualFields =
+  const showAgentApiKeyField =
     !isAutoProvider && effectiveProvider !== 'none' && effectiveProvider !== 'copilot-sdk'
+  const showAgentModelField = !isAutoProvider && effectiveProvider !== 'none'
 
   const showCodexCheck = effectiveProvider === 'codex-sdk'
   const showByok = effectiveProvider === 'copilot-sdk'
+  const copilotByokBaseUrlPlaceholder =
+    settings.copilotByokProvider === 'openai'
+      ? 'https://api.openai.com/v1'
+      : settings.copilotByokProvider === 'anthropic'
+        ? 'https://api.anthropic.com'
+        : settings.copilotByokProvider === 'openrouter'
+          ? 'https://openrouter.ai/api/v1'
+          : 'https://example.com/v1'
+  const agentModelPlaceholder =
+    effectiveProvider === 'claude-sdk'
+      ? 'Es. claude-sonnet-4.5'
+      : effectiveProvider === 'copilot-sdk'
+        ? settings.copilotByokEnabled && settings.copilotByokProvider === 'anthropic'
+          ? 'Es. claude-sonnet-4.5'
+          : 'Es. gpt-4.1'
+        : 'Es. gpt-4.1'
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -126,46 +143,66 @@ export function AgentProviderSection({
           </div>
         )}
 
-        {/* Manual fields: API key + model */}
-        {showManualFields && (
-          <>
-            <div>
-              <Label htmlFor="agentApiKey">API Key agente</Label>
-              <div className="relative">
-                <Input
-                  id="agentApiKey"
-                  type={showApiKey ? 'text' : 'password'}
-                  value={settings.agentApiKey ?? ''}
-                  onChange={(e) => onFieldChange('agentApiKey', e.target.value)}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowApiKey((prev) => !prev)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                  tabIndex={-1}
-                >
-                  {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {touched.agentApiKey && errors.agentApiKey && (
-                <p className="text-xs text-red-500 mt-1">{errors.agentApiKey}</p>
+        {showAgentApiKeyField && (
+          <div>
+            <Label htmlFor="agentApiKey">
+              API Key agente
+              {effectiveProvider === 'claude-sdk' && (
+                <span className="text-xs font-normal text-gray-400 ml-1">(opzionale)</span>
               )}
-            </div>
-
-            <div>
-              <Label htmlFor="agentModel">Modello agente</Label>
+            </Label>
+            <div className="relative">
               <Input
-                id="agentModel"
-                type="text"
-                value={settings.agentModel ?? ''}
-                onChange={(e) => onFieldChange('agentModel', e.target.value)}
+                id="agentApiKey"
+                type={showApiKey ? 'text' : 'password'}
+                value={settings.agentApiKey ?? ''}
+                onChange={(e) => onFieldChange('agentApiKey', e.target.value)}
+                placeholder={
+                  effectiveProvider === 'claude-sdk'
+                    ? 'Lascia vuoto per usare la config locale di Claude Code'
+                    : ''
+                }
+                className="pr-10"
               />
-              {touched.agentModel && errors.agentModel && (
-                <p className="text-xs text-red-500 mt-1">{errors.agentModel}</p>
-              )}
+              <button
+                type="button"
+                onClick={() => setShowApiKey((prev) => !prev)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
-          </>
+            {touched.agentApiKey && errors.agentApiKey && (
+              <p className="text-xs text-red-500 mt-1">{errors.agentApiKey}</p>
+            )}
+          </div>
+        )}
+
+        {showAgentModelField && (
+          <div>
+            <Label htmlFor="agentModel">
+              Modello agente
+              <span className="text-xs font-normal text-gray-400 ml-1">(opzionale)</span>
+            </Label>
+            <Input
+              id="agentModel"
+              type="text"
+              value={settings.agentModel ?? ''}
+              onChange={(e) => onFieldChange('agentModel', e.target.value)}
+              placeholder={agentModelPlaceholder}
+            />
+            {touched.agentModel && errors.agentModel && (
+              <p className="text-xs text-red-500 mt-1">{errors.agentModel}</p>
+            )}
+            {effectiveProvider === 'copilot-sdk' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Il Copilot SDK usa questo valore per la sessione corrente. Se lasci vuoto, BugCat
+                usa il modello predefinito del provider selezionato e non riusa un vecchio valore
+                rimasto da Claude Code SDK.
+              </p>
+            )}
+          </div>
         )}
 
         {/* BYOK section for Copilot SDK */}
@@ -221,6 +258,31 @@ export function AgentProviderSection({
                   {touched.copilotByokProvider && errors.copilotByokProvider && (
                     <p className="text-xs text-red-500 mt-1">{errors.copilotByokProvider}</p>
                   )}
+                </div>
+
+                <div>
+                  <Label htmlFor="copilotByokBaseUrl">
+                    Base URL BYOK
+                    {(settings.copilotByokProvider === 'openai' ||
+                      settings.copilotByokProvider === 'anthropic' ||
+                      settings.copilotByokProvider === 'openrouter') && (
+                      <span className="text-xs font-normal text-gray-400 ml-1">(opzionale)</span>
+                    )}
+                  </Label>
+                  <Input
+                    id="copilotByokBaseUrl"
+                    type="text"
+                    value={settings.copilotByokBaseUrl ?? ''}
+                    onChange={(e) => onFieldChange('copilotByokBaseUrl', e.target.value)}
+                    placeholder={copilotByokBaseUrlPlaceholder}
+                  />
+                  {touched.copilotByokBaseUrl && errors.copilotByokBaseUrl && (
+                    <p className="text-xs text-red-500 mt-1">{errors.copilotByokBaseUrl}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">
+                    Il Copilot SDK usa `provider.baseUrl` nella SessionConfig. Se lasci vuoto,
+                    BugCat usa l&apos;endpoint standard per OpenAI, Anthropic o OpenRouter.
+                  </p>
                 </div>
 
                 <div>

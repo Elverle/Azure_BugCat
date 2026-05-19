@@ -1,0 +1,61 @@
+import type { CategorizedBug, ProjectEntry } from '@shared/types'
+
+export function buildAnalyzePrompt(
+  bug: CategorizedBug,
+  project: ProjectEntry,
+  architectureContext: string
+): string {
+  const sections: string[] = []
+
+  sections.push(
+    `You are a senior software engineer performing a root-cause analysis on a bug report. Your goal is to analyze the bug in the context of the project codebase, identify likely root causes, affected components, and suggest concrete investigation steps.`
+  )
+
+  sections.push(`## Bug Report
+
+- **ID:** ${bug.id}
+- **Title:** ${bug.title}
+- **State:** ${bug.state}
+- **Priority:** ${bug.priority}
+- **Area Path:** ${bug.areaPath}
+- **Tags:** ${bug.tags.length > 0 ? bug.tags.join(', ') : '(nessun tag)'}
+- **Created:** ${bug.createdDate}
+- **Updated:** ${bug.updatedDate}
+- **Assignee:** ${bug.assignee ?? '(non assegnato)'}
+
+### Category
+- **Macro Category:** ${bug.macroCategory}
+- **Sub Category:** ${bug.subCategory}
+- **Category Reason:** ${bug.categoryReason}
+
+### Description
+${bug.description || '(nessuna descrizione)'}`)
+
+  sections.push(`## Project Context
+
+- **Project:** ${project.name}
+- **Path:** ${project.path}
+- **Type:** ${project.type}
+- **Description:** ${project.description || '(nessuna descrizione)'}
+- **Keywords:** ${project.keywords.length > 0 ? project.keywords.join(', ') : '(nessuna keyword)'}`)
+
+  if (architectureContext.trim()) {
+    sections.push(`## Architecture Context
+
+${architectureContext.trim()}`)
+  }
+
+  sections.push(`## Your Task
+
+Analyze this bug in the context of the project located at \`${project.path}\`. 
+
+1. Read relevant source files to understand the codebase structure
+2. Identify the likely root cause of the bug
+3. List the affected components/files
+4. Suggest concrete investigation and fix steps
+5. Provide a final structured report with your findings
+
+Focus on actionable insights. Use the project type (${project.type}) and description to guide your analysis.`)
+
+  return sections.join('\n\n')
+}
