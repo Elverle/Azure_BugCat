@@ -9,6 +9,10 @@ export interface RunParams {
   providerType?: LLMProviderType
   model?: string
   maxTurns?: number
+  mcpAvailable?: boolean
+  adoPat?: string
+  adoOrgUrl?: string
+  adoProjectName?: string
   abortSignal: AbortSignal
   onChunk: (chunk: AgentChunk) => void
 }

@@ -48,6 +48,7 @@ export const IPC_CHANNELS = {
   AGENT_CHUNK: 'agent:chunk',
   AGENT_COMPLETED: 'agent:completed',
   AGENT_ERROR: 'agent:error',
+  AGENT_MCP_STATUS: 'agent:mcp-status',
 
   // Projects
   PROJECTS_GET: 'projects:get',

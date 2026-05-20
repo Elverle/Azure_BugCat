@@ -66,7 +66,13 @@ export function DashboardPage(): JSX.Element {
     clearCategorizeError
   } = useDashboard()
 
-  const { session: agentSession, startSession, abortSession, clearSession } = useAgentSession()
+  const {
+    session: agentSession,
+    mcpStatus,
+    startSession,
+    abortSession,
+    clearSession
+  } = useAgentSession()
 
   const [filterState, setFilterState] = useState<FilterState>(EMPTY_FILTER_STATE)
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE)
@@ -358,7 +364,7 @@ export function DashboardPage(): JSX.Element {
 
         {/* Bug list */}
         {viewMode === 'sessions' ? (
-          <SessionsPanel session={agentSession} onAbort={abortSession} />
+          <SessionsPanel session={agentSession} mcpStatus={mcpStatus} onAbort={abortSession} />
         ) : viewMode === 'similarity' ? (
           <DashboardSimilaritySection
             key={`${sessionInfo.fetchedAt ?? 'none'}-${sessionInfo.categorizedAt ?? 'none'}`}

@@ -3,7 +3,7 @@ title: 'Preload Bridge (contextBridge)'
 type: entity
 subtype: middleware
 created: 2026-04-29
-updated: 2026-05-18
+updated: 2026-05-20
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -13,6 +13,7 @@ sources:
     '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
+    '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -60,6 +61,7 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 | `onAgentChunk(cb)`               | `agent:chunk`                   | on (returns unsubscribe) |
 | `onAgentCompleted(cb)`           | `agent:completed`               | on (returns unsubscribe) |
 | `onAgentError(cb)`               | `agent:error`                   | on (returns unsubscribe) |
+| `onAgentMcpStatus(cb)`           | `agent:mcp-status`              | on (returns unsubscribe) |
 | `getProjects()`                  | `projects:get`                  | invoke                   |
 | `setProjects(projects)`          | `projects:set`                  | invoke                   |
 | `validateProjectPaths(paths)`    | `projects:validate-paths`       | invoke                   |
@@ -89,7 +91,7 @@ declare global {
 - Cancellation remains explicit and whitelisted: the renderer can only abort the current categorization run through the dedicated method, not by touching arbitrary process state.
 - The status method is read-only and window-scoped: the renderer can query whether its own categorization is still active without receiving access to the controller itself.
 - FT-14A keeps privileged binary and filesystem actions in the same narrow bridge style: the renderer can request a fixed CLI check, a directory picker, and path validation, but cannot access `fs` or spawn arbitrary commands directly.
-- FT-14B follows the same pattern for agent sessions: the renderer cannot instantiate SDK clients or subscribe to arbitrary IPC channels, only to the dedicated chunk/completed/error streams exposed here.
+- FT-14B follows the same pattern for agent sessions: the renderer cannot instantiate SDK clients or subscribe to arbitrary IPC channels, only to the dedicated chunk/completed/error/MCP-status streams exposed here.
 
 ## See also
 
@@ -101,6 +103,7 @@ declare global {
 - [[wiki/entities/use-ai-cluster-hook]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/electron-architecture]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

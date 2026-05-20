@@ -3,8 +3,12 @@ title: 'Claude SDK Runner'
 type: entity
 subtype: service
 created: 2026-05-18
-updated: 2026-05-18
-sources: ['[[wiki/sources/ft-14b-agent-sessions]]']
+updated: 2026-05-20
+sources:
+	[
+		'[[wiki/sources/ft-14b-agent-sessions]]',
+		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]'
+	]
 tags: [agent, claude, sdk, streaming, security]
 lang: en
 ---
@@ -20,9 +24,10 @@ Anthropic-backed FT-14B runner implemented with `@anthropic-ai/claude-agent-sdk`
 ## Runtime Behavior
 
 - Calls `query()` with `cwd = primaryPath`.
-- Restricts `allowedTools` to `Read`, `Glob`, and `Grep`.
+- Restricts `allowedTools` to `Read`, `Glob`, and `Grep`, and adds `mcp__azure-devops` only when FT-14C marks MCP as available.
 - Uses `maxTurns ?? 50` and forwards an optional model override.
 - Injects `ANTHROPIC_API_KEY` only when a key is explicitly available; otherwise Claude Code local auth/config can satisfy the SDK.
+- Injects `PERSONAL_ACCESS_TOKEN` only for MCP-enabled runs, using the base64 `:PAT` form expected by the Azure DevOps MCP runtime.
 - Creates a linked `AbortController` because the SDK expects a controller object rather than a bare `AbortSignal`.
 
 ## Event Mapping
@@ -36,14 +41,17 @@ Anthropic-backed FT-14B runner implemented with `@anthropic-ai/claude-agent-sdk`
 ## Implementation Notes
 
 - The SDK response wrapper is nested under `msg.message.content`, not `msg.content`.
-- `supportsFixMode` and `supportsMcp` are both `false` in FT-14B.
+- `supportsFixMode` remains `false`, but FT-14C sets `supportsMcp = true`.
+- `.mcp.json` preparation happens before the runner starts; the runner only consumes the resulting project context and env.
 
 ## Dependencies
 
 - [[wiki/entities/agent-session-manager]]
 - [[wiki/concepts/read-only-agent-analysis-sandboxing]]
+- [[wiki/entities/mcp-config-writer]]
 
 ## See also
 
 - [[wiki/entities/agent-runner-factory]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/agent-analysis-sessions]]

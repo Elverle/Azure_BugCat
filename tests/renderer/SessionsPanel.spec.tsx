@@ -20,12 +20,12 @@ function makeSession(overrides: Partial<AgentSession> = {}): AgentSession {
 
 describe('SessionsPanel', () => {
   it('renders empty state when session is null', () => {
-    render(<SessionsPanel session={null} onAbort={vi.fn()} />)
+    render(<SessionsPanel session={null} mcpStatus={null} onAbort={vi.fn()} />)
     expect(screen.getByText('Nessuna sessione attiva')).toBeInTheDocument()
   })
 
   it('renders running state with abort button', () => {
-    render(<SessionsPanel session={makeSession()} onAbort={vi.fn()} />)
+    render(<SessionsPanel session={makeSession()} mcpStatus={null} onAbort={vi.fn()} />)
     expect(screen.getByText('In corso')).toBeInTheDocument()
     expect(screen.getByText('Interrompi')).toBeInTheDocument()
   })
@@ -38,6 +38,7 @@ describe('SessionsPanel', () => {
           completedAt: '2026-01-01T10:05:00Z',
           report: 'Root cause found in module X'
         })}
+        mcpStatus={null}
         onAbort={vi.fn()}
       />
     )
@@ -52,6 +53,7 @@ describe('SessionsPanel', () => {
           status: 'aborted',
           completedAt: '2026-01-01T10:03:00Z'
         })}
+        mcpStatus={null}
         onAbort={vi.fn()}
       />
     )
@@ -66,6 +68,7 @@ describe('SessionsPanel', () => {
           completedAt: '2026-01-01T10:02:00Z',
           error: { code: 'UNKNOWN_ERROR', message: 'LLM timeout occurred' }
         })}
+        mcpStatus={null}
         onAbort={vi.fn()}
       />
     )
@@ -92,7 +95,7 @@ describe('SessionsPanel', () => {
       ]
     })
 
-    render(<SessionsPanel session={session} onAbort={vi.fn()} />)
+    render(<SessionsPanel session={session} mcpStatus={null} onAbort={vi.fn()} />)
     expect(screen.getByText('Analyzing code...')).toBeInTheDocument()
     expect(screen.getByText('→ read_file')).toBeInTheDocument()
     expect(screen.getByText('(2 eventi)')).toBeInTheDocument()
@@ -100,7 +103,7 @@ describe('SessionsPanel', () => {
 
   it('abort button calls onAbort', () => {
     const onAbort = vi.fn()
-    render(<SessionsPanel session={makeSession()} onAbort={onAbort} />)
+    render(<SessionsPanel session={makeSession()} mcpStatus={null} onAbort={onAbort} />)
 
     fireEvent.click(screen.getByText('Interrompi'))
     expect(onAbort).toHaveBeenCalledTimes(1)

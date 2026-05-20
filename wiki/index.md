@@ -23,23 +23,24 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ### Features
 
-| #   | ID     | Descrizione                                               | Status |
-| --- | ------ | --------------------------------------------------------- | ------ |
-| 1   | FT-01  | Scaffold Electron + Infrastruttura Base                   | Done   |
-| 2   | FT-02  | Pagina Settings e Persistenza Configurazione              | Done   |
-| 3   | FT-03  | Azure DevOps Bug Fetching (Main Process)                  | Done   |
-| 4   | FT-04  | LLM Provider Abstraction e Categorizzazione               | Done   |
-| 5   | FT-05  | Dashboard Principale: Tabella, Filtri e Raggruppamenti    | Done   |
-| 6   | FT-06  | Pannello Dettaglio Bug (Drawer)                           | Done   |
-| 7   | FT-07  | Persistenza Dati e Gestione Sessione                      | Done   |
-| 8   | FT-08  | GenericProvider OpenAI-compatible e rimozione Copilot     | Done   |
-| 9   | FT-09  | Structured output JSON Schema per tutti i provider LLM    | Done   |
-| 10  | FT-10  | AI Cluster - Similar Bug Detection                        | Done   |
-| 11  | FT-11  | OpenRouter SDK Provider                                   | Done   |
-| 12  | FT-12  | Incremental Session Cache e Re-Categorizzazione Selettiva | Done   |
-| 13  | FT-13  | Storico Chiusi - KPI storici per bug closed/done          | Done   |
-| 14  | FT-14A | Agent Configuration & Project Registry                    | Done   |
-| 15  | FT-14B | Agent Sessions end-to-end per analisi bug                 | Done   |
+| #   | ID     | Descrizione                                                 | Status |
+| --- | ------ | ----------------------------------------------------------- | ------ |
+| 1   | FT-01  | Scaffold Electron + Infrastruttura Base                     | Done   |
+| 2   | FT-02  | Pagina Settings e Persistenza Configurazione                | Done   |
+| 3   | FT-03  | Azure DevOps Bug Fetching (Main Process)                    | Done   |
+| 4   | FT-04  | LLM Provider Abstraction e Categorizzazione                 | Done   |
+| 5   | FT-05  | Dashboard Principale: Tabella, Filtri e Raggruppamenti      | Done   |
+| 6   | FT-06  | Pannello Dettaglio Bug (Drawer)                             | Done   |
+| 7   | FT-07  | Persistenza Dati e Gestione Sessione                        | Done   |
+| 8   | FT-08  | GenericProvider OpenAI-compatible e rimozione Copilot       | Done   |
+| 9   | FT-09  | Structured output JSON Schema per tutti i provider LLM      | Done   |
+| 10  | FT-10  | AI Cluster - Similar Bug Detection                          | Done   |
+| 11  | FT-11  | OpenRouter SDK Provider                                     | Done   |
+| 12  | FT-12  | Incremental Session Cache e Re-Categorizzazione Selettiva   | Done   |
+| 13  | FT-13  | Storico Chiusi - KPI storici per bug closed/done            | Done   |
+| 14  | FT-14A | Agent Configuration & Project Registry                      | Done   |
+| 15  | FT-14B | Agent Sessions end-to-end per analisi bug                   | Done   |
+| 16  | FT-14C | MCP Azure DevOps integration con fallback per agent session | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -60,6 +61,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-13-closed-bugs-history]] — FT-13 closed-history analytics: filtered catalog IPC, cleanup-baseline metadata, bug-level category detail, local row filtering, and resilient renderer states (2026-05-13)
 - [[wiki/sources/ft-14a-agent-configuration-project-registry]] — FT-14A settings foundation for agent-provider derivation, project registry, architecture context, save-time sanitization, and schema v4 backfill (2026-05-17)
 - [[wiki/sources/ft-14b-agent-sessions]] — FT-14B agent sessions: single-bug analyze runs with SDK-backed streaming logs, reconnect, abort, and Markdown reports (2026-05-18)
+- [[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]] — FT-14C MCP-backed Azure DevOps fetch for agent sessions with health check, prompt fallback, and UI status feedback (2026-05-20)
 
 ## Entities
 
@@ -91,6 +93,8 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/agent-session-manager]] — Main-process single-session lifecycle coordinator for agent runs (FT-14B)
 - [[wiki/entities/agent-runner-factory]] — Resolves settings into Claude, Codex, or Copilot SDK runners (FT-14B)
 - [[wiki/entities/agent-prompt-builder]] — Builds the single-project analysis prompt from bug, project, and architecture context (FT-14B)
+- [[wiki/entities/mcp-config-writer]] — Writes or merges project-local `.mcp.json` for Azure DevOps MCP without persisting the PAT (FT-14C)
+- [[wiki/entities/mcp-health-check]] — Spawn-based Azure DevOps MCP readiness probe with timeout and crash-window handling (FT-14C)
 - [[wiki/entities/claude-sdk-runner]] — Claude Code SDK adapter with read-only tools and linked abort handling (FT-14B)
 - [[wiki/entities/codex-sdk-runner]] — Codex SDK adapter using read-only sandbox mode (FT-14B)
 - [[wiki/entities/copilot-sdk-runner]] — Copilot SDK adapter with explicit client startup and streamed deltas (FT-14B)
@@ -164,6 +168,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/concepts/single-active-agent-session-lifecycle]] — Main-process single-session model with bounded chunk retention and stale-callback protection (FT-14B)
 - [[wiki/concepts/streaming-agent-session-ipc]] — Hybrid invoke/event IPC pattern for reconnectable agent-session streams (FT-14B)
 - [[wiki/concepts/read-only-agent-analysis-sandboxing]] — Analyze-only provider constraints for early agent integration (FT-14B)
+- [[wiki/concepts/mcp-capability-probe-and-fallback]] — Session-start capability probe that prefers Azure DevOps MCP and degrades to the full embedded bug prompt when unavailable (FT-14C)
 
 ## Topics
 
@@ -171,6 +176,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/topics/renderer-ui]] — React SPA: HashRouter routing, component tree, styling stack
 - [[wiki/topics/agent-session-configuration-foundation]] — Settings-driven foundation for future agent-session execution: provider derivation, project registry, architecture context, and concurrency limits
 - [[wiki/topics/agent-analysis-sessions]] — End-to-end bug analysis flow from drawer action to streamed session logs and final Markdown report
+- [[wiki/topics/mcp-backed-agent-analysis]] — Azure DevOps MCP-enhanced agent analysis flow with health check, runner-specific registration, and renderer fallback feedback
 - [[wiki/topics/llm-categorization-pipeline]] — End-to-end LLM categorization: IPC → chunking → provider → validation → progressive results
 - [[wiki/topics/ai-cluster-similar-bug-detection]] — End-to-end similar-bug detection: dashboard tab → session gate → IPC → per-category LLM analysis → persisted results
 - [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, drawer drill-down, and categorization actions together

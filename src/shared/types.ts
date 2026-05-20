@@ -223,3 +223,13 @@ export interface AgentErrorPayload {
   sessionId: string
   error: AppError
 }
+
+export interface McpStatus {
+  available: boolean
+  reason?: string
+}
+
+export interface AgentMcpStatusPayload {
+  sessionId: string
+  mcpStatus: McpStatus
+}

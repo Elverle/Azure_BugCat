@@ -3,7 +3,7 @@ title: 'IPC Handlers'
 type: entity
 subtype: service
 created: 2026-04-29
-updated: 2026-05-18
+updated: 2026-05-20
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -18,6 +18,7 @@ sources:
     '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
+    '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -35,32 +36,32 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 
 ## Registered Handlers
 
-| Channel                         | Status         | Action                                                                                                                                                                                                          |
-| ------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ping`                          | ✅ Implemented | Returns `'pong'`                                                                                                                                                                                                |
-| `settings:get`                  | ✅ Implemented | Returns `store.get('settings')`                                                                                                                                                                                 |
-| `settings:set`                  | ✅ Implemented | Calls `store.set('settings', payload)`                                                                                                                                                                          |
-| `session:get`                   | ✅ Implemented | Returns `store.get('session')`                                                                                                                                                                                  |
-| `session:clear`                 | ✅ Implemented | Sets `session` to `null`                                                                                                                                                                                        |
-| `catalog:clear`                 | ✅ Implemented | Sets `bugCatalog` to `null`, records `catalogMetadata.lastClearedAt`, and leaves the current `session` untouched                                                                                                |
-| `catalog:get-closed`            | ✅ Implemented | Reads `bugCatalog`, filters to entries with `closedAt !== null`, and returns that closed-only slice together with the latest `session.fetchedAt` plus `catalogMetadata.lastClearedAt` if available              |
-| `agent:check-binary`            | ✅ Implemented | Runs `codex --version` with a fixed argument list and returns `BinaryCheckResult` instead of throwing on missing CLI                                                                                            |
-| `agent:select-directory`        | ✅ Implemented | Opens an Electron directory picker and returns the selected folder path or `null`                                                                                                                               |
-| `agent:start`                   | ✅ Implemented | Resolves the current bug, selected FT-14A project, and settings, builds a prompt, selects a runner, starts the main-process session, and returns `{ sessionId, agentProvider }`                                 |
-| `agent:abort`                   | ✅ Implemented | Aborts the active FT-14B session when the requested session ID still matches the running session                                                                                                                |
-| `agent:get-session`             | ✅ Implemented | Returns the current in-memory FT-14B session so renderer remounts can reconnect                                                                                                                                 |
-| `projects:get`                  | ✅ Implemented | Returns `settings.projects ?? []` from persisted settings                                                                                                                                                       |
-| `projects:set`                  | ✅ Implemented | Replaces `settings.projects` in persisted settings                                                                                                                                                              |
-| `projects:validate-paths`       | ✅ Implemented | Checks whether each provided path exists and is a directory, returning a per-path error map                                                                                                                     |
-| `ado:fetch-bugs`                | ✅ Implemented | Validates settings, calls `fetchBugsFromQuery()`, merges results into `bugCatalog`, persists a fresh open-bug `session` plus `lastFetchNewCount`, and reuses categorization when signatures still match         |
-| `ado:test-connection`           | ✅ Implemented | Calls `testAdoConnection()`, returns `TestConnectionResult`                                                                                                                                                     |
-| `ado:fetch-attachment-data-url` | ✅ Implemented | Loads persisted settings and returns a renderer-safe attachment data URL for Azure DevOps-hosted images                                                                                                         |
-| `llm:categorize`                | ✅ Implemented | Loads settings+session, filters to uncategorized open bugs, creates a per-window `AbortController`, calls `categorizeBugs()`, merges results back into `session` and `bugCatalog`, and persists only on success |
-| `llm:categorize-cancel`         | ✅ Implemented | Aborts the active categorization controller for the current renderer window and returns `{ cancelled }`                                                                                                         |
-| `llm:categorize-status`         | ✅ Implemented | Returns `{ active }` for the current renderer window so a remounted Dashboard can recover an in-flight categorization                                                                                           |
-| `llm:test-connection`           | ✅ Implemented | Validates `apiKey`, calls `testLLMConnection()`, returns `TestConnectionResult`; generic-provider `baseUrl` rules are enforced downstream                                                                       |
-| `llm:find-similar`              | ✅ Implemented | Validates settings plus categorized session state, calls `findSimilarBugs()`, sends `SimilarityProgress`, persists `similarityResults`, and updates catalog similarity metadata                                 |
-| `shell:open-external`           | ✅ Implemented | Validates that the payload is a well-formed `https://` URL, then delegates to `shell.openExternal()`                                                                                                            |
+| Channel                         | Status         | Action                                                                                                                                                                                                                                       |
+| ------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ping`                          | ✅ Implemented | Returns `'pong'`                                                                                                                                                                                                                             |
+| `settings:get`                  | ✅ Implemented | Returns `store.get('settings')`                                                                                                                                                                                                              |
+| `settings:set`                  | ✅ Implemented | Calls `store.set('settings', payload)`                                                                                                                                                                                                       |
+| `session:get`                   | ✅ Implemented | Returns `store.get('session')`                                                                                                                                                                                                               |
+| `session:clear`                 | ✅ Implemented | Sets `session` to `null`                                                                                                                                                                                                                     |
+| `catalog:clear`                 | ✅ Implemented | Sets `bugCatalog` to `null`, records `catalogMetadata.lastClearedAt`, and leaves the current `session` untouched                                                                                                                             |
+| `catalog:get-closed`            | ✅ Implemented | Reads `bugCatalog`, filters to entries with `closedAt !== null`, and returns that closed-only slice together with the latest `session.fetchedAt` plus `catalogMetadata.lastClearedAt` if available                                           |
+| `agent:check-binary`            | ✅ Implemented | Runs `codex --version` with a fixed argument list and returns `BinaryCheckResult` instead of throwing on missing CLI                                                                                                                         |
+| `agent:select-directory`        | ✅ Implemented | Opens an Electron directory picker and returns the selected folder path or `null`                                                                                                                                                            |
+| `agent:start`                   | ✅ Implemented | Resolves the current bug, selected FT-14A project, and settings, computes FT-14C MCP availability, builds the right prompt, starts the main-process session, emits `agent:mcp-status`, and returns `{ sessionId, agentProvider, mcpStatus }` |
+| `agent:abort`                   | ✅ Implemented | Aborts the active FT-14B session when the requested session ID still matches the running session                                                                                                                                             |
+| `agent:get-session`             | ✅ Implemented | Returns the current in-memory FT-14B session so renderer remounts can reconnect                                                                                                                                                              |
+| `projects:get`                  | ✅ Implemented | Returns `settings.projects ?? []` from persisted settings                                                                                                                                                                                    |
+| `projects:set`                  | ✅ Implemented | Replaces `settings.projects` in persisted settings                                                                                                                                                                                           |
+| `projects:validate-paths`       | ✅ Implemented | Checks whether each provided path exists and is a directory, returning a per-path error map                                                                                                                                                  |
+| `ado:fetch-bugs`                | ✅ Implemented | Validates settings, calls `fetchBugsFromQuery()`, merges results into `bugCatalog`, persists a fresh open-bug `session` plus `lastFetchNewCount`, and reuses categorization when signatures still match                                      |
+| `ado:test-connection`           | ✅ Implemented | Calls `testAdoConnection()`, returns `TestConnectionResult`                                                                                                                                                                                  |
+| `ado:fetch-attachment-data-url` | ✅ Implemented | Loads persisted settings and returns a renderer-safe attachment data URL for Azure DevOps-hosted images                                                                                                                                      |
+| `llm:categorize`                | ✅ Implemented | Loads settings+session, filters to uncategorized open bugs, creates a per-window `AbortController`, calls `categorizeBugs()`, merges results back into `session` and `bugCatalog`, and persists only on success                              |
+| `llm:categorize-cancel`         | ✅ Implemented | Aborts the active categorization controller for the current renderer window and returns `{ cancelled }`                                                                                                                                      |
+| `llm:categorize-status`         | ✅ Implemented | Returns `{ active }` for the current renderer window so a remounted Dashboard can recover an in-flight categorization                                                                                                                        |
+| `llm:test-connection`           | ✅ Implemented | Validates `apiKey`, calls `testLLMConnection()`, returns `TestConnectionResult`; generic-provider `baseUrl` rules are enforced downstream                                                                                                    |
+| `llm:find-similar`              | ✅ Implemented | Validates settings plus categorized session state, calls `findSimilarBugs()`, sends `SimilarityProgress`, persists `similarityResults`, and updates catalog similarity metadata                                                              |
+| `shell:open-external`           | ✅ Implemented | Validates that the payload is a well-formed `https://` URL, then delegates to `shell.openExternal()`                                                                                                                                         |
 
 ## Security Notes
 
@@ -80,7 +81,13 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - `session:clear` and `catalog:clear` intentionally have different blast radii, which lets operators reset the open snapshot without losing historical categorization reuse.
 - `catalog:get-closed` reuses `session.fetchedAt` as the renderer-facing "last update" marker for FT-13, and now also forwards the persisted history cleanup baseline without exposing the mutable session snapshot itself.
 - `toRendererError()` converts plain thrown objects into real `Error` instances before they cross the IPC boundary, preserving human-readable messages and error codes for the renderer.
-- `agent:start` currently rejects anything other than `mode === 'analyze'`, and Claude runs with read-only `Read` / `Glob` / `Grep` tools only.
+- `agent:start` currently rejects anything other than `mode === 'analyze'`, and FT-14C treats MCP setup failures as degradations, not fatal startup errors.
+- FT-14C writes only a placeholder token into `.mcp.json`; the live PAT is provided through process environment after encoding and never persisted in cleartext.
+- Copilot MCP configuration stays in-memory, so it does not mutate the selected repository on disk.
+
+## Event-Only Agent Session Channels
+
+- `agent:mcp-status` is emitted from inside `agent:start` after the MCP capability decision so the renderer can label the session as `MCP` or `Fallback` without parsing chunk logs.
 
 ## Dependencies
 
@@ -93,6 +100,8 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - [[wiki/entities/agent-session-manager]]
 - [[wiki/entities/agent-runner-factory]]
 - [[wiki/entities/agent-prompt-builder]]
+- [[wiki/entities/mcp-health-check]]
+- [[wiki/entities/mcp-config-writer]]
 - [[wiki/entities/open-external-ipc]]
 
 ## See also
@@ -103,6 +112,7 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/session-persistence-lifecycle]]
 - [[wiki/topics/electron-architecture]]

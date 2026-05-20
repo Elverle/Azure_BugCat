@@ -76,6 +76,11 @@ const electronAPI = {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
     ipcRenderer.on(IPC_CHANNELS.AGENT_ERROR, handler)
     return () => ipcRenderer.removeListener(IPC_CHANNELS.AGENT_ERROR, handler)
+  },
+  onAgentMcpStatus: (callback: (data: unknown) => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
+    ipcRenderer.on(IPC_CHANNELS.AGENT_MCP_STATUS, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.AGENT_MCP_STATUS, handler)
   }
 }
 

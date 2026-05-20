@@ -3,7 +3,7 @@ title: 'IPC Channel Constants'
 type: entity
 subtype: config
 created: 2026-04-29
-updated: 2026-05-18
+updated: 2026-05-20
 sources:
 	[
 		'[[wiki/sources/ft-01-scaffold]]',
@@ -13,6 +13,7 @@ sources:
 		'[[wiki/sources/ft-13-closed-bugs-history]]',
 		'[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
 		'[[wiki/sources/ft-14b-agent-sessions]]',
+		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
 		'[[wiki/analyses/cancel-categorization-flow]]',
 		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
 	]
@@ -58,6 +59,7 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `AGENT_CHUNK`                   | `agent:chunk`                   | Agent Session |
 | `AGENT_COMPLETED`               | `agent:completed`               | Agent Session |
 | `AGENT_ERROR`                   | `agent:error`                   | Agent Session |
+| `AGENT_MCP_STATUS`              | `agent:mcp-status`              | Agent Session |
 | `PROJECTS_GET`                  | `projects:get`                  | Projects      |
 | `PROJECTS_SET`                  | `projects:set`                  | Projects      |
 | `PROJECTS_VALIDATE_PATHS`       | `projects:validate-paths`       | Projects      |
@@ -76,5 +78,6 @@ export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
 - [[wiki/entities/open-external-ipc]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

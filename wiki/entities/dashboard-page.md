@@ -3,12 +3,13 @@ title: 'Dashboard Page'
 type: entity
 subtype: component
 created: 2026-04-30
-updated: 2026-05-18
+updated: 2026-05-20
 sources:
 	[
 		'[[wiki/sources/ft-05-dashboard]]',
 		'[[wiki/sources/ft-06-bug-detail-drawer]]',
 		'[[wiki/sources/ft-14b-agent-sessions]]',
+		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
 		'[[wiki/sources/ft-11-openrouter-provider]]',
 		'[[wiki/analyses/cancel-categorization-flow]]',
 		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
@@ -43,6 +44,7 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 
 - Uses `useDashboard()` for session hydration, fetch action, categorize action, and progress state.
 - Uses [[wiki/entities/use-agent-session-hook]] for FT-14B session reconnect, start, abort, and completion/error state.
+- Receives `mcpStatus` from [[wiki/entities/use-agent-session-hook]] and forwards it to [[wiki/entities/sessions-panel]] so FT-14C can show whether the session used MCP or the fallback prompt path.
 - For long-running categorization runs, passes `cancelCategorization()` plus `isCategorizing` into [[wiki/entities/dashboard-header]] so the top action can switch to a cancel affordance.
 - Also passes `isCancelling` into [[wiki/entities/dashboard-header]] so the cancel affordance can become a temporary `Cancelling...` state while the abort request is in flight.
 - Recovers an active categorization after Dashboard remount because [[wiki/entities/use-dashboard-hook]] rehydrates long-running state from the main-process status IPC instead of relying on page-local state only.
@@ -87,5 +89,6 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 
 - [[wiki/topics/dashboard-bug-exploration]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/concepts/dashboard-derivation-pipeline]]
 - [[wiki/topics/renderer-ui]]

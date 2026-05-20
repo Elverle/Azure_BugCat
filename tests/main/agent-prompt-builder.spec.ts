@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildAnalyzePrompt } from '@main/agent/prompt-builder'
+import { buildAnalyzePrompt, buildMcpPrompt } from '@main/agent/prompt-builder'
 import type { CategorizedBug, ProjectEntry } from '@shared/types'
 
 const mockBug: CategorizedBug = {
@@ -77,5 +77,43 @@ describe('buildAnalyzePrompt', () => {
     const projectNoKeywords: ProjectEntry = { ...mockProject, keywords: [] }
     const result = buildAnalyzePrompt(mockBug, projectNoKeywords, '')
     expect(result).toContain('(nessuna keyword)')
+  })
+})
+
+describe('buildMcpPrompt', () => {
+  it('output contains bug ID', () => {
+    const result = buildMcpPrompt(123, mockProject, '')
+    expect(result).toContain('123')
+  })
+
+  it('output does NOT contain bug title, description, or other fields', () => {
+    const result = buildMcpPrompt(123, mockProject, '')
+    expect(result).not.toContain('Login button not working')
+    expect(result).not.toContain('The login button does not respond to clicks')
+    expect(result).not.toContain('Authentication')
+  })
+
+  it('output contains MCP fetch instructions', () => {
+    const result = buildMcpPrompt(123, mockProject, '')
+    expect(result).toContain('MCP')
+    expect(result).toContain('fetch')
+  })
+
+  it('output contains project context', () => {
+    const result = buildMcpPrompt(123, mockProject, '')
+    expect(result).toContain('hotel-frontend')
+    expect(result).toContain('/Users/dev/hotel-frontend')
+    expect(result).toContain('frontend')
+  })
+
+  it('output contains architecture context when provided', () => {
+    const result = buildMcpPrompt(123, mockProject, 'Monorepo with NX workspace')
+    expect(result).toContain('Architecture Context')
+    expect(result).toContain('Monorepo with NX workspace')
+  })
+
+  it('output does NOT contain architecture context section when empty', () => {
+    const result = buildMcpPrompt(123, mockProject, '')
+    expect(result).not.toContain('## Architecture Context')
   })
 })

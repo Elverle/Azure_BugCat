@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
 
 import type { AgentRunner, RunParams } from '../types'
+import { resolveMcpServerPath, extractOrgName, encodePat } from '../mcp-config-writer'
 
 const require = createRequire(import.meta.url)
 const COPILOT_SEND_AND_WAIT_TIMEOUT_MS = 10 * 60 * 1000
@@ -166,7 +167,7 @@ function normalizeCopilotError(error: unknown): Error {
 
 export class CopilotSDKRunner implements AgentRunner {
   readonly supportsFixMode = false
-  readonly supportsMcp = false
+  readonly supportsMcp = true
 
   async run(params: RunParams): Promise<string> {
     const { CopilotClient } = await import('@github/copilot-sdk')
@@ -195,12 +196,33 @@ export class CopilotSDKRunner implements AgentRunner {
 
     try {
       await client.start()
+      const mcpServers =
+        params.mcpAvailable && params.adoPat && params.adoOrgUrl
+          ? {
+              'azure-devops': {
+                type: 'stdio' as const,
+                command: 'node',
+                args: [
+                  resolveMcpServerPath(),
+                  extractOrgName(params.adoOrgUrl),
+                  '--authentication',
+                  'pat'
+                ],
+                env: {
+                  PERSONAL_ACCESS_TOKEN: encodePat(params.adoPat)
+                },
+                tools: ['*']
+              }
+            }
+          : undefined
+
       session = await client.createSession({
         model: resolveCopilotModel(params),
         provider,
         workingDirectory: params.primaryPath,
         streaming: true,
-        onPermissionRequest: buildReadOnlyPermissionHandler()
+        onPermissionRequest: buildReadOnlyPermissionHandler(),
+        ...(mcpServers ? { mcpServers } : {})
       })
 
       const abortHandler = (): void => {

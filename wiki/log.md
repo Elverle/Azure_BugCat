@@ -2,7 +2,8 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                                                                                            |
 | ---------- | -------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-05-18 | update FT-14 Copilot wait  | GitHub Copilot | Raised the explicit Copilot `session.sendAndWait()` timeout from the SDK default 60s to 10 minutes so longer repository analysis can finish without failing on `session.idle` wait time.                                                                       |
+| 2026-05-20 | scan FT-14C                | GitHub Copilot | Scanned FT-14C MCP Azure DevOps integration for agent sessions. Added MCP source/entity/concept/topic pages and updated agent-session, IPC, preload, shared-type, renderer, and tracker docs for MCP health-check fallback behavior.                             |
+| 2026-05-18 | update FT-14 Copilot wait  | GitHub Copilot | Raised the explicit Copilot `session.sendAndWait()` timeout from the SDK default 60s to 10 minutes so longer repository analysis can finish without failing on `session.idle` wait time.                                                                         |
 | 2026-05-18 | update FT-14 model UX      | GitHub Copilot | Exposed the shared `agentModel` field for Copilot SDK in Settings so stale hidden model values are visible/editable, with copy that clarifies blank falls back to the provider default.                                                                          |
 | 2026-05-18 | update FT-14B Copilot path | GitHub Copilot | Aligned the Copilot runner with the SDK contract: session-scoped BYOK provider config, BYOK base URL settings/validation, read-only permission handling, and native Copilot CLI resolution on Electron with `ELECTRON_RUN_AS_NODE` kept only as a fallback path. |
 | 2026-05-18 | scan FT-14B                | GitHub Copilot | Scanned FT-14B agent sessions. Added the runtime topic, 8 entity pages, 3 concepts, and updated IPC/dashboard/settings/security docs plus the delivery trackers.                                                                                                 |
@@ -122,6 +123,36 @@ Pages updated:
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/dashboard-bug-exploration]]
+
+## [2026-05-20] scan | FT-14C - MCP Azure DevOps Integration for Agent Sessions
+
+Scanned FT-14C after the agent-session workflow gained an MCP-first Azure DevOps path with graceful fallback. The feature adds project-local `.mcp.json` writing for Claude/Codex, programmatic `mcpServers` injection for Copilot, a spawn-based MCP health check with a 500ms crash-detection window, a shorter MCP prompt variant, and renderer-visible `MCP` / `Fallback` status.
+
+Pages created:
+
+- [[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]
+- [[wiki/entities/mcp-config-writer]]
+- [[wiki/entities/mcp-health-check]]
+- [[wiki/concepts/mcp-capability-probe-and-fallback]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/agent-prompt-builder]]
+- [[wiki/entities/claude-sdk-runner]]
+- [[wiki/entities/codex-sdk-runner]]
+- [[wiki/entities/copilot-sdk-runner]]
+- [[wiki/entities/use-agent-session-hook]]
+- [[wiki/entities/sessions-panel]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/ipc-channels]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/preload-bridge]]
+- [[wiki/entities/dashboard-page]]
+- [[wiki/concepts/read-only-agent-analysis-sandboxing]]
+- [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
 
 ## [2026-05-13] scan | FT-13 - Storico Chiusi
 

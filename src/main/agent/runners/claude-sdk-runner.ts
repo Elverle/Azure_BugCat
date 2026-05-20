@@ -1,8 +1,9 @@
 import type { AgentRunner, RunParams } from '../types'
+import { encodePat } from '../mcp-config-writer'
 
 export class ClaudeSDKRunner implements AgentRunner {
   readonly supportsFixMode = false
-  readonly supportsMcp = false
+  readonly supportsMcp = true
 
   async run(params: RunParams): Promise<string> {
     const { query } = await import('@anthropic-ai/claude-agent-sdk')
@@ -15,17 +16,36 @@ export class ClaudeSDKRunner implements AgentRunner {
     params.abortSignal.addEventListener('abort', onExternalAbort, { once: true })
 
     try {
+      const env: Record<string, string> = {}
+      if (params.apiKey) env.ANTHROPIC_API_KEY = params.apiKey
+      if (params.mcpAvailable && params.adoPat) {
+        env.PERSONAL_ACCESS_TOKEN = encodePat(params.adoPat)
+      }
+
+      const allowedTools = params.mcpAvailable
+        ? ['Read', 'Glob', 'Grep', 'mcp__azure-devops']
+        : ['Read', 'Glob', 'Grep']
+
       const messages = query({
         prompt: params.prompt,
         options: {
           cwd: params.primaryPath,
-          allowedTools: ['Read', 'Glob', 'Grep'],
+          allowedTools,
           maxTurns: params.maxTurns ?? 50,
           model: params.model,
-          ...(params.apiKey ? { env: { ANTHROPIC_API_KEY: params.apiKey } } : {}),
+          ...(Object.keys(env).length > 0 ? { env } : {}),
           abortController: ac,
           permissionMode: 'default'
         }
+      })
+
+      console.log('Claude SDK session started with params:', {
+        primaryPath: params.primaryPath,
+        model: params.model,
+        mcpAvailable: params.mcpAvailable,
+        allowedTools,
+        prompt: params.prompt.length > 100 ? params.prompt.slice(0, 100) + '...' : params.prompt,
+        ...(Object.keys(env).length > 0 ? { envKeys: Object.keys(env) } : {})
       })
 
       for await (const message of messages) {

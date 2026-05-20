@@ -3,21 +3,27 @@ title: 'Agent Prompt Builder'
 type: entity
 subtype: library
 created: 2026-05-18
-updated: 2026-05-18
-sources: ['[[wiki/sources/ft-14b-agent-sessions]]']
+updated: 2026-05-20
+sources:
+	[
+		'[[wiki/sources/ft-14b-agent-sessions]]',
+		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]'
+	]
 tags: [agent, prompt, bugs, project-context]
 lang: en
 ---
 
 ## Description
 
-Pure helper that builds the FT-14B analysis prompt from one categorized bug, one selected project, and the optional architecture context captured in Settings.
+Pure helper that builds the session prompt for FT-14B and FT-14C. It now supports both the original full bug-embedding prompt and the shorter MCP-oriented prompt used when Azure DevOps MCP is available.
 
 ## Location
 
 `src/main/agent/prompt-builder.ts`
 
-## Prompt Structure
+## Prompt Variants
+
+### `buildAnalyzePrompt()`
 
 - Role framing: senior engineer performing root-cause analysis
 - Bug report block: identity, status, timestamps, tags, categorization, description
@@ -25,10 +31,17 @@ Pure helper that builds the FT-14B analysis prompt from one categorized bug, one
 - Optional architecture context block
 - Explicit task list: inspect code, identify likely root cause, list affected files/components, suggest next steps, produce a structured report
 
+### `buildMcpPrompt()`
+
+- Replaces the full bug block with a bug ID and instructions to fetch work item context through Azure DevOps MCP tools.
+- Still includes project metadata plus optional architecture context so local code navigation stays grounded.
+- Adds DevOps organization and project labels for operator-visible context without embedding the full bug payload.
+
 ## Scope Guards
 
 - FT-14B prompts only one primary project path.
-- Tests assert that the prompt does not mention MCP, secondary projects, or cross-repo workflows.
+- The MCP prompt intentionally does not embed bug title, description, categorization, or other fields that MCP should fetch live.
+- The fallback full prompt still does not mention secondary projects or cross-repo workflows.
 - Empty description, tags, and keywords are normalized into explicit placeholders instead of omitted sections.
 
 ## Dependencies
@@ -39,4 +52,5 @@ Pure helper that builds the FT-14B analysis prompt from one categorized bug, one
 ## See also
 
 - [[wiki/entities/agent-session-manager]]
+- [[wiki/concepts/mcp-capability-probe-and-fallback]]
 - [[wiki/topics/agent-analysis-sessions]]

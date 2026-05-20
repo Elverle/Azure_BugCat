@@ -1013,7 +1013,7 @@ describe('registerIPCHandlers', () => {
         }
       )
 
-      expect(result).toEqual({ sessionId: 'new-session-id', agentProvider: 'claude-sdk' })
+      expect(result).toMatchObject({ sessionId: 'new-session-id', agentProvider: 'claude-sdk' })
       expect(sessionManagerStartMock).toHaveBeenCalled()
     })
 

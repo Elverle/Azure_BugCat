@@ -5,11 +5,14 @@ import type {
   AgentSessionStatus,
   AgentCompletedPayload,
   AgentErrorPayload,
-  AgentProviderType
+  AgentMcpStatusPayload,
+  AgentProviderType,
+  McpStatus
 } from '@shared/types'
 
 interface UseAgentSessionReturn {
   session: AgentSession | null
+  mcpStatus: McpStatus | null
   startSession: (bugId: number, primaryProjectId: string) => Promise<void>
   abortSession: () => Promise<void>
   clearSession: () => void
@@ -17,6 +20,7 @@ interface UseAgentSessionReturn {
 
 export function useAgentSession(): UseAgentSessionReturn {
   const [session, setSession] = useState<AgentSession | null>(null)
+  const [mcpStatus, setMcpStatus] = useState<McpStatus | null>(null)
   const sessionIdRef = useRef<string | null>(null)
 
   // Reconnect to existing session on mount
@@ -71,10 +75,17 @@ export function useAgentSession(): UseAgentSessionReturn {
       })
     })
 
+    const unsubMcpStatus = api.onAgentMcpStatus?.((data: unknown) => {
+      const { sessionId, mcpStatus: status } = data as AgentMcpStatusPayload
+      if (sessionId !== sessionIdRef.current) return
+      setMcpStatus(status)
+    })
+
     return () => {
       unsubChunk?.()
       unsubCompleted?.()
       unsubError?.()
+      unsubMcpStatus?.()
     }
   }, [])
 
@@ -82,8 +93,21 @@ export function useAgentSession(): UseAgentSessionReturn {
     const api = window.electronAPI as any
     try {
       const result = await api.agentStart({ bugId, mode: 'analyze', primaryProjectId })
-      const { sessionId, agentProvider } = result as { sessionId: string; agentProvider: string }
+      const {
+        sessionId,
+        agentProvider,
+        mcpStatus: initialMcpStatus
+      } = result as {
+        sessionId: string
+        agentProvider: string
+        mcpStatus?: McpStatus
+      }
       sessionIdRef.current = sessionId
+
+      // Set MCP status immediately from invoke result (avoids race with IPC event)
+      if (initialMcpStatus) {
+        setMcpStatus(initialMcpStatus)
+      }
 
       setSession({
         id: sessionId,
@@ -128,7 +152,8 @@ export function useAgentSession(): UseAgentSessionReturn {
   const clearSession = useCallback(() => {
     sessionIdRef.current = null
     setSession(null)
+    setMcpStatus(null)
   }, [])
 
-  return { session, startSession, abortSession, clearSession }
+  return { session, mcpStatus, startSession, abortSession, clearSession }
 }

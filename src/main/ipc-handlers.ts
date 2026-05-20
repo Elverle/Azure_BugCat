@@ -22,12 +22,21 @@ import {
   mergeCategorization,
   updateCatalogSimilarityMetadata
 } from './utils/catalog-merge'
-import { SessionManager, createRunner, buildAnalyzePrompt, AgentNotConfiguredError } from './agent'
+import {
+  SessionManager,
+  createRunner,
+  buildAnalyzePrompt,
+  buildMcpPrompt,
+  AgentNotConfiguredError,
+  writeMcpConfig,
+  checkMcpHealth
+} from './agent'
 import type {
   AgentStartPayload,
   AgentAbortPayload,
   CategorizedBug,
   AgentChunk,
+  McpStatus,
   AppError as AppErrorType
 } from '../shared/types'
 
@@ -497,10 +506,39 @@ export function registerIPCHandlers(): void {
         throw err
       }
 
-      // Build prompt
-      const prompt = buildAnalyzePrompt(bug, project, settings.architectureContext ?? '')
+      // MCP health check and configuration
+      let mcpStatus: McpStatus = { available: false, reason: 'MCP non configurabile' }
+      const mcpFeasible = !!(settings.pat && settings.orgUrl && settings.projectName)
 
-      // Start session (fire-and-forget)
+      if (mcpFeasible) {
+        try {
+          mcpStatus = await checkMcpHealth({
+            orgUrl: settings.orgUrl,
+            pat: settings.pat,
+            timeoutMs: 5000
+          })
+
+          // Write .mcp.json for Claude/Codex (file-based MCP)
+          if (mcpStatus.available && agentProvider !== 'copilot-sdk') {
+            await writeMcpConfig(project.path, settings.orgUrl)
+          }
+        } catch {
+          mcpStatus = { available: false, reason: 'Errore durante il check MCP' }
+        }
+      }
+
+      // Choose prompt based on MCP availability
+      const prompt = mcpStatus.available
+        ? buildMcpPrompt(
+            bug.id,
+            project,
+            settings.architectureContext ?? '',
+            settings.orgUrl,
+            settings.projectName
+          )
+        : buildAnalyzePrompt(bug, project, settings.architectureContext ?? '')
+
+      // Generate session ID early so we can emit MCP status before session starts
       const sessionId = sessionManager.start(
         bugId,
         mode,
@@ -514,7 +552,11 @@ export function registerIPCHandlers(): void {
           apiKey: resolvedApiKey,
           baseUrl: resolvedBaseUrl,
           providerType: resolvedByokProvider,
-          model: settings.agentModel
+          model: settings.agentModel,
+          mcpAvailable: mcpStatus.available,
+          adoPat: settings.pat,
+          adoOrgUrl: settings.orgUrl,
+          adoProjectName: settings.projectName
         },
         (chunk: AgentChunk) => {
           event.sender.send(IPC_CHANNELS.AGENT_CHUNK, chunk)
@@ -527,7 +569,10 @@ export function registerIPCHandlers(): void {
         }
       )
 
-      return { sessionId, agentProvider }
+      // Emit MCP status to renderer
+      event.sender.send(IPC_CHANNELS.AGENT_MCP_STATUS, { sessionId, mcpStatus })
+
+      return { sessionId, agentProvider, mcpStatus }
     } catch (error: unknown) {
       throw toRendererError(error)
     }

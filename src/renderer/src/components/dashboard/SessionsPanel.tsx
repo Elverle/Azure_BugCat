@@ -13,15 +13,16 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react'
-import type { AgentSession, AgentChunk } from '@shared/types'
+import type { AgentSession, AgentChunk, McpStatus } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
 
 interface SessionsPanelProps {
   session: AgentSession | null
+  mcpStatus: McpStatus | null
   onAbort: () => void
 }
 
-export function SessionsPanel({ session, onAbort }: SessionsPanelProps): JSX.Element {
+export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProps): JSX.Element {
   const logEndRef = useRef<HTMLDivElement>(null)
   const [logOpen, setLogOpen] = useState(true)
   const [reportOpen, setReportOpen] = useState(true)
@@ -51,6 +52,7 @@ export function SessionsPanel({ session, onAbort }: SessionsPanelProps): JSX.Ele
       <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
         <div className="flex items-center gap-3">
           <SessionStatusBadge status={session.status} />
+          <McpStatusBadge mcpStatus={mcpStatus} />
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Bug #{session.bugId} — Analisi</h3>
             <p className="text-xs text-gray-500">
@@ -199,9 +201,7 @@ function ChunkLine({ chunk }: { chunk: AgentChunk }): JSX.Element {
         <div className="text-indigo-600 pl-4 break-words">
           <span className="text-gray-400 mr-2">{time}</span>
           <span className="font-semibold">→ {chunk.toolName ?? 'tool'}</span>{' '}
-          <span className="text-indigo-400">
-            {chunk.content}
-          </span>
+          <span className="text-indigo-400">{chunk.content}</span>
         </div>
       )
     case 'tool_result':
@@ -217,4 +217,25 @@ function ChunkLine({ chunk }: { chunk: AgentChunk }): JSX.Element {
         </div>
       )
   }
+}
+
+function McpStatusBadge({ mcpStatus }: { mcpStatus: McpStatus | null }): JSX.Element | null {
+  if (!mcpStatus) return null
+
+  if (mcpStatus.available) {
+    return (
+      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">
+        MCP
+      </span>
+    )
+  }
+
+  return (
+    <span
+      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 cursor-help"
+      title={mcpStatus.reason ?? 'MCP non disponibile — analisi con prompt completo'}
+    >
+      Fallback
+    </span>
+  )
 }

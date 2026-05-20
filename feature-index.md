@@ -33,4 +33,5 @@ Track every deliverable here using explicit prefixes:
 | 23  | FT-14B  | Agent Sessions end-to-end per analisi bug con Claude/Codex/Copilot                                                                     | Complete |
 | 24  | fix-02  | Allineamento Copilot SDK runner: BYOK base URL, permessi read-only e risoluzione nativa del Copilot CLI con fallback Electron (FT-14B) | Complete |
 | 25  | fix-03  | Visibilità del modello agente per Copilot SDK ed eliminazione del valore nascosto persistito (FT-14A, FT-14B)                          | Complete |
-| 26  | fix-04  | Aumento del timeout di attesa `session.idle` per Copilot SDK a 10 minuti (FT-14B)                                                     | Complete |
+| 26  | fix-04  | Aumento del timeout di attesa `session.idle` per Copilot SDK a 10 minuti (FT-14B)                                                      | Complete |
+| 27  | FT-14C  | Integrazione MCP Azure DevOps per sessioni agente con health check, fallback al prompt completo e badge stato MCP/Fallback             | Complete |

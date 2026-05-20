@@ -3,7 +3,7 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-18
+updated: 2026-05-20
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -15,6 +15,7 @@ sources:
     '[[wiki/sources/ft-13-closed-bugs-history]]',
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
+    '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [typescript, types, shared, domain-model, catalog, settings, agent]
@@ -103,6 +104,8 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | `AgentAbortPayload`     | Abort request: `{ sessionId }`                                          |
 | `AgentCompletedPayload` | Completion event: `{ sessionId, report }`                               |
 | `AgentErrorPayload`     | Error event: `{ sessionId, error }`                                     |
+| `McpStatus`             | Session-scoped MCP availability: `{ available, reason? }`               |
+| `AgentMcpStatusPayload` | Event payload for renderer MCP badge updates                            |
 
 _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]] and consumed by [[wiki/entities/use-settings-hook]].
 
@@ -145,6 +148,11 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `SessionMode` already reserves `'fix'` for future work even though FT-14B currently supports only `analyze`.
 - `AgentChunk` exists so Claude, Codex, and Copilot can stream into one UI model despite very different native SDK event schemas.
 
+## FT-14C Notes
+
+- `McpStatus` formalizes the result of the session-start capability probe so the main process, preload bridge, and renderer all share the same availability/fallback contract.
+- `AgentMcpStatusPayload` keeps MCP feedback event-based and session-scoped instead of overloading the chunk stream with transport details.
+
 ## Cancellation Notes
 
 - `ErrorCode` now includes `OPERATION_CANCELLED` so intentional user aborts can be distinguished from `LLM_TIMEOUT`.
@@ -157,5 +165,6 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - [[wiki/entities/project-registry]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]
