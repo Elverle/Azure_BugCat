@@ -36,7 +36,13 @@ describe('SessionsPanel', () => {
         session={makeSession({
           status: 'completed',
           completedAt: '2026-01-01T10:05:00Z',
-          report: 'Root cause found in module X'
+          report: 'Root cause found in module X',
+          usage: {
+            inputTokens: 120,
+            outputTokens: 30,
+            totalTokens: 150,
+            model: 'claude-sonnet-4.5'
+          }
         })}
         mcpStatus={null}
         onAbort={vi.fn()}
@@ -44,6 +50,26 @@ describe('SessionsPanel', () => {
     )
     expect(screen.getByText('Completata')).toBeInTheDocument()
     expect(screen.getByText('Root cause found in module X')).toBeInTheDocument()
+    expect(screen.getByText('Statistiche')).toBeInTheDocument()
+    expect(screen.getByText('150')).toBeInTheDocument()
+    expect(screen.getByText('claude-sonnet-4.5')).toBeInTheDocument()
+  })
+
+  it('renders fallback text when usage metrics are not available', () => {
+    render(
+      <SessionsPanel
+        session={makeSession({
+          status: 'aborted',
+          completedAt: '2026-01-01T10:03:00Z'
+        })}
+        mcpStatus={null}
+        onAbort={vi.fn()}
+      />
+    )
+
+    expect(
+      screen.getByText('Metriche token non disponibili per questa sessione.')
+    ).toBeInTheDocument()
   })
 
   it('renders aborted state with badge', () => {

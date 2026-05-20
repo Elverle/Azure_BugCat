@@ -7,7 +7,8 @@ updated: 2026-05-20
 sources:
 	[
 		'[[wiki/sources/ft-14b-agent-sessions]]',
-		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]'
+		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
+		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]'
 	]
 tags: [react, hook, agent, ipc, reconnect]
 lang: en
@@ -15,7 +16,7 @@ lang: en
 
 ## Description
 
-Renderer hook that manages the FT-14B agent session view-model. It reconnects to an existing main-process session on mount, subscribes to streamed IPC events, exposes start/abort/clear actions, and preserves structured IPC error codes instead of flattening every failure into a generic message.
+Renderer hook that manages the FT-14B agent session view-model. It reconnects to an existing main-process session on mount, subscribes to streamed IPC events, exposes start/abort/clear actions, preserves provider usage metrics on completion, and preserves structured IPC error codes instead of flattening every failure into a generic message.
 
 ## Location
 
@@ -23,13 +24,13 @@ Renderer hook that manages the FT-14B agent session view-model. It reconnects to
 
 ## Returned API
 
-| Field / Method                          | Purpose                                                |
-| --------------------------------------- | ------------------------------------------------------ |
-| `session`                               | Current `AgentSession` or `null`                       |
-| `mcpStatus`                             | Current session MCP availability/fallback metadata     |
-| `startSession(bugId, primaryProjectId)` | Starts an FT-14B analyze session                       |
-| `abortSession()`                        | Aborts the current running session                     |
-| `clearSession()`                        | Clears renderer-local state and forgets the session ID |
+| Field / Method                                                | Purpose                                                |
+| ------------------------------------------------------------- | ------------------------------------------------------ |
+| `session`                                                     | Current `AgentSession` or `null`                       |
+| `mcpStatus`                                                   | Current session MCP availability/fallback metadata     |
+| `startSession(bugId, primaryProjectId, secondaryProjectIds?)` | Starts an FT-14B/FT-14D analyze session                |
+| `abortSession()`                                              | Aborts the current running session                     |
+| `clearSession()`                                              | Clears renderer-local state and forgets the session ID |
 
 ## Key Behaviors
 
@@ -37,7 +38,10 @@ Renderer hook that manages the FT-14B agent session view-model. It reconnects to
 - Stores the authoritative session ID in a ref and filters incoming chunk/completed/error events against that ID.
 - Subscribes to `onAgentMcpStatus()` and stores the per-session `McpStatus` alongside the live session snapshot.
 - Appends chunks only while the local session is still `running`.
+- Mirrors the main-process 500-chunk cap locally so reconnect state and streamed UI state stay aligned.
+- Copies `usage` from `agent:completed` into the local `AgentSession`, making token statistics available to the Sessions workspace immediately after completion.
 - Creates a local optimistic `running` session immediately after `agentStart()` returns `{ sessionId, agentProvider, mcpStatus }`.
+- Persists the selected `secondaryProjectIds` into that optimistic session so the renderer model matches the main-process snapshot shape.
 - Applies the returned `mcpStatus` immediately before waiting for the separate IPC event so the renderer does not race the badge state against `agent:start` resolution.
 - Preserves `err.code` from rejected IPC invocations when available; only falls back to heuristic mapping when the invoke error does not carry a structured code.
 - Marks completed, aborted, and error transitions locally so the UI reacts immediately.
@@ -53,5 +57,6 @@ Renderer hook that manages the FT-14B agent session view-model. It reconnects to
 - [[wiki/entities/sessions-panel]]
 - [[wiki/entities/dashboard-page]]
 - [[wiki/concepts/streaming-agent-session-ipc]]
+- [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/agent-analysis-sessions]]

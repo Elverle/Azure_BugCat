@@ -1,11 +1,25 @@
-import type { AgentRunner, RunParams } from '../types'
+import type { AgentRunner, AgentRunResult, RunParams } from '../types'
+import type { AgentUsageStats } from '@shared/types'
 import { encodePat } from '../mcp-config-writer'
+import { mergeAgentUsage, toFiniteNumber } from '../usage'
+
+function normalizeCodexUsage(rawUsage: unknown, model?: string): AgentUsageStats | undefined {
+  const usage = rawUsage as Record<string, unknown> | undefined
+
+  return mergeAgentUsage(undefined, {
+    inputTokens: toFiniteNumber(usage?.input_tokens),
+    outputTokens: toFiniteNumber(usage?.output_tokens),
+    cacheReadTokens: toFiniteNumber(usage?.cached_input_tokens),
+    reasoningTokens: toFiniteNumber(usage?.reasoning_output_tokens),
+    model
+  })
+}
 
 export class CodexSDKRunner implements AgentRunner {
   readonly supportsFixMode = false
   readonly supportsMcp = true
 
-  async run(params: RunParams): Promise<string> {
+  async run(params: RunParams): Promise<AgentRunResult> {
     const { Codex } = await import('@openai/codex-sdk')
 
     // Set MCP env var so the spawned process can authenticate with Azure DevOps MCP server.
@@ -29,6 +43,7 @@ export class CodexSDKRunner implements AgentRunner {
       })
 
       let report = ''
+      let usage: AgentUsageStats | undefined
       const { events } = await thread.runStreamed(params.prompt)
 
       for await (const event of events) {
@@ -68,10 +83,14 @@ export class CodexSDKRunner implements AgentRunner {
           eventType.includes('finish')
         ) {
           report = (event as any).finalResponse ?? (event as any).content ?? report
+          usage = mergeAgentUsage(
+            usage,
+            normalizeCodexUsage((event as any).usage, params.model ?? 'codex-mini-latest')
+          )
         }
       }
 
-      return report
+      return { report, usage }
     } finally {
       if (mcpEnvSet) {
         if (previousPatValue === undefined) {

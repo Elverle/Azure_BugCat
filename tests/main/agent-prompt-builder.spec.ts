@@ -117,3 +117,78 @@ describe('buildMcpPrompt', () => {
     expect(result).not.toContain('## Architecture Context')
   })
 })
+
+const secondaryProjects: ProjectEntry[] = [
+  {
+    id: 'proj-2',
+    name: 'hotel-api',
+    path: '/Users/dev/hotel-api',
+    type: 'backend',
+    description: 'Hotel backend API',
+    keywords: ['hotel', 'api']
+  },
+  {
+    id: 'proj-3',
+    name: 'hotel-common',
+    path: '/Users/dev/hotel-common',
+    type: 'shared',
+    description: '',
+    keywords: ['shared']
+  }
+]
+
+describe('buildAnalyzePrompt — secondary projects', () => {
+  it('includes secondary projects section when provided', () => {
+    const result = buildAnalyzePrompt(mockBug, mockProject, '', secondaryProjects)
+    expect(result).toContain('## Secondary Projects (read-only context)')
+    expect(result).toContain('hotel-api')
+    expect(result).toContain('/Users/dev/hotel-api')
+    expect(result).toContain('backend')
+    expect(result).toContain('Hotel backend API')
+  })
+
+  it('omits secondary projects section when undefined', () => {
+    const result = buildAnalyzePrompt(mockBug, mockProject, '')
+    expect(result).not.toContain('## Secondary Projects')
+  })
+
+  it('omits secondary projects section when empty array', () => {
+    const result = buildAnalyzePrompt(mockBug, mockProject, '', [])
+    expect(result).not.toContain('## Secondary Projects')
+  })
+
+  it('shows (nessuna descrizione) for project with empty description', () => {
+    const result = buildAnalyzePrompt(mockBug, mockProject, '', secondaryProjects)
+    expect(result).toContain('(nessuna descrizione)')
+  })
+
+  it('contains read-only warning', () => {
+    const result = buildAnalyzePrompt(mockBug, mockProject, '', secondaryProjects)
+    expect(result).toContain('do NOT modify files')
+  })
+})
+
+describe('buildMcpPrompt — secondary projects', () => {
+  it('includes secondary projects section when provided', () => {
+    const result = buildMcpPrompt(123, mockProject, '', undefined, undefined, secondaryProjects)
+    expect(result).toContain('## Secondary Projects (read-only context)')
+    expect(result).toContain('hotel-api')
+    expect(result).toContain('/Users/dev/hotel-api')
+  })
+
+  it('omits secondary projects section when undefined', () => {
+    const result = buildMcpPrompt(123, mockProject, '')
+    expect(result).not.toContain('## Secondary Projects')
+  })
+
+  it('omits secondary projects section when empty array', () => {
+    const result = buildMcpPrompt(123, mockProject, '', undefined, undefined, [])
+    expect(result).not.toContain('## Secondary Projects')
+  })
+
+  it('table contains all secondary projects', () => {
+    const result = buildMcpPrompt(123, mockProject, '', undefined, undefined, secondaryProjects)
+    expect(result).toContain('hotel-api')
+    expect(result).toContain('hotel-common')
+  })
+})

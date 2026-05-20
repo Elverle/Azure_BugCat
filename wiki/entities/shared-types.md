@@ -16,6 +16,7 @@ sources:
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
+    '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [typescript, types, shared, domain-model, catalog, settings, agent]
@@ -93,19 +94,27 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Agent sessions
 
-| Type                    | Purpose                                                                 |
-| ----------------------- | ----------------------------------------------------------------------- |
-| `SessionMode`           | Session intent union, currently `'analyze' \| 'fix'`                    |
-| `AgentChunkType`        | Chunk classification: `text`, `tool_use`, `tool_result`, `status`       |
-| `AgentChunk`            | Streamed renderer-facing log event with `sessionId`, text, and metadata |
-| `AgentSessionStatus`    | Session state union: `running`, `completed`, `aborted`, `error`         |
-| `AgentSession`          | Full FT-14B live session snapshot                                       |
-| `AgentStartPayload`     | Start request: `{ bugId, mode, primaryProjectId }`                      |
-| `AgentAbortPayload`     | Abort request: `{ sessionId }`                                          |
-| `AgentCompletedPayload` | Completion event: `{ sessionId, report }`                               |
-| `AgentErrorPayload`     | Error event: `{ sessionId, error }`                                     |
-| `McpStatus`             | Session-scoped MCP availability: `{ available, reason? }`               |
-| `AgentMcpStatusPayload` | Event payload for renderer MCP badge updates                            |
+| Type                    | Purpose                                                                                                     |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `SessionMode`           | Session intent union, currently `'analyze' \| 'fix'`                                                        |
+| `AgentChunkType`        | Chunk classification: `text`, `tool_use`, `tool_result`, `status`                                           |
+| `AgentChunk`            | Streamed renderer-facing log event with `sessionId`, text, and metadata                                     |
+| `AgentSessionStatus`    | Session state union: `running`, `completed`, `aborted`, `error`                                             |
+| `AgentUsageStats`       | Provider-normalized usage snapshot with token counts, optional cache/reasoning metrics, duration, and model |
+| `AgentSession`          | Full FT-14 live session snapshot, now including optional `secondaryProjectIds` and `usage`                  |
+| `AgentStartPayload`     | Start request: `{ bugId, mode, primaryProjectId, secondaryProjectIds? }`                                    |
+| `AgentAbortPayload`     | Abort request: `{ sessionId }`                                                                              |
+| `AgentCompletedPayload` | Completion event: `{ sessionId, report, usage? }`                                                           |
+| `AgentErrorPayload`     | Error event: `{ sessionId, error }`                                                                         |
+| `McpStatus`             | Session-scoped MCP availability: `{ available, reason? }`                                                   |
+| `AgentMcpStatusPayload` | Event payload for renderer MCP badge updates                                                                |
+
+### Project-suggestion preflight
+
+| Type                       | Purpose                                                                |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `ProjectSuggestionPayload` | FT-14D request payload: `{ bugId, primaryOverride? }`                  |
+| `ProjectSuggestion`        | FT-14D response payload: `{ primaryProjectId, suggestedSecondaryIds }` |
 
 _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]] and consumed by [[wiki/entities/use-settings-hook]].
 
@@ -153,6 +162,17 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `McpStatus` formalizes the result of the session-start capability probe so the main process, preload bridge, and renderer all share the same availability/fallback contract.
 - `AgentMcpStatusPayload` keeps MCP feedback event-based and session-scoped instead of overloading the chunk stream with transport details.
 
+## FT-14D Notes
+
+- `AgentSession.secondaryProjectIds` lets reconnecting renderers and session viewers preserve the cross-repo selection that started the run.
+- `AgentStartPayload.secondaryProjectIds` keeps secondary repo choice explicit instead of inferring it later from prompt text.
+- `ProjectSuggestionPayload` and `ProjectSuggestion` formalize the suggestion IPC contract so the renderer does not need to understand the heuristic implementation.
+
+## min-08 Notes
+
+- `AgentUsageStats` normalizes provider-specific usage payloads into one renderer-safe shape so Claude, Codex, and Copilot can all feed the same statistics view.
+- `AgentCompletedPayload.usage` keeps token metrics tied to the same session-completion event that already delivers the final report, avoiding a second IPC round trip.
+
 ## Cancellation Notes
 
 - `ErrorCode` now includes `OPERATION_CANCELLED` so intentional user aborts can be distinguished from `LLM_TIMEOUT`.
@@ -165,6 +185,7 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - [[wiki/entities/project-registry]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

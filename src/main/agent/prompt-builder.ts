@@ -1,11 +1,33 @@
 import type { CategorizedBug, ProjectEntry } from '@shared/types'
 
+function escapeTableCell(text: string): string {
+  return text.replace(/\|/g, '\\|').replace(/\n/g, ' ').replace(/\r/g, '')
+}
+
+function buildSecondaryProjectsSection(secondaryProjects: ProjectEntry[]): string {
+  const rows = secondaryProjects
+    .map(
+      (p) =>
+        `| ${escapeTableCell(p.name)} | ${escapeTableCell(p.path)} | ${escapeTableCell(p.type)} | ${escapeTableCell(p.description || '(nessuna descrizione)')} |`
+    )
+    .join('\n')
+
+  return `## Secondary Projects (read-only context)
+
+If relevant, you may read files from these secondary projects for additional context. These are read-only references — do NOT modify files in these paths.
+
+| Project | Path | Type | Description |
+|---------|------|------|-------------|
+${rows}`
+}
+
 export function buildMcpPrompt(
   bugId: number,
   project: ProjectEntry,
   architectureContext: string,
   orgUrl?: string,
-  projectName?: string
+  projectName?: string,
+  secondaryProjects?: ProjectEntry[]
 ): string {
   const sections: string[] = []
 
@@ -29,9 +51,14 @@ export function buildMcpPrompt(
 ${architectureContext.trim()}`)
   }
 
+  if (secondaryProjects && secondaryProjects.length > 0) {
+    sections.push(buildSecondaryProjectsSection(secondaryProjects))
+  }
+
   sections.push(`## Your Task
 
-1. Fetch complete bug details using MCP Azure DevOps tools (work item #${bugId})
+1. Fetch complete bug details using MCP Azure DevOps tools (work item #${bugId}, use always the DevOps Project), including description, comments, history, but not images or attachments.
+Summarize the key information relevant for root-cause analysis.
 2. Read relevant source files to understand the codebase structure
 3. Identify the likely root cause of the bug
 4. List the affected components/files
@@ -46,7 +73,8 @@ Focus on actionable insights. Use the project type (${project.type}) and descrip
 export function buildAnalyzePrompt(
   bug: CategorizedBug,
   project: ProjectEntry,
-  architectureContext: string
+  architectureContext: string,
+  secondaryProjects?: ProjectEntry[]
 ): string {
   const sections: string[] = []
 
@@ -86,6 +114,10 @@ ${bug.description || '(nessuna descrizione)'}`)
     sections.push(`## Architecture Context
 
 ${architectureContext.trim()}`)
+  }
+
+  if (secondaryProjects && secondaryProjects.length > 0) {
+    sections.push(buildSecondaryProjectsSection(secondaryProjects))
   }
 
   sections.push(`## Your Task

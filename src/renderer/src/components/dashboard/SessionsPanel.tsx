@@ -10,10 +10,11 @@ import {
   Bot,
   Terminal,
   FileText,
+  BarChart3,
   ChevronDown,
   ChevronUp
 } from 'lucide-react'
-import type { AgentSession, AgentChunk, McpStatus } from '@shared/types'
+import type { AgentSession, AgentChunk, AgentUsageStats, McpStatus } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
 
 interface SessionsPanelProps {
@@ -26,6 +27,7 @@ export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProp
   const logEndRef = useRef<HTMLDivElement>(null)
   const [logOpen, setLogOpen] = useState(true)
   const [reportOpen, setReportOpen] = useState(true)
+  const [statsOpen, setStatsOpen] = useState(true)
 
   // Auto-scroll to bottom when new chunks arrive
   useEffect(() => {
@@ -144,8 +146,87 @@ export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProp
           )}
         </div>
       )}
+
+      {session.status !== 'running' && (
+        <div
+          className={
+            session.status === 'completed' && session.report ? 'border-t border-gray-100' : ''
+          }
+        >
+          <button
+            type="button"
+            onClick={() => setStatsOpen((v) => !v)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-blue-50 hover:bg-blue-100 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-2">
+              <BarChart3 size={14} className="text-blue-600" />
+              <span className="text-xs font-semibold text-blue-700 uppercase tracking-wider">
+                Statistiche
+              </span>
+            </div>
+            {statsOpen ? (
+              <ChevronUp size={14} className="text-blue-400" />
+            ) : (
+              <ChevronDown size={14} className="text-blue-400" />
+            )}
+          </button>
+          {statsOpen && <SessionUsagePanel usage={session.usage} />}
+        </div>
+      )}
     </div>
   )
+}
+
+function SessionUsagePanel({ usage }: { usage?: AgentUsageStats }): JSX.Element {
+  if (!usage) {
+    return (
+      <div className="p-4 text-sm text-gray-500 italic">
+        Metriche token non disponibili per questa sessione.
+      </div>
+    )
+  }
+
+  const items = [
+    { label: 'Token totali', value: formatMetric(usage.totalTokens) },
+    { label: 'Input', value: formatMetric(usage.inputTokens) },
+    { label: 'Output', value: formatMetric(usage.outputTokens) },
+    { label: 'Cache read', value: formatMetric(usage.cacheReadTokens) },
+    { label: 'Cache write', value: formatMetric(usage.cacheWriteTokens) },
+    { label: 'Reasoning', value: formatMetric(usage.reasoningTokens) },
+    { label: 'Durata', value: formatDuration(usage.durationMs) },
+    { label: 'Modello', value: usage.model ?? 'n/d' }
+  ]
+
+  return (
+    <div className="p-4 bg-white">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {items.map((item) => (
+          <div key={item.label} className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+            <div className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+              {item.label}
+            </div>
+            <div className="mt-1 text-sm font-semibold text-gray-900">{item.value}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function formatMetric(value: number | undefined): string {
+  return value === undefined ? 'n/d' : value.toLocaleString('it-IT')
+}
+
+function formatDuration(value: number | undefined): string {
+  if (value === undefined) {
+    return 'n/d'
+  }
+
+  if (value < 1000) {
+    return `${value} ms`
+  }
+
+  return `${(value / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} s`
 }
 
 function SessionStatusBadge({ status }: { status: AgentSession['status'] }): JSX.Element {

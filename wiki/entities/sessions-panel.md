@@ -7,7 +7,8 @@ updated: 2026-05-20
 sources:
 	[
 		'[[wiki/sources/ft-14b-agent-sessions]]',
-		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]'
+		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
+		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]'
 	]
 tags: [react, component, dashboard, agent, markdown, logs]
 lang: en
@@ -15,7 +16,7 @@ lang: en
 
 ## Description
 
-Dashboard component that renders the FT-14B agent-session experience. It shows the empty state, running status and abort action, error messaging, an accordion log of streamed chunks, and a Markdown-rendered final report after completion.
+Dashboard component that renders the FT-14B agent-session experience. It shows the empty state, running status and abort action, error messaging, an accordion log of streamed chunks, a Markdown-rendered final report after completion, and a dedicated `Statistiche` section for provider token usage when the runner exposes it.
 
 ## Location
 
@@ -36,7 +37,9 @@ Dashboard component that renders the FT-14B agent-session experience. It shows t
 - Auto-scrolls the log viewport to the newest chunk while the log accordion is open.
 - Renders chunk types with distinct visual treatment for plain text, tool calls, tool results, and status updates.
 - Renders the final report through `react-markdown` + `remark-gfm` inside Tailwind Typography `prose` styles.
-- Uses two accordions so long log streams and the final report can be expanded independently.
+- Renders a third accordion-like `Statistiche` section after the report for completed/error/aborted sessions, showing input/output/total tokens and related provider metrics when available.
+- Falls back to a readable `Metriche token non disponibili` state when a provider does not expose usage data for the finished run.
+- Uses independent accordion state so long log streams, the final report, and the statistics area can be expanded independently.
 - Uses an inline `McpStatusBadge` helper: green `MCP` for successful FT-14C runs, amber `Fallback` with a tooltip reason when the session degraded to the full prompt path.
 
 ## Dependencies

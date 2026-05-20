@@ -39,7 +39,7 @@ import {
   type GroupBy
 } from '@renderer/lib/dashboard-utils'
 import { cn } from '@renderer/lib/utils'
-import type { AppSettings, CategorizedBug } from '@shared/types'
+import type { AppSettings, CategorizedBug, ProjectEntry } from '@shared/types'
 
 type ViewMode = 'table' | 'card' | 'similarity' | 'sessions'
 
@@ -85,8 +85,7 @@ export function DashboardPage(): JSX.Element {
     orgUrl: '',
     projectName: ''
   })
-  const [projects, setProjects] = useState<Array<{ id: string; name: string; path: string }>>([])
-
+  const [projects, setProjects] = useState<ProjectEntry[]>([])
   // Computed values
   const filteredBugs = useMemo(
     () => filterBugs(bugs, { ...filterState, searchText }),
@@ -164,7 +163,7 @@ export function DashboardPage(): JSX.Element {
       if (settings) {
         setAdoSettings({ orgUrl: settings.orgUrl, projectName: settings.projectName })
         if (settings.projects) {
-          setProjects(settings.projects.map((p) => ({ id: p.id, name: p.name, path: p.path })))
+          setProjects(settings.projects)
         }
       }
     })
@@ -229,8 +228,8 @@ export function DashboardPage(): JSX.Element {
   }, [selectedBug, adoSettings, adoLinkEnabled])
 
   const handleAnalyze = useCallback(
-    async (bugId: number, projectId: string) => {
-      await startSession(bugId, projectId)
+    async (bugId: number, projectId: string, secondaryProjectIds: string[]) => {
+      await startSession(bugId, projectId, secondaryProjectIds)
       setViewMode('sessions')
     },
     [startSession]

@@ -1,14 +1,35 @@
-import type { AgentRunner, RunParams } from '../types'
+import type { AgentRunner, AgentRunResult, RunParams } from '../types'
+import type { AgentUsageStats } from '@shared/types'
 import { encodePat } from '../mcp-config-writer'
+import { mergeAgentUsage, toFiniteNumber } from '../usage'
+
+function normalizeClaudeUsage(rawUsage: unknown, model?: string): AgentUsageStats | undefined {
+  const usage = rawUsage as Record<string, unknown> | undefined
+
+  return mergeAgentUsage(undefined, {
+    inputTokens: toFiniteNumber(usage?.input_tokens ?? usage?.inputTokens),
+    outputTokens: toFiniteNumber(usage?.output_tokens ?? usage?.outputTokens),
+    cacheReadTokens: toFiniteNumber(
+      usage?.cache_read_input_tokens ?? usage?.cacheReadTokens ?? usage?.cacheReadInputTokens
+    ),
+    cacheWriteTokens: toFiniteNumber(
+      usage?.cache_creation_input_tokens ??
+        usage?.cacheWriteTokens ??
+        usage?.cacheCreationInputTokens
+    ),
+    model
+  })
+}
 
 export class ClaudeSDKRunner implements AgentRunner {
   readonly supportsFixMode = false
   readonly supportsMcp = true
 
-  async run(params: RunParams): Promise<string> {
+  async run(params: RunParams): Promise<AgentRunResult> {
     const { query } = await import('@anthropic-ai/claude-agent-sdk')
 
     let report = ''
+    let usage: AgentUsageStats | undefined
 
     // The SDK expects AbortController, not AbortSignal — create a linked one
     const ac = new AbortController()
@@ -65,6 +86,13 @@ export class ClaudeSDKRunner implements AgentRunner {
         } else if (msg.type === 'assistant') {
           // The SDK wraps the API response in msg.message
           const apiMessage = msg.message
+          usage = mergeAgentUsage(
+            usage,
+            normalizeClaudeUsage(
+              apiMessage?.usage,
+              typeof msg.model === 'string' ? msg.model : params.model
+            )
+          )
           const contentBlocks = Array.isArray(apiMessage?.content) ? apiMessage.content : []
 
           for (const block of contentBlocks) {
@@ -110,6 +138,15 @@ export class ClaudeSDKRunner implements AgentRunner {
           }
         } else if (msg.type === 'result') {
           report = typeof msg.result === 'string' ? msg.result : JSON.stringify(msg.result)
+          usage = mergeAgentUsage(
+            usage,
+            normalizeClaudeUsage(
+              typeof msg.result === 'object' && msg.result !== null
+                ? (msg.result as any).usage
+                : undefined,
+              params.model
+            )
+          )
           params.onChunk({
             sessionId: '',
             type: 'status',
@@ -119,7 +156,7 @@ export class ClaudeSDKRunner implements AgentRunner {
         }
       }
 
-      return report
+      return { report, usage }
     } finally {
       params.abortSignal.removeEventListener('abort', onExternalAbort)
     }

@@ -14,6 +14,7 @@ sources:
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
+    '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -55,6 +56,7 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 | `openExternal(url)`              | `shell:open-external`           | invoke                   |
 | `checkAgentBinary()`             | `agent:check-binary`            | invoke                   |
 | `selectDirectory()`              | `agent:select-directory`        | invoke                   |
+| `agentSuggestProjects(payload)`  | `agent:suggest-projects`        | invoke                   |
 | `agentStart(payload)`            | `agent:start`                   | invoke                   |
 | `agentAbort(payload)`            | `agent:abort`                   | invoke                   |
 | `agentGetSession()`              | `agent:get-session`             | invoke                   |
@@ -92,6 +94,7 @@ declare global {
 - The status method is read-only and window-scoped: the renderer can query whether its own categorization is still active without receiving access to the controller itself.
 - FT-14A keeps privileged binary and filesystem actions in the same narrow bridge style: the renderer can request a fixed CLI check, a directory picker, and path validation, but cannot access `fs` or spawn arbitrary commands directly.
 - FT-14B follows the same pattern for agent sessions: the renderer cannot instantiate SDK clients or subscribe to arbitrary IPC channels, only to the dedicated chunk/completed/error/MCP-status streams exposed here.
+- FT-14D keeps project suggestions inside that same explicit boundary: the renderer can ask for a recommendation, but the heuristic and store/session access stay in the main process.
 
 ## See also
 
@@ -99,10 +102,12 @@ declare global {
 - [[wiki/entities/ipc-channels]] — channel constant definitions
 - [[wiki/entities/project-registry]]
 - [[wiki/entities/use-agent-session-hook]]
+- [[wiki/entities/analyze-start-panel]]
 - [[wiki/entities/open-external-ipc]]
 - [[wiki/entities/use-ai-cluster-hook]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/electron-architecture]]

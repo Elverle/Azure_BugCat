@@ -2,8 +2,9 @@
 title: 'Single Active Agent Session Lifecycle'
 type: concept
 created: 2026-05-18
-updated: 2026-05-18
-sources: ['[[wiki/sources/ft-14b-agent-sessions]]']
+updated: 2026-05-20
+sources:
+	['[[wiki/sources/ft-14b-agent-sessions]]', '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]']
 tags: [agent, session, lifecycle, abort, main-process]
 lang: en
 ---
@@ -17,7 +18,9 @@ FT-14B intentionally models agent execution as a single active main-process sess
 - At most one session can be `running`.
 - A finished `completed`, `aborted`, or `error` session is auto-cleared the next time a new session starts.
 - `abort()` only succeeds when both the session ID matches and the current status is still `running`.
+- The live session snapshot keeps the selected primary project plus optional `secondaryProjectIds` so reconnect behavior stays deterministic.
 - Provider callbacks are accepted only if they still belong to the active session ID.
+- Secondary-repository provenance is attached at chunk-ingest time, not reconstructed later from stored prompt text.
 - Stored chunks are capped at 500 entries, evicting the oldest first.
 
 ## Why This Shape
@@ -31,4 +34,5 @@ FT-14B intentionally models agent execution as a single active main-process sess
 
 - [[wiki/entities/agent-session-manager]]
 - [[wiki/entities/use-agent-session-hook]]
+- [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/agent-analysis-sessions]]

@@ -108,7 +108,12 @@ vi.mock('@main/agent', () => {
     SessionManager: MockSessionManager,
     createRunner: createRunnerMock,
     buildAnalyzePrompt: buildAnalyzePromptMock,
-    AgentNotConfiguredError
+    buildMcpPrompt: vi.fn().mockReturnValue('mcp-prompt'),
+    AgentNotConfiguredError,
+    writeMcpConfig: vi.fn().mockResolvedValue(undefined),
+    checkMcpHealth: vi.fn().mockResolvedValue({ available: false, reason: 'test' }),
+    selectPrimaryProject: vi.fn().mockReturnValue(null),
+    suggestSecondaryProjects: vi.fn().mockReturnValue([])
   }
 })
 

@@ -41,6 +41,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 14  | FT-14A | Agent Configuration & Project Registry                      | Done   |
 | 15  | FT-14B | Agent Sessions end-to-end per analisi bug                   | Done   |
 | 16  | FT-14C | MCP Azure DevOps integration con fallback per agent session | Done   |
+| 17  | FT-14D | Analisi cross-repo e suggerimento progetti                  | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -62,6 +63,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-14a-agent-configuration-project-registry]] — FT-14A settings foundation for agent-provider derivation, project registry, architecture context, save-time sanitization, and schema v4 backfill (2026-05-17)
 - [[wiki/sources/ft-14b-agent-sessions]] — FT-14B agent sessions: single-bug analyze runs with SDK-backed streaming logs, reconnect, abort, and Markdown reports (2026-05-18)
 - [[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]] — FT-14C MCP-backed Azure DevOps fetch for agent sessions with health check, prompt fallback, and UI status feedback (2026-05-20)
+- [[wiki/sources/ft-14d-cross-repo-project-suggestions]] — FT-14D cross-repo agent analysis: heuristic primary-project selection, optional secondary repos, conditional multi-repo prompts, and tagged secondary log provenance (2026-05-20)
 
 ## Entities
 
@@ -90,6 +92,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/use-settings-hook]] — Central settings state management hook (FT-02)
 - [[wiki/entities/validation-utils]] — Pure validation functions for settings fields (FT-02)
 - [[wiki/entities/project-registry]] — Persisted registry of local projects for future agent sessions (FT-14A)
+- [[wiki/entities/project-matcher]] — Pure heuristic scorer/suggester for FT-14D primary and secondary project recommendations (FT-14D)
 - [[wiki/entities/agent-session-manager]] — Main-process single-session lifecycle coordinator for agent runs (FT-14B)
 - [[wiki/entities/agent-runner-factory]] — Resolves settings into Claude, Codex, or Copilot SDK runners (FT-14B)
 - [[wiki/entities/agent-prompt-builder]] — Builds the single-project analysis prompt from bug, project, and architecture context (FT-14B)
@@ -126,6 +129,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/bug-table]] — Sortable 8-column bug table with keyboard-accessible headers and rows (FT-05)
 - [[wiki/entities/bug-card]] — Card renderer for grouped bug exploration with deterministic tinting (FT-05)
 - [[wiki/entities/bug-detail-drawer]] — Fixed right-side detail drawer with LLM reasoning, metadata, and prev/next navigation (FT-06)
+- [[wiki/entities/analyze-start-panel]] — Drawer sub-panel for FT-14D smart primary selection, secondary toggles, and analyze start state (FT-14D)
 - [[wiki/entities/ai-cluster-category-section]] — Collapsible per-category result section for AI Cluster (FT-10)
 - [[wiki/entities/similarity-group-card]] — Similarity score/reason card with clickable bug list (FT-10)
 - [[wiki/entities/catalog-merge-utility]] — Main-process utility for signature computation, catalog/session merge, selective categorization merge, and similarity lifecycle metadata (FT-12)
@@ -169,6 +173,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/concepts/streaming-agent-session-ipc]] — Hybrid invoke/event IPC pattern for reconnectable agent-session streams (FT-14B)
 - [[wiki/concepts/read-only-agent-analysis-sandboxing]] — Analyze-only provider constraints for early agent integration (FT-14B)
 - [[wiki/concepts/mcp-capability-probe-and-fallback]] — Session-start capability probe that prefers Azure DevOps MCP and degrades to the full embedded bug prompt when unavailable (FT-14C)
+- [[wiki/concepts/cross-repo-project-suggestion-heuristics]] — FT-14D rules for automatic primary-project scoring, secondary-project suggestion, and safe operator override (FT-14D)
 
 ## Topics
 
@@ -176,6 +181,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/topics/renderer-ui]] — React SPA: HashRouter routing, component tree, styling stack
 - [[wiki/topics/agent-session-configuration-foundation]] — Settings-driven foundation for future agent-session execution: provider derivation, project registry, architecture context, and concurrency limits
 - [[wiki/topics/agent-analysis-sessions]] — End-to-end bug analysis flow from drawer action to streamed session logs and final Markdown report
+- [[wiki/topics/cross-repo-agent-analysis]] — FT-14D extension of agent analysis with heuristic project preselection, optional secondary repos, and cross-repo prompt/log context
 - [[wiki/topics/mcp-backed-agent-analysis]] — Azure DevOps MCP-enhanced agent analysis flow with health check, runner-specific registration, and renderer fallback feedback
 - [[wiki/topics/llm-categorization-pipeline]] — End-to-end LLM categorization: IPC → chunking → provider → validation → progressive results
 - [[wiki/topics/ai-cluster-similar-bug-detection]] — End-to-end similar-bug detection: dashboard tab → session gate → IPC → per-category LLM analysis → persisted results

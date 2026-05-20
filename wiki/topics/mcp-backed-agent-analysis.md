@@ -6,7 +6,8 @@ updated: 2026-05-20
 sources:
   [
     '[[wiki/sources/ft-14b-agent-sessions]]',
-    '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]'
+    '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
+    '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]'
   ]
 tags: [agent, mcp, azure-devops, dashboard, fallback]
 lang: en
@@ -14,7 +15,7 @@ lang: en
 
 ## Overview
 
-FT-14C extends the general agent-session flow with a session-start decision about bug context acquisition. When the Azure DevOps MCP server is usable, the agent receives a short prompt and fetches live bug details through MCP tools. When it is not, BugCat falls back to the FT-14B prompt that embeds the bug data directly.
+FT-14C extends the general agent-session flow with a session-start decision about bug context acquisition. When the Azure DevOps MCP server is usable, the agent receives a short prompt and fetches live bug details through MCP tools. When it is not, BugCat falls back to the FT-14B prompt that embeds the bug data directly. FT-14D keeps that same branch, but both prompt variants can now carry optional secondary repositories as read-only context.
 
 ## End-to-End Flow
 
@@ -41,6 +42,7 @@ BugDetailDrawer
 
 - **MCP available**: runner receives MCP access, the prompt refers to bug ID plus MCP fetch instructions, and the session header shows `MCP`.
 - **Fallback**: runner starts without MCP-specific access, the prompt embeds the full bug payload, and the session header shows `Fallback` with the reason in a tooltip.
+- **Cross-repo context**: when FT-14D selects valid secondary projects, either prompt variant appends the same read-only `Secondary Projects` table.
 - **No session**: the Dashboard keeps the normal empty sessions state and does not show a status badge.
 
 ## Main Components
@@ -48,6 +50,7 @@ BugDetailDrawer
 - [[wiki/entities/mcp-health-check]]
 - [[wiki/entities/mcp-config-writer]]
 - [[wiki/entities/agent-prompt-builder]]
+- [[wiki/entities/project-matcher]]
 - [[wiki/entities/claude-sdk-runner]]
 - [[wiki/entities/codex-sdk-runner]]
 - [[wiki/entities/copilot-sdk-runner]]
@@ -57,5 +60,6 @@ BugDetailDrawer
 ## See also
 
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/concepts/mcp-capability-probe-and-fallback]]
 - [[wiki/concepts/read-only-agent-analysis-sandboxing]]

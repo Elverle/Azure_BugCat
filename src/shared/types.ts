@@ -190,16 +190,29 @@ export interface AgentChunk {
 
 export type AgentSessionStatus = 'running' | 'completed' | 'aborted' | 'error'
 
+export interface AgentUsageStats {
+  inputTokens?: number
+  outputTokens?: number
+  totalTokens?: number
+  cacheReadTokens?: number
+  cacheWriteTokens?: number
+  reasoningTokens?: number
+  durationMs?: number
+  model?: string
+}
+
 export interface AgentSession {
   id: string
   bugId: number
   mode: SessionMode
   primaryProjectId: string
+  secondaryProjectIds?: string[]
   agentProvider: AgentProviderType
   status: AgentSessionStatus
   startedAt: string
   completedAt?: string
   report?: string
+  usage?: AgentUsageStats
   error?: AppError
   chunks: AgentChunk[]
 }
@@ -208,6 +221,7 @@ export interface AgentStartPayload {
   bugId: number
   mode: SessionMode
   primaryProjectId: string
+  secondaryProjectIds?: string[]
 }
 
 export interface AgentAbortPayload {
@@ -217,6 +231,7 @@ export interface AgentAbortPayload {
 export interface AgentCompletedPayload {
   sessionId: string
   report: string
+  usage?: AgentUsageStats
 }
 
 export interface AgentErrorPayload {
@@ -232,4 +247,14 @@ export interface McpStatus {
 export interface AgentMcpStatusPayload {
   sessionId: string
   mcpStatus: McpStatus
+}
+
+export interface ProjectSuggestionPayload {
+  bugId: number
+  primaryOverride?: string
+}
+
+export interface ProjectSuggestion {
+  primaryProjectId: string | null
+  suggestedSecondaryIds: string[]
 }

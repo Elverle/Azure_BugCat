@@ -60,7 +60,8 @@ describe('useAgentSession', () => {
     expect(mockElectronAPI.agentStart).toHaveBeenCalledWith({
       bugId: 123,
       mode: 'analyze',
-      primaryProjectId: 'proj-1'
+      primaryProjectId: 'proj-1',
+      secondaryProjectIds: undefined
     })
     expect(result.current.session).not.toBeNull()
     expect(result.current.session?.status).toBe('running')
@@ -99,12 +100,21 @@ describe('useAgentSession', () => {
 
     act(() => {
       eventCallbacks['completed']?.forEach((cb) =>
-        cb({ sessionId: 'session-1', report: 'Bug found in auth module' })
+        cb({
+          sessionId: 'session-1',
+          report: 'Bug found in auth module',
+          usage: { inputTokens: 80, outputTokens: 20, totalTokens: 100 }
+        })
       )
     })
 
     expect(result.current.session?.status).toBe('completed')
     expect(result.current.session?.report).toBe('Bug found in auth module')
+    expect(result.current.session?.usage).toEqual({
+      inputTokens: 80,
+      outputTokens: 20,
+      totalTokens: 100
+    })
   })
 
   it('receiving onAgentError sets status to error', async () => {

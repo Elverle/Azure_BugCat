@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { SessionManager } from '@main/agent/session-manager'
-import type { AgentRunner, RunParams } from '@main/agent/types'
+import type { AgentRunResult, AgentRunner, RunParams } from '@main/agent/types'
 import type { AgentChunk, AppError } from '@shared/types'
 
 function flushPromises(): Promise<void> {
@@ -9,7 +9,7 @@ function flushPromises(): Promise<void> {
 
 function createMockRunner(
   options: {
-    resolveWith?: string
+    resolveWith?: AgentRunResult
     rejectWith?: Error
     onRun?: (params: RunParams) => void
   } = {}
@@ -20,7 +20,7 @@ function createMockRunner(
     run: vi.fn(async (params: RunParams) => {
       options.onRun?.(params)
       if (options.rejectWith) throw options.rejectWith
-      return options.resolveWith ?? 'Test report'
+      return options.resolveWith ?? { report: 'Test report' }
     })
   }
 }
@@ -143,7 +143,12 @@ describe('SessionManager', () => {
   })
 
   it('on runner completion: session transitions to completed and calls onCompleted', async () => {
-    const runner = createMockRunner({ resolveWith: 'Final report' })
+    const runner = createMockRunner({
+      resolveWith: {
+        report: 'Final report',
+        usage: { inputTokens: 120, outputTokens: 45, totalTokens: 165 }
+      }
+    })
     const onCompleted = vi.fn()
 
     const sessionId = manager.start(
@@ -163,7 +168,16 @@ describe('SessionManager', () => {
 
     expect(manager.getSession()?.status).toBe('completed')
     expect(manager.getSession()?.report).toBe('Final report')
-    expect(onCompleted).toHaveBeenCalledWith(sessionId, 'Final report')
+    expect(manager.getSession()?.usage).toEqual({
+      inputTokens: 120,
+      outputTokens: 45,
+      totalTokens: 165
+    })
+    expect(onCompleted).toHaveBeenCalledWith(sessionId, 'Final report', {
+      inputTokens: 120,
+      outputTokens: 45,
+      totalTokens: 165
+    })
   })
 
   it('on runner error: session transitions to error and calls onError', async () => {
@@ -217,13 +231,13 @@ describe('SessionManager', () => {
 
   it('ignores stale callbacks after abort and restart', async () => {
     // Start first session with a slow runner that we control
-    let resolveFirst!: (v: string) => void
+    let resolveFirst!: (v: AgentRunResult) => void
     const slowRunner: AgentRunner = {
       supportsFixMode: false,
       supportsMcp: false,
       run: vi.fn().mockImplementation(
         () =>
-          new Promise<string>((resolve) => {
+          new Promise<AgentRunResult>((resolve) => {
             resolveFirst = resolve
           })
       )
@@ -256,7 +270,7 @@ describe('SessionManager', () => {
     const fastRunner: AgentRunner = {
       supportsFixMode: false,
       supportsMcp: false,
-      run: vi.fn().mockResolvedValue('second report')
+      run: vi.fn().mockResolvedValue({ report: 'second report' })
     }
 
     const secondId = manager.start(
@@ -277,11 +291,11 @@ describe('SessionManager', () => {
     await flushPromises()
 
     // The completed callback should be called with the second session's id
-    expect(onCompleted).toHaveBeenCalledWith(secondId, 'second report')
+    expect(onCompleted).toHaveBeenCalledWith(secondId, 'second report', undefined)
     expect(manager.getSession()?.report).toBe('second report')
 
     // Resolve the first runner (stale callback) — should be ignored
-    resolveFirst('stale report')
+    resolveFirst({ report: 'stale report' })
     await flushPromises()
 
     // Session should still show second session data, not stale data
@@ -305,7 +319,7 @@ describe('SessionManager', () => {
             timestamp: new Date().toISOString()
           })
         }
-        return 'done'
+        return { report: 'done' }
       })
     }
 

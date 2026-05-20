@@ -14,6 +14,7 @@ sources:
 		'[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
 		'[[wiki/sources/ft-14b-agent-sessions]]',
 		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
+		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
 		'[[wiki/analyses/cancel-categorization-flow]]',
 		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
 	]
@@ -53,6 +54,7 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `OPEN_EXTERNAL`                 | `shell:open-external`           | Shell         |
 | `AGENT_CHECK_BINARY`            | `agent:check-binary`            | Agent         |
 | `AGENT_SELECT_DIRECTORY`        | `agent:select-directory`        | Agent         |
+| `AGENT_SUGGEST_PROJECTS`        | `agent:suggest-projects`        | Agent Session |
 | `AGENT_START`                   | `agent:start`                   | Agent Session |
 | `AGENT_ABORT`                   | `agent:abort`                   | Agent Session |
 | `AGENT_GET_SESSION`             | `agent:get-session`             | Agent Session |
@@ -78,6 +80,7 @@ export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
 - [[wiki/entities/open-external-ipc]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

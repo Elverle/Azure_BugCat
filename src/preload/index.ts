@@ -59,6 +59,8 @@ const electronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.PROJECTS_VALIDATE_PATHS, paths),
 
   // Agent Sessions
+  agentSuggestProjects: (payload: { bugId: number; primaryOverride?: string }) =>
+    ipcRenderer.invoke(IPC_CHANNELS.AGENT_SUGGEST_PROJECTS, payload),
   agentStart: (payload: unknown) => ipcRenderer.invoke(IPC_CHANNELS.AGENT_START, payload),
   agentAbort: (payload: unknown) => ipcRenderer.invoke(IPC_CHANNELS.AGENT_ABORT, payload),
   agentGetSession: () => ipcRenderer.invoke(IPC_CHANNELS.AGENT_GET_SESSION),

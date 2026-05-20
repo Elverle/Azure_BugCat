@@ -2,15 +2,43 @@ import { randomUUID } from 'crypto'
 import type {
   AgentSession,
   AgentChunk,
+  AgentUsageStats,
   AppError,
   SessionMode,
   AgentProviderType
 } from '@shared/types'
 import type { AgentRunner, RunParams } from './types'
 
+interface SecondaryProjectInfo {
+  name: string
+  path: string
+}
+
+/**
+ * Tags a chunk's content with the secondary project name if its content
+ * references a path under one of the secondary projects.
+ */
+export function tagSecondaryChunk(
+  chunk: AgentChunk,
+  secondaryProjects: SecondaryProjectInfo[]
+): AgentChunk {
+  if (chunk.type !== 'tool_result') return chunk
+
+  for (const project of secondaryProjects) {
+    if (chunk.content.includes(project.path)) {
+      return {
+        ...chunk,
+        content: `[secondary:${project.name}] ${chunk.content}`
+      }
+    }
+  }
+  return chunk
+}
+
 export class SessionManager {
   private currentSession: AgentSession | null = null
   private abortController: AbortController | null = null
+  private secondaryProjects: SecondaryProjectInfo[] = []
 
   getSession(): AgentSession | null {
     return this.currentSession
@@ -29,8 +57,10 @@ export class SessionManager {
     prompt: string,
     runParams: Omit<RunParams, 'prompt' | 'abortSignal' | 'onChunk'>,
     onChunk: (chunk: AgentChunk) => void,
-    onCompleted: (sessionId: string, report: string) => void,
-    onError: (sessionId: string, error: AppError) => void
+    onCompleted: (sessionId: string, report: string, usage?: AgentUsageStats) => void,
+    onError: (sessionId: string, error: AppError) => void,
+    secondaryProjectIds?: string[],
+    secondaryProjectInfos?: SecondaryProjectInfo[]
   ): string {
     // Auto-clear finished sessions so a new one can start
     if (this.currentSession && this.currentSession.status !== 'running') {
@@ -44,12 +74,14 @@ export class SessionManager {
 
     const sessionId = randomUUID()
     this.abortController = new AbortController()
+    this.secondaryProjects = secondaryProjectInfos ?? []
 
     this.currentSession = {
       id: sessionId,
       bugId,
       mode,
       primaryProjectId,
+      secondaryProjectIds: secondaryProjectIds ?? [],
       agentProvider,
       status: 'running',
       startedAt: new Date().toISOString(),
@@ -91,17 +123,18 @@ export class SessionManager {
     prompt: string,
     runParams: Omit<RunParams, 'prompt' | 'abortSignal' | 'onChunk'>,
     onChunk: (chunk: AgentChunk) => void,
-    onCompleted: (sessionId: string, report: string) => void,
+    onCompleted: (sessionId: string, report: string, usage?: AgentUsageStats) => void,
     onError: (sessionId: string, error: AppError) => void
   ): Promise<void> {
     try {
-      const report = await runner.run({
+      const result = await runner.run({
         ...runParams,
         prompt,
         abortSignal: controller.signal,
         onChunk: (chunk) => {
           if (this.currentSession?.id !== sessionId) return
-          const enrichedChunk: AgentChunk = { ...chunk, sessionId }
+          const taggedChunk = tagSecondaryChunk(chunk, this.secondaryProjects)
+          const enrichedChunk: AgentChunk = { ...taggedChunk, sessionId }
           // Cap stored chunks to prevent unbounded memory growth
           if (this.currentSession.chunks.length >= 500) {
             this.currentSession.chunks.shift()
@@ -114,8 +147,9 @@ export class SessionManager {
       if (this.currentSession?.id === sessionId && this.currentSession?.status === 'running') {
         this.currentSession.status = 'completed'
         this.currentSession.completedAt = new Date().toISOString()
-        this.currentSession.report = report
-        onCompleted(sessionId, report)
+        this.currentSession.report = result.report
+        this.currentSession.usage = result.usage
+        onCompleted(sessionId, result.report, result.usage)
       }
     } catch (err: unknown) {
       if (controller.signal.aborted) return

@@ -1,7 +1,9 @@
 import { createRequire } from 'node:module'
 
-import type { AgentRunner, RunParams } from '../types'
+import type { AgentRunner, AgentRunResult, RunParams } from '../types'
+import type { AgentUsageStats } from '@shared/types'
 import { resolveMcpServerPath, extractOrgName, encodePat } from '../mcp-config-writer'
+import { mergeAgentUsage, toFiniteNumber } from '../usage'
 
 const require = createRequire(import.meta.url)
 const COPILOT_SEND_AND_WAIT_TIMEOUT_MS = 10 * 60 * 1000
@@ -165,11 +167,24 @@ function normalizeCopilotError(error: unknown): Error {
   return error
 }
 
+function normalizeCopilotUsage(rawUsage: unknown): AgentUsageStats | undefined {
+  const usage = rawUsage as Record<string, unknown> | undefined
+
+  return mergeAgentUsage(undefined, {
+    inputTokens: toFiniteNumber(usage?.inputTokens),
+    outputTokens: toFiniteNumber(usage?.outputTokens),
+    cacheReadTokens: toFiniteNumber(usage?.cacheReadTokens),
+    cacheWriteTokens: toFiniteNumber(usage?.cacheWriteTokens),
+    durationMs: toFiniteNumber(usage?.duration),
+    model: typeof usage?.model === 'string' ? usage.model : undefined
+  })
+}
+
 export class CopilotSDKRunner implements AgentRunner {
   readonly supportsFixMode = false
   readonly supportsMcp = true
 
-  async run(params: RunParams): Promise<string> {
+  async run(params: RunParams): Promise<AgentRunResult> {
     const { CopilotClient } = await import('@github/copilot-sdk')
 
     const providerType = resolveCopilotProviderType(params.providerType)
@@ -185,6 +200,7 @@ export class CopilotSDKRunner implements AgentRunner {
     const client = new CopilotClient(buildCopilotClientOptions(params.primaryPath, !provider))
 
     let report = ''
+    let usage: AgentUsageStats | undefined
     let session:
       | {
           on: (eventName: string, handler: (event: any) => void) => void
@@ -254,6 +270,10 @@ export class CopilotSDKRunner implements AgentRunner {
           }
         })
 
+        session.on('assistant.usage', (event: any) => {
+          usage = mergeAgentUsage(usage, normalizeCopilotUsage(event.data))
+        })
+
         session.on('tool.execution_start', (event: any) => {
           const toolName = event.data?.toolName ?? event.data?.name ?? 'tool'
           const toolArgs = event.data?.arguments ?? event.data?.input ?? event.data ?? {}
@@ -318,7 +338,7 @@ export class CopilotSDKRunner implements AgentRunner {
           timestamp: new Date().toISOString()
         })
 
-        return report
+        return { report, usage }
       } finally {
         params.abortSignal.removeEventListener('abort', abortHandler)
         await session.disconnect?.().catch(() => {})

@@ -19,6 +19,7 @@ sources:
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
+    '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -47,6 +48,7 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 | `catalog:get-closed`            | ✅ Implemented | Reads `bugCatalog`, filters to entries with `closedAt !== null`, and returns that closed-only slice together with the latest `session.fetchedAt` plus `catalogMetadata.lastClearedAt` if available                                           |
 | `agent:check-binary`            | ✅ Implemented | Runs `codex --version` with a fixed argument list and returns `BinaryCheckResult` instead of throwing on missing CLI                                                                                                                         |
 | `agent:select-directory`        | ✅ Implemented | Opens an Electron directory picker and returns the selected folder path or `null`                                                                                                                                                            |
+| `agent:suggest-projects`        | ✅ Implemented | Validates the FT-14D payload, loads the current bug and project registry, computes the primary recommendation, and returns suggested secondary project IDs                                                                                   |
 | `agent:start`                   | ✅ Implemented | Resolves the current bug, selected FT-14A project, and settings, computes FT-14C MCP availability, builds the right prompt, starts the main-process session, emits `agent:mcp-status`, and returns `{ sessionId, agentProvider, mcpStatus }` |
 | `agent:abort`                   | ✅ Implemented | Aborts the active FT-14B session when the requested session ID still matches the running session                                                                                                                                             |
 | `agent:get-session`             | ✅ Implemented | Returns the current in-memory FT-14B session so renderer remounts can reconnect                                                                                                                                                              |
@@ -84,6 +86,8 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - `agent:start` currently rejects anything other than `mode === 'analyze'`, and FT-14C treats MCP setup failures as degradations, not fatal startup errors.
 - FT-14C writes only a placeholder token into `.mcp.json`; the live PAT is provided through process environment after encoding and never persisted in cleartext.
 - Copilot MCP configuration stays in-memory, so it does not mutate the selected repository on disk.
+- FT-14D validates `agent:suggest-projects` payloads defensively before touching session or settings state.
+- FT-14D resolves only secondary project IDs that still map to existing directories before passing `secondaryPaths` into a runner, so stale settings entries degrade safely instead of widening access.
 
 ## Event-Only Agent Session Channels
 
@@ -100,6 +104,7 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - [[wiki/entities/agent-session-manager]]
 - [[wiki/entities/agent-runner-factory]]
 - [[wiki/entities/agent-prompt-builder]]
+- [[wiki/entities/project-matcher]]
 - [[wiki/entities/mcp-health-check]]
 - [[wiki/entities/mcp-config-writer]]
 - [[wiki/entities/open-external-ipc]]
@@ -112,6 +117,7 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 - [[wiki/concepts/ipc-security-model]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/session-persistence-lifecycle]]

@@ -45,6 +45,7 @@ export const IPC_CHANNELS = {
   AGENT_START: 'agent:start',
   AGENT_ABORT: 'agent:abort',
   AGENT_GET_SESSION: 'agent:get-session',
+  AGENT_SUGGEST_PROJECTS: 'agent:suggest-projects',
   AGENT_CHUNK: 'agent:chunk',
   AGENT_COMPLETED: 'agent:completed',
   AGENT_ERROR: 'agent:error',

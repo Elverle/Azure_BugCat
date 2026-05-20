@@ -33,6 +33,8 @@ import {
   resolvePackagedCopilotCliPath
 } from '@main/agent/runners/copilot-sdk-runner'
 
+const sessionHandlers: Record<string, ((event: any) => void)[]> = {}
+
 beforeEach(() => {
   startMock.mockClear().mockResolvedValue(undefined)
   stopMock.mockClear().mockResolvedValue([])
@@ -40,8 +42,17 @@ beforeEach(() => {
   sendAndWaitMock.mockClear().mockResolvedValue({ data: { content: 'final report' } })
   disconnectMock.mockClear().mockResolvedValue(undefined)
   onMock.mockClear()
+  Object.keys(sessionHandlers).forEach((key) => {
+    sessionHandlers[key] = []
+  })
   createSessionMock.mockReset().mockResolvedValue({
-    on: onMock,
+    on: vi.fn((eventName: string, handler: (event: any) => void) => {
+      if (!sessionHandlers[eventName]) {
+        sessionHandlers[eventName] = []
+      }
+      sessionHandlers[eventName].push(handler)
+      onMock(eventName, handler)
+    }),
     sendAndWait: sendAndWaitMock,
     disconnect: disconnectMock
   })
@@ -49,7 +60,7 @@ beforeEach(() => {
 
 describe('resolvePackagedCopilotCliPath', () => {
   it('resolves the native Windows Copilot executable package when available', () => {
-    const resolvedPath = resolvePackagedCopilotCliPath('win32', 'x64', (moduleId) => {
+    const resolvedPath = resolvePackagedCopilotCliPath('win32', 'x64', (moduleId: string) => {
       expect(moduleId).toBe('@github/copilot-win32-x64')
       return 'C:/copilot/copilot.exe'
     })
@@ -103,7 +114,7 @@ describe('CopilotSDKRunner', () => {
   it('passes an explicit 10 minute timeout to sendAndWait', async () => {
     const runner = new CopilotSDKRunner()
 
-    const report = await runner.run({
+    const result = await runner.run({
       prompt: 'Analyze this bug',
       primaryPath: 'C:/repo',
       mode: 'analyze',
@@ -112,6 +123,42 @@ describe('CopilotSDKRunner', () => {
     })
 
     expect(sendAndWaitMock).toHaveBeenCalledWith({ prompt: 'Analyze this bug' }, 600000)
-    expect(report).toBe('final report')
+    expect(result.report).toBe('final report')
+  })
+
+  it('collects usage metrics from assistant.usage events', async () => {
+    sendAndWaitMock.mockImplementationOnce(async () => {
+      sessionHandlers['assistant.usage']?.forEach((handler) =>
+        handler({
+          data: {
+            inputTokens: 110,
+            outputTokens: 25,
+            cacheReadTokens: 10,
+            duration: 900,
+            model: 'gpt-4.1'
+          }
+        })
+      )
+
+      return { data: { content: 'final report' } }
+    })
+
+    const runner = new CopilotSDKRunner()
+    const result = await runner.run({
+      prompt: 'Analyze this bug',
+      primaryPath: 'C:/repo',
+      mode: 'analyze',
+      abortSignal: new AbortController().signal,
+      onChunk: vi.fn()
+    })
+
+    expect(result.usage).toEqual({
+      inputTokens: 110,
+      outputTokens: 25,
+      totalTokens: 135,
+      cacheReadTokens: 10,
+      durationMs: 900,
+      model: 'gpt-4.1'
+    })
   })
 })

@@ -1,8 +1,9 @@
-import type { AgentChunk, LLMProviderType, SessionMode } from '@shared/types'
+import type { AgentChunk, AgentUsageStats, LLMProviderType, SessionMode } from '@shared/types'
 
 export interface RunParams {
   prompt: string
   primaryPath: string
+  secondaryPaths?: string[]
   mode: SessionMode
   apiKey?: string
   baseUrl?: string
@@ -17,8 +18,13 @@ export interface RunParams {
   onChunk: (chunk: AgentChunk) => void
 }
 
+export interface AgentRunResult {
+  report: string
+  usage?: AgentUsageStats
+}
+
 export interface AgentRunner {
   readonly supportsFixMode: boolean
   readonly supportsMcp: boolean
-  run(params: RunParams): Promise<string>
+  run(params: RunParams): Promise<AgentRunResult>
 }

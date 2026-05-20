@@ -29,7 +29,9 @@ import {
   buildMcpPrompt,
   AgentNotConfiguredError,
   writeMcpConfig,
-  checkMcpHealth
+  checkMcpHealth,
+  selectPrimaryProject,
+  suggestSecondaryProjects
 } from './agent'
 import type {
   AgentStartPayload,
@@ -448,9 +450,64 @@ export function registerIPCHandlers(): void {
   // Agent Sessions
   const sessionManager = new SessionManager()
 
+  ipcMain.handle(IPC_CHANNELS.AGENT_SUGGEST_PROJECTS, async (_event, payload: unknown) => {
+    if (!payload || typeof payload !== 'object') {
+      throw { code: 'UNKNOWN_ERROR', message: 'Payload non valido per suggest-projects' }
+    }
+
+    const { bugId, primaryOverride } = payload as { bugId?: unknown; primaryOverride?: unknown }
+
+    if (typeof bugId !== 'number' || !Number.isFinite(bugId)) {
+      throw { code: 'UNKNOWN_ERROR', message: 'bugId deve essere un numero valido' }
+    }
+
+    const settings = store.get('settings') as AppSettings | null
+    if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
+
+    const session = store.get('session') as SessionData | null
+    const bug = session?.bugs?.find((b) => b.id === bugId) as CategorizedBug | undefined
+    if (!bug) throw { code: 'STORE_ERROR', message: `Bug ${bugId} non trovato in sessione` }
+
+    const projects = settings.projects ?? []
+
+    // If primaryOverride is provided, use it directly (user changed primary in UI)
+    const primaryProjectId =
+      typeof primaryOverride === 'string' && projects.some((p) => p.id === primaryOverride)
+        ? primaryOverride
+        : selectPrimaryProject(bug, projects)
+
+    const suggestedSecondaryIds = primaryProjectId
+      ? suggestSecondaryProjects(primaryProjectId, projects)
+      : []
+
+    return { primaryProjectId, suggestedSecondaryIds }
+  })
+
   ipcMain.handle(IPC_CHANNELS.AGENT_START, async (event: IpcMainInvokeEvent, payload: unknown) => {
     try {
-      const { bugId, mode, primaryProjectId } = payload as AgentStartPayload
+      if (!payload || typeof payload !== 'object') {
+        throw { code: 'UNKNOWN_ERROR', message: 'Payload non valido per agent:start' }
+      }
+
+      const {
+        bugId,
+        mode,
+        primaryProjectId,
+        secondaryProjectIds: rawSecondaryIds
+      } = payload as AgentStartPayload
+
+      if (typeof bugId !== 'number' || !Number.isFinite(bugId)) {
+        throw { code: 'UNKNOWN_ERROR', message: 'bugId deve essere un numero valido' }
+      }
+      if (typeof primaryProjectId !== 'string' || !primaryProjectId.trim()) {
+        throw { code: 'UNKNOWN_ERROR', message: 'primaryProjectId mancante' }
+      }
+
+      const secondaryProjectIds = Array.isArray(rawSecondaryIds)
+        ? rawSecondaryIds.filter(
+            (id): id is string => typeof id === 'string' && id.trim().length > 0
+          )
+        : []
 
       if (mode !== 'analyze') {
         throw {
@@ -471,6 +528,25 @@ export function registerIPCHandlers(): void {
       const project = settings.projects?.find((p) => p.id === primaryProjectId)
       if (!project)
         throw { code: 'STORE_ERROR', message: `Progetto ${primaryProjectId} non trovato` }
+
+      // Resolve secondary projects
+      const secondaryProjects: ProjectEntry[] = []
+      if (secondaryProjectIds.length > 0) {
+        const { existsSync, statSync } = await import('fs')
+        for (const secId of secondaryProjectIds) {
+          const secProject = settings.projects?.find((p) => p.id === secId)
+          if (!secProject) continue
+          if (!secProject.path.trim()) continue
+          if (!existsSync(secProject.path)) continue
+          try {
+            const stat = statSync(secProject.path)
+            if (!stat.isDirectory()) continue
+          } catch {
+            continue
+          }
+          secondaryProjects.push(secProject)
+        }
+      }
 
       const agentProvider = resolveAgentProviderType(settings)
       const resolvedApiKey = resolveAgentApiKey(settings)
@@ -534,9 +610,15 @@ export function registerIPCHandlers(): void {
             project,
             settings.architectureContext ?? '',
             settings.orgUrl,
-            settings.projectName
+            settings.projectName,
+            secondaryProjects.length > 0 ? secondaryProjects : undefined
           )
-        : buildAnalyzePrompt(bug, project, settings.architectureContext ?? '')
+        : buildAnalyzePrompt(
+            bug,
+            project,
+            settings.architectureContext ?? '',
+            secondaryProjects.length > 0 ? secondaryProjects : undefined
+          )
 
       // Generate session ID early so we can emit MCP status before session starts
       const sessionId = sessionManager.start(
@@ -548,6 +630,8 @@ export function registerIPCHandlers(): void {
         prompt,
         {
           primaryPath: project.path,
+          secondaryPaths:
+            secondaryProjects.length > 0 ? secondaryProjects.map((p) => p.path) : undefined,
           mode,
           apiKey: resolvedApiKey,
           baseUrl: resolvedBaseUrl,
@@ -561,12 +645,16 @@ export function registerIPCHandlers(): void {
         (chunk: AgentChunk) => {
           event.sender.send(IPC_CHANNELS.AGENT_CHUNK, chunk)
         },
-        (sid: string, report: string) => {
-          event.sender.send(IPC_CHANNELS.AGENT_COMPLETED, { sessionId: sid, report })
+        (sid: string, report: string, usage) => {
+          event.sender.send(IPC_CHANNELS.AGENT_COMPLETED, { sessionId: sid, report, usage })
         },
         (sid: string, error: AppErrorType) => {
           event.sender.send(IPC_CHANNELS.AGENT_ERROR, { sessionId: sid, error })
-        }
+        },
+        secondaryProjectIds.length > 0 ? secondaryProjects.map((p) => p.id) : undefined,
+        secondaryProjects.length > 0
+          ? secondaryProjects.map((p) => ({ name: p.name, path: p.path }))
+          : undefined
       )
 
       // Emit MCP status to renderer
