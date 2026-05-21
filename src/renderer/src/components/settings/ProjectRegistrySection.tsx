@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { FolderOpen, Trash2 } from 'lucide-react'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
@@ -24,11 +25,40 @@ export function ProjectRegistrySection({
   onRemoveProject,
   onSelectDirectory
 }: ProjectRegistrySectionProps): React.JSX.Element {
+  const [keywordDrafts, setKeywordDrafts] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    setKeywordDrafts((prev) => {
+      const next: Record<string, string> = { ...prev }
+
+      for (const project of projects) {
+        if (!(project.id in next)) {
+          next[project.id] = project.keywords.join(', ')
+        }
+      }
+
+      for (const projectId of Object.keys(next)) {
+        if (!projects.some((project) => project.id === projectId)) {
+          delete next[projectId]
+        }
+      }
+
+      return next
+    })
+  }, [projects])
+
   async function handleSelectPath(projectId: string): Promise<void> {
     const result = await onSelectDirectory()
     if (result) {
       onUpdateProject(projectId, { path: result })
     }
+  }
+
+  function parseKeywords(value: string): string[] {
+    return value
+      .split(',')
+      .map((keyword) => keyword.trim())
+      .filter(Boolean)
   }
 
   return (
@@ -156,15 +186,21 @@ export function ProjectRegistrySection({
               <Input
                 id={`project-${index}-keywords`}
                 type="text"
-                value={project.keywords.join(', ')}
-                onChange={(e) =>
+                value={keywordDrafts[project.id] ?? project.keywords.join(', ')}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setKeywordDrafts((prev) => ({ ...prev, [project.id]: value }))
                   onUpdateProject(project.id, {
-                    keywords: e.target.value
-                      .split(',')
-                      .map((k) => k.trim())
-                      .filter(Boolean)
+                    keywords: parseKeywords(value)
                   })
-                }
+                }}
+                onBlur={(e) => {
+                  const value = e.target.value
+                  setKeywordDrafts((prev) => ({ ...prev, [project.id]: value }))
+                  onUpdateProject(project.id, {
+                    keywords: parseKeywords(value)
+                  })
+                }}
               />
               {touched[`project-${index}-keywords`] && errors[`project-${index}-keywords`] && (
                 <p className="text-xs text-red-500 mt-1">{errors[`project-${index}-keywords`]}</p>

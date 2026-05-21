@@ -3,7 +3,7 @@ title: 'Settings Page'
 type: entity
 subtype: component
 created: 2026-04-29
-updated: 2026-05-17
+updated: 2026-05-21
 sources:
   [
     '[[wiki/sources/ft-02-settings]]',
@@ -70,6 +70,7 @@ Top-level page component for application configuration. It now composes six sect
 - Disables the save button when the form is not dirty, contains validation errors, or is currently saving.
 - Owns local state for the Codex CLI binary check result and loading flag, then passes that state into [[wiki/entities/agent-provider-section]].
 - Hosts the FT-14A agent-session preparation surface without executing any agent workflow yet.
+- Hosts the FT-14A project registry, where keyword input is entered as comma-separated text and normalized only after editing so punctuation remains typeable.
 - Renders a session danger zone card that explains the destructive impact of clearing the current snapshot while preserving historical catalog data.
 - Renders a second danger zone card for deleting the historical bug catalog while preserving the current session snapshot.
 - Opens separate [[wiki/entities/confirm-dialog]] instances before invoking `window.electronAPI.clearSession()` and `window.electronAPI.clearCatalog()`.

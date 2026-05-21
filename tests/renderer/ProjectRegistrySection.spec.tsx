@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { ProjectRegistrySection } from '@renderer/components/settings/ProjectRegistrySection'
 import type { ProjectEntry } from '@shared/types'
@@ -59,5 +59,23 @@ describe('ProjectRegistrySection', () => {
 
     expect(screen.getByText('Il nome è obbligatorio')).toBeInTheDocument()
     expect(screen.queryByText('Il percorso è obbligatorio')).not.toBeInTheDocument()
+  })
+
+  it('lets keywords be typed as comma-separated text and parses them into an array', () => {
+    const onUpdateProject = vi.fn()
+
+    render(
+      <ProjectRegistrySection
+        {...defaultProps}
+        projects={[blankProject]}
+        onUpdateProject={onUpdateProject}
+      />
+    )
+
+    const keywordsInput = screen.getByLabelText('Keywords (separate da virgola)')
+    fireEvent.change(keywordsInput, { target: { value: 'api, rest' } })
+
+    expect(keywordsInput).toHaveValue('api, rest')
+    expect(onUpdateProject).toHaveBeenLastCalledWith('p1', { keywords: ['api', 'rest'] })
   })
 })

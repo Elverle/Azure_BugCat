@@ -3,7 +3,7 @@ title: 'Project Registry Section'
 type: entity
 subtype: component
 created: 2026-05-17
-updated: 2026-05-17
+updated: 2026-05-21
 sources: ['[[wiki/sources/ft-14a-agent-configuration-project-registry]]']
 tags: [react, component, settings, projects, registry]
 lang: en
@@ -37,7 +37,7 @@ interface ProjectRegistrySectionProps {
 - Adds new rows through `onAddProject()`, with row-local editing handled by `onUpdateProject(id, updates)`.
 - Uses a folder-picker button that delegates path selection to the main process instead of exposing filesystem access in the renderer.
 - Supports the `backend`, `frontend`, and `shared` project-type radio group.
-- Accepts keyword entry as comma-separated text and normalizes it to a trimmed string array.
+- Accepts keyword entry as comma-separated text, keeps the raw typed draft visible while editing, and normalizes it to a trimmed string array for persistence.
 - Shows validation messages only for the specific touched fields of each row, not for every untouched field in a newly created project.
 
 ## Dependencies
