@@ -38,3 +38,5 @@ Track every deliverable here using explicit prefixes:
 | 28  | FT-14D  | Analisi cross-repo e suggerimento progetti con primary intelligente, secondari opzionali e prompt multi-repo read-only                     | Complete |
 | 29  | min-08  | Statistiche token per sessioni agente con usage provider-aware e sezione `Statistiche` nel workspace Sessioni (FT-14B, FT-14D)             | Complete |
 | 30  | fix-05  | Ripristino import relativi per le usage stats dei runner agente, compatibili con il bundle electron-vite del main process (FT-14B, min-08) | Complete |
+| 31  | FT-14E  | Workspace multi-session per sessioni agente con persistenza 24h, crash recovery, list/detail panels, badge MCP e azioni report             | Complete |
+| 32  | fix-06  | Rimozione del residuo legacy single-session dopo FT-14E: cleanup di hook/panel/test inutilizzati e del vecchio evento MCP dedicato         | Complete |

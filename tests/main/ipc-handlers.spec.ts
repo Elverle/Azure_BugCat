@@ -95,8 +95,13 @@ vi.mock('@main/agent', () => {
     start = sessionManagerStartMock
     abort = sessionManagerAbortMock
     getSession = vi.fn()
+    getAllSessions = vi.fn().mockReturnValue([])
+    getRunningCount = vi.fn().mockReturnValue(0)
     isRunning = vi.fn().mockReturnValue(false)
-    clear = vi.fn()
+    setMaxConcurrent = vi.fn()
+    restoreSessions = vi.fn()
+    markStaleAsAborted = vi.fn()
+    clearCompleted = vi.fn()
   }
   class AgentNotConfiguredError extends Error {
     constructor(msg = 'Not configured') {
@@ -116,6 +121,13 @@ vi.mock('@main/agent', () => {
     suggestSecondaryProjects: vi.fn().mockReturnValue([])
   }
 })
+
+vi.mock('@main/agent/session-persistence', () => ({
+  persistSession: vi.fn(),
+  loadPersistedSessions: vi.fn().mockReturnValue([]),
+  pruneExpiredSessions: vi.fn(),
+  markStaleRunning: vi.fn().mockReturnValue([])
+}))
 
 import { registerIPCHandlers } from '../../src/main/ipc-handlers'
 
@@ -155,6 +167,9 @@ describe('registerIPCHandlers', () => {
     createRunnerMock.mockReset().mockReturnValue({ run: vi.fn() })
     buildAnalyzePromptMock.mockReset().mockReturnValue('mock analysis prompt')
     registerIPCHandlers()
+    // Clear store mocks after init so tests only see their own interactions
+    storeGet.mockClear()
+    storeSet.mockClear()
   })
 
   it('registers the expected IPC channels', () => {

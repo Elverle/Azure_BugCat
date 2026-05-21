@@ -3,26 +3,27 @@ title: 'useAgentSession Hook'
 type: entity
 subtype: hook
 created: 2026-05-18
-updated: 2026-05-20
+updated: 2026-05-21
 sources:
 	[
 		'[[wiki/sources/ft-14b-agent-sessions]]',
 		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
-		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]'
+		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
+		'[[wiki/sources/ft-14e-multi-session-agent-workspace]]'
 	]
-tags: [react, hook, agent, ipc, reconnect]
+tags: [react, hook, agent, ipc, reconnect, deprecated, removed]
 lang: en
 ---
 
 ## Description
 
-Renderer hook that manages the FT-14B agent session view-model. It reconnects to an existing main-process session on mount, subscribes to streamed IPC events, exposes start/abort/clear actions, preserves provider usage metrics on completion, and preserves structured IPC error codes instead of flattening every failure into a generic message.
+Historical FT-14B single-session hook. It was kept briefly during the FT-14E rollout as a compatibility layer for the drawer launch flow, then removed in `fix-06` once `DashboardPage` switched to the shared multi-session contract.
 
 ## Location
 
-`src/renderer/src/hooks/useAgentSession.ts`
+Removed from the codebase in `fix-06` after the drawer launch path stopped depending on a dedicated single-session renderer model.
 
-## Returned API
+## Former API
 
 | Field / Method                                                | Purpose                                                |
 | ------------------------------------------------------------- | ------------------------------------------------------ |
@@ -32,11 +33,11 @@ Renderer hook that manages the FT-14B agent session view-model. It reconnects to
 | `abortSession()`                                              | Aborts the current running session                     |
 | `clearSession()`                                              | Clears renderer-local state and forgets the session ID |
 
-## Key Behaviors
+## Historical Behaviors
 
-- Calls `window.electronAPI.agentGetSession()` on mount so the Dashboard can recover an already-running session after tab switches or remounts.
+- Calls `window.electronAPI.agentGetSession()` without an ID on mount so legacy callers can still recover the first running session.
 - Stores the authoritative session ID in a ref and filters incoming chunk/completed/error events against that ID.
-- Subscribes to `onAgentMcpStatus()` and stores the per-session `McpStatus` alongside the live session snapshot.
+- Stored the per-session `McpStatus` alongside the live session snapshot before FT-14E moved that state into persisted session summaries.
 - Appends chunks only while the local session is still `running`.
 - Mirrors the main-process 500-chunk cap locally so reconnect state and streamed UI state stay aligned.
 - Copies `usage` from `agent:completed` into the local `AgentSession`, making token statistics available to the Sessions workspace immediately after completion.
@@ -46,6 +47,7 @@ Renderer hook that manages the FT-14B agent session view-model. It reconnects to
 - Preserves `err.code` from rejected IPC invocations when available; only falls back to heuristic mapping when the invoke error does not carry a structured code.
 - Marks completed, aborted, and error transitions locally so the UI reacts immediately.
 - `clearSession()` resets both the local session and the last observed MCP status.
+- Did not manage session summaries, status filters, or session-selection state; FT-14E moved that responsibility into the dedicated workspace hook.
 
 ## Dependencies
 
@@ -54,7 +56,8 @@ Renderer hook that manages the FT-14B agent session view-model. It reconnects to
 
 ## See also
 
-- [[wiki/entities/sessions-panel]]
+- [[wiki/entities/use-agent-sessions-hook]]
+- [[wiki/entities/session-workspace]]
 - [[wiki/entities/dashboard-page]]
 - [[wiki/concepts/streaming-agent-session-ipc]]
 - [[wiki/topics/cross-repo-agent-analysis]]

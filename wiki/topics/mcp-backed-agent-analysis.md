@@ -2,12 +2,13 @@
 title: 'MCP-Backed Agent Analysis'
 type: topic
 created: 2026-05-20
-updated: 2026-05-20
+updated: 2026-05-21
 sources:
   [
     '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
-    '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]'
+    '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
+    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]'
   ]
 tags: [agent, mcp, azure-devops, dashboard, fallback]
 lang: en
@@ -15,33 +16,35 @@ lang: en
 
 ## Overview
 
-FT-14C extends the general agent-session flow with a session-start decision about bug context acquisition. When the Azure DevOps MCP server is usable, the agent receives a short prompt and fetches live bug details through MCP tools. When it is not, BugCat falls back to the FT-14B prompt that embeds the bug data directly. FT-14D keeps that same branch, but both prompt variants can now carry optional secondary repositories as read-only context.
+FT-14C extends the general agent-session flow with a session-start decision about bug context acquisition. When the Azure DevOps MCP server is usable, the agent receives a short prompt and fetches live bug details through MCP tools. When it is not, BugCat falls back to the FT-14B prompt that embeds the bug data directly. FT-14D keeps that same branch, but both prompt variants can now carry optional secondary repositories as read-only context. FT-14E preserves the same MCP decision, but surfaces it inside the session workspace summary model so operators can scan MCP usage across multiple retained sessions.
 
 ## End-to-End Flow
 
 ```text
 BugDetailDrawer
   -> DashboardPage.handleAnalyze()
-    -> useAgentSession.startSession()
-      -> preload bridge agentStart()
-        -> ipc-handlers
-          -> resolve bug + project + settings
-          -> checkMcpHealth()
-          -> if available:
-               -> writeMcpConfig() for Claude/Codex
-               -> buildMcpPrompt()
-             else:
-               -> buildAnalyzePrompt()
-          -> SessionManager.start(..., mcpAvailable)
-          -> AGENT_MCP_STATUS
-            -> useAgentSession
-              -> SessionsPanel header badge
+    -> preload bridge agentStart()
+      -> ipc-handlers
+        -> resolve bug + project + settings
+        -> checkMcpHealth()
+        -> if available:
+             -> writeMcpConfig() for Claude/Codex
+             -> buildMcpPrompt()
+           else:
+             -> buildAnalyzePrompt()
+        -> SessionManager.start(..., mcpAvailable)
+        -> sessionMcpStatus map
+
+SessionWorkspace
+  -> agent:list-sessions
+    -> AgentSessionSummary.mcpStatus
+      -> SessionListPanel summary badge
 ```
 
 ## Runtime Outcomes
 
-- **MCP available**: runner receives MCP access, the prompt refers to bug ID plus MCP fetch instructions, and the session header shows `MCP`.
-- **Fallback**: runner starts without MCP-specific access, the prompt embeds the full bug payload, and the session header shows `Fallback` with the reason in a tooltip.
+- **MCP available**: runner receives MCP access, the prompt refers to bug ID plus MCP fetch instructions, and the FT-14E session list shows `MCP`.
+- **Fallback**: runner starts without MCP-specific access, the prompt embeds the full bug payload, and the summary model retains the fallback reason even though the workspace currently emphasizes the positive `MCP` badge more than the negative path.
 - **Cross-repo context**: when FT-14D selects valid secondary projects, either prompt variant appends the same read-only `Secondary Projects` table.
 - **No session**: the Dashboard keeps the normal empty sessions state and does not show a status badge.
 
@@ -54,12 +57,14 @@ BugDetailDrawer
 - [[wiki/entities/claude-sdk-runner]]
 - [[wiki/entities/codex-sdk-runner]]
 - [[wiki/entities/copilot-sdk-runner]]
-- [[wiki/entities/use-agent-session-hook]]
-- [[wiki/entities/sessions-panel]]
+- [[wiki/entities/use-agent-sessions-hook]]
+- [[wiki/entities/session-list-panel]]
+- [[wiki/entities/session-workspace]]
 
 ## See also
 
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/agent-session-workspace]]
 - [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/concepts/mcp-capability-probe-and-fallback]]
 - [[wiki/concepts/read-only-agent-analysis-sandboxing]]

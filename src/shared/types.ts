@@ -249,6 +249,40 @@ export interface AgentMcpStatusPayload {
   mcpStatus: McpStatus
 }
 
+export type AgentSessionFilter = 'all' | AgentSessionStatus
+
+export interface AgentSessionSummary {
+  id: string
+  bugId: number
+  mode: SessionMode
+  primaryProjectId: string
+  secondaryProjectIds?: string[]
+  agentProvider: AgentProviderType
+  status: AgentSessionStatus
+  startedAt: string
+  completedAt?: string
+  report?: string
+  usage?: AgentUsageStats
+  error?: AppError
+  mcpStatus?: McpStatus
+  chunkCount: number
+}
+
+export interface AgentSessionUpdatedPayload {
+  sessionId: string
+  status: AgentSessionStatus
+  completedAt?: string
+}
+
+export interface AgentSaveReportPayload {
+  sessionId: string
+  defaultFilename?: string
+}
+
+export interface PersistedAgentSession extends AgentSession {
+  persistedAt: string
+}
+
 export interface ProjectSuggestionPayload {
   bugId: number
   primaryOverride?: string

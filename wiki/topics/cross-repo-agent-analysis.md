@@ -29,13 +29,12 @@ BugDetailDrawer
         -> suggestSecondaryProjects()
   -> operator may override primary / toggle secondaries
     -> DashboardPage.handleAnalyze(bugId, primaryProjectId, secondaryProjectIds)
-      -> useAgentSession.startSession(...)
-        -> preload bridge agentStart()
-          -> ipc-handlers validate IDs + resolve existing directories
-            -> buildAnalyzePrompt() or buildMcpPrompt()
-              -> SessionManager.start()
-                -> runner reads primary path + optional secondary paths
-                -> secondary tool results are tagged in the session log
+      -> preload bridge agentStart()
+        -> ipc-handlers validate IDs + resolve existing directories
+          -> buildAnalyzePrompt() or buildMcpPrompt()
+            -> SessionManager.start()
+              -> runner reads primary path + optional secondary paths
+              -> secondary tool results are tagged in the session log
 ```
 
 ## Runtime Guarantees
@@ -54,7 +53,6 @@ BugDetailDrawer
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/agent-prompt-builder]]
 - [[wiki/entities/agent-session-manager]]
-- [[wiki/entities/use-agent-session-hook]]
 - [[wiki/entities/bug-detail-drawer]]
 - [[wiki/entities/dashboard-page]]
 

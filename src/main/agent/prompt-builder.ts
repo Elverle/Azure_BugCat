@@ -57,7 +57,7 @@ ${architectureContext.trim()}`)
 
   sections.push(`## Your Task
 
-1. Fetch complete bug details using MCP Azure DevOps tools (work item #${bugId}, use always the DevOps Project), including description, comments, history, but not images or attachments.
+1. Fetch complete bug details using MCP Azure DevOps tools (work item #${bugId}, use always the DevOps Project), DO NOT fetch images or attachments.
 Summarize the key information relevant for root-cause analysis.
 2. Read relevant source files to understand the codebase structure
 3. Identify the likely root cause of the bug

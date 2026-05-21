@@ -2,7 +2,7 @@
 title: 'Session Persistence Lifecycle'
 type: topic
 created: 2026-05-01
-updated: 2026-05-13
+updated: 2026-05-21
 sources:
   [
     '[[wiki/sources/ft-03-ado-fetch]]',
@@ -11,15 +11,16 @@ sources:
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
-    '[[wiki/sources/ft-13-closed-bugs-history]]'
+    '[[wiki/sources/ft-13-closed-bugs-history]]',
+    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]'
   ]
-tags: [session, catalog, persistence, dashboard, ai-cluster, settings, migration]
+tags: [session, catalog, persistence, dashboard, ai-cluster, settings, migration, agent]
 lang: en
 ---
 
 ## Overview
 
-Session persistence in Bug Categorizer is now a two-layer concern. `session` is the renderer-facing snapshot of currently open bugs and their derived analysis state, while `bugCatalog` is the historical main-process catalog used for lifecycle tracking and categorization reuse. Together they are populated by fetch, categorize, and similarity-analysis flows, upgraded at startup through schema migration, and selectively cleared from Settings.
+Session persistence in Bug Categorizer is now a three-surface concern. `session` is the renderer-facing snapshot of currently open bugs and their derived analysis state, `bugCatalog` is the historical main-process catalog used for lifecycle tracking and categorization reuse, and FT-14E adds retained `agentSessions` for recent agent-analysis history and crash recovery. Together they are populated by fetch, categorize, similarity-analysis, and agent-session flows, upgraded at startup through schema migration, and selectively cleared or pruned by the main process.
 
 ## End-to-End Flow
 
@@ -27,7 +28,15 @@ Session persistence in Bug Categorizer is now a two-layer concern. `session` is 
 Application startup
   -> [[wiki/entities/store-migration]]
     -> encrypted [[wiki/entities/electron-store]]
-    -> { session, bugCatalog }
+    -> { session, bugCatalog, agentSessions }
+
+Agent-session startup recovery
+  -> [[wiki/entities/ipc-handlers]]
+    -> [[wiki/entities/agent-session-persistence]]
+      -> loadPersistedSessions()
+      -> markStaleRunning()
+      -> pruneExpiredSessions()
+      -> SessionManager.restoreSessions()
 
 Fetch / categorize
   -> [[wiki/entities/ipc-handlers]]
@@ -53,6 +62,13 @@ Manual reset
     -> [[wiki/entities/confirm-dialog]]
     -> clearSession() or clearCatalog()
     -> store.set('session', null) or store.set('bugCatalog', null)
+
+Agent-session retention
+  -> [[wiki/entities/ipc-handlers]]
+    -> agent:start
+      -> [[wiki/entities/agent-session-persistence]].persistSession(running)
+    -> terminal agent states
+      -> persistSession(completed | aborted | error)
 ```
 
 ## Lifecycle Stages
@@ -93,6 +109,13 @@ Manual reset
 - Clearing the session removes the open snapshot but preserves the historical bug catalog and saved ADO/LLM settings.
 - Clearing the catalog removes historical lifecycle and categorization reuse data but leaves the current session snapshot untouched.
 
+### Agent Session Retention and Recovery
+
+- FT-14E stores retained agent sessions separately from both the bug `session` snapshot and the `bugCatalog`.
+- Persisted agent sessions are kept for 24 hours and trimmed to 200 stored chunks per session.
+- Startup recovery restores recent sessions for inspection, but any stale `running` session is rewritten as `aborted` because the underlying SDK work cannot be resumed safely.
+- The Dashboard workspace then fetches summaries first and full session detail on demand, which keeps retained history useful without loading every stored log eagerly.
+
 ## Why This Topic Matters
 
 - Session data is the bridge between background integrations and the interactive renderer UX.
@@ -106,9 +129,11 @@ Manual reset
 - [[wiki/entities/settings-page]]
 - [[wiki/entities/dashboard-header]]
 - [[wiki/entities/catalog-merge-utility]]
+- [[wiki/entities/agent-session-persistence]]
 - [[wiki/concepts/settings-persistence-flow]]
 - [[wiki/concepts/schema-versioned-store-migration]]
 - [[wiki/concepts/catalog-backed-selective-re-categorization]]
+- [[wiki/topics/agent-session-workspace]]
 - [[wiki/topics/dashboard-bug-exploration]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

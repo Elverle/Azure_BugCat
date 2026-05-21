@@ -1,6 +1,6 @@
 import { computeInputSignature } from './utils/catalog-merge'
 
-export const CURRENT_SCHEMA_VERSION = 4
+export const CURRENT_SCHEMA_VERSION = 5
 
 export type Migration = {
   version: number
@@ -111,6 +111,19 @@ export const migrations: Migration[] = [
       }
       return data
     }
+  },
+  {
+    version: 5,
+    up: (data) => {
+      if (data.agentSessions === undefined) {
+        data.agentSessions = []
+      }
+      if (data.settings && typeof data.settings === 'object') {
+        const settings = data.settings as Record<string, unknown>
+        if (settings.maxConcurrentSessions === 1) settings.maxConcurrentSessions = 5
+      }
+      return data
+    }
   }
 ]
 
@@ -137,7 +150,8 @@ export function migrateStore(store: StoreAccess): void {
     let data: Record<string, unknown> = {
       settings: store.get('settings'),
       session: store.get('session'),
-      bugCatalog: store.get('bugCatalog')
+      bugCatalog: store.get('bugCatalog'),
+      agentSessions: store.get('agentSessions')
     }
     for (const migration of pending) {
       data = migration.up(data)
@@ -146,6 +160,7 @@ export function migrateStore(store: StoreAccess): void {
     if (data.settings !== undefined) store.set('settings', data.settings)
     if (data.session !== undefined) store.set('session', data.session)
     if (data.bugCatalog !== undefined) store.set('bugCatalog', data.bugCatalog)
+    if (data.agentSessions !== undefined) store.set('agentSessions', data.agentSessions)
     store.set('schemaVersion', CURRENT_SCHEMA_VERSION)
   } catch (error) {
     console.error('Store migration failed:', error)

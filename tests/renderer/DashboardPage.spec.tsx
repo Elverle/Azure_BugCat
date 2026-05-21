@@ -71,7 +71,10 @@ const mockElectronAPI = {
   onCategorizeProgress: vi.fn(() => vi.fn()),
   openExternal: vi.fn().mockResolvedValue(undefined),
   findSimilarBugs: vi.fn(),
-  onFindSimilarProgress: vi.fn(() => vi.fn())
+  onFindSimilarProgress: vi.fn(() => vi.fn()),
+  agentStart: vi.fn().mockResolvedValue({ sessionId: 'session-1' }),
+  agentListSessions: vi.fn().mockResolvedValue([]),
+  onAgentSessionUpdated: vi.fn(() => vi.fn())
 }
 
 describe('DashboardPage', () => {

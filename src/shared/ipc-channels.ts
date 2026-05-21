@@ -45,11 +45,13 @@ export const IPC_CHANNELS = {
   AGENT_START: 'agent:start',
   AGENT_ABORT: 'agent:abort',
   AGENT_GET_SESSION: 'agent:get-session',
+  AGENT_LIST_SESSIONS: 'agent:list-sessions',
+  AGENT_SESSION_UPDATED: 'agent:session-updated',
+  AGENT_SAVE_REPORT: 'agent:save-report',
   AGENT_SUGGEST_PROJECTS: 'agent:suggest-projects',
   AGENT_CHUNK: 'agent:chunk',
   AGENT_COMPLETED: 'agent:completed',
   AGENT_ERROR: 'agent:error',
-  AGENT_MCP_STATUS: 'agent:mcp-status',
 
   // Projects
   PROJECTS_GET: 'projects:get',

@@ -2,7 +2,7 @@
 title: 'Dashboard Bug Exploration'
 type: topic
 created: 2026-04-30
-updated: 2026-05-18
+updated: 2026-05-21
 sources:
   [
     '[[wiki/sources/ft-05-dashboard]]',
@@ -17,7 +17,7 @@ lang: en
 
 ## Overview
 
-The dashboard is the main triage workspace of the app. It consumes the cached `SessionData` produced by FT-03 and FT-04, then gives operators a fast way to inspect bug volume, narrow the dataset, switch between list, cluster-oriented, similarity-analysis, and FT-14B agent-session views, drill into one bug with a persistent side drawer, and launch deeper per-bug investigation from the same screen.
+The dashboard is the main triage workspace of the app. It consumes the cached `SessionData` produced by FT-03 and FT-04, then gives operators a fast way to inspect bug volume, narrow the dataset, switch between list, cluster-oriented, similarity-analysis, and FT-14E multi-session views, drill into one bug with a persistent side drawer, and launch deeper per-bug investigation from the same screen.
 
 ## End-to-End Flow
 
@@ -56,8 +56,8 @@ DashboardHeader actions
 
 ### Sessioni
 
-- Uses [[wiki/entities/use-agent-session-hook]] to reconnect to the main-process session, stream new chunks, and surface abort/error/completion transitions.
-- Renders [[wiki/entities/sessions-panel]] as a dedicated dashboard tab rather than overloading the drawer with long-running session output.
+- Renders [[wiki/entities/session-workspace]] as a dedicated dashboard tab with summary/detail split, filters, report actions, and capacity-aware launching.
+- Starts sessions from the drawer through the shared `agent:start` invoke path, then lands the operator in the multi-session workspace.
 - Acts as the target view after the bug drawer `Analizza` action starts a session.
 
 ## Interaction Model
@@ -77,7 +77,7 @@ DashboardHeader actions
 - The external work item action delegates to [[wiki/entities/open-external-ipc]] instead of opening browser URLs directly from the renderer.
 - Intentional categorization cancellation is silent in the UI: it clears progress and restores the previous session-backed dataset without opening the blocking error modal reserved for real provider failures.
 - Real categorization failures now surface readable messages because the main process converts structured error payloads into proper `Error` objects before returning them through IPC.
-- FT-14B session state can survive tab switches and route remounts because the actual session lifecycle stays in the main process and the renderer reconnects through `agent:get-session`.
+- FT-14E session state can survive tab switches and route remounts because the actual session lifecycle stays in the main process and the renderer reconnects through `agent:list-sessions` plus `agent:get-session`.
 
 ## Related Components
 
@@ -91,10 +91,9 @@ DashboardHeader actions
 - [[wiki/entities/group-accordion]]
 - [[wiki/entities/use-bug-drawer-hook]]
 - [[wiki/entities/use-ai-cluster-hook]]
-- [[wiki/entities/use-agent-session-hook]]
 - [[wiki/entities/ai-cluster-category-section]]
 - [[wiki/entities/similarity-group-card]]
-- [[wiki/entities/sessions-panel]]
+- [[wiki/entities/session-workspace]]
 
 ## See also
 

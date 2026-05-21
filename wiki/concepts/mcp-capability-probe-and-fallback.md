@@ -2,7 +2,7 @@
 title: 'MCP Capability Probe and Fallback'
 type: concept
 created: 2026-05-20
-updated: 2026-05-20
+updated: 2026-05-21
 sources: ['[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]']
 tags: [agent, mcp, azure-devops, fallback, resilience]
 lang: en
@@ -20,7 +20,7 @@ FT-14C adds a capability-negotiation stage to `agent:start`. Instead of assuming
    - write or merge `.mcp.json` for Claude/Codex through [[wiki/entities/mcp-config-writer]], or
    - inject `mcpServers` directly for [[wiki/entities/copilot-sdk-runner]].
 4. Build the short MCP-oriented prompt through [[wiki/entities/agent-prompt-builder]].
-5. Emit `agent:mcp-status` so the renderer can show the chosen path.
+5. Cache the resulting `McpStatus` alongside the session so FT-14E summaries can expose the chosen path.
 6. If any step fails, skip only the MCP branch and continue with the full embedded bug prompt.
 
 ## Why This Pattern Matters

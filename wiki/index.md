@@ -42,6 +42,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 15  | FT-14B | Agent Sessions end-to-end per analisi bug                   | Done   |
 | 16  | FT-14C | MCP Azure DevOps integration con fallback per agent session | Done   |
 | 17  | FT-14D | Analisi cross-repo e suggerimento progetti                  | Done   |
+| 18  | FT-14E | Workspace multi-session per sessioni agente con recovery    | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -64,6 +65,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-14b-agent-sessions]] — FT-14B agent sessions: single-bug analyze runs with SDK-backed streaming logs, reconnect, abort, and Markdown reports (2026-05-18)
 - [[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]] — FT-14C MCP-backed Azure DevOps fetch for agent sessions with health check, prompt fallback, and UI status feedback (2026-05-20)
 - [[wiki/sources/ft-14d-cross-repo-project-suggestions]] — FT-14D cross-repo agent analysis: heuristic primary-project selection, optional secondary repos, conditional multi-repo prompts, and tagged secondary log provenance (2026-05-20)
+- [[wiki/sources/ft-14e-multi-session-agent-workspace]] — FT-14E bounded multi-session workspace: persisted recovery, summary/detail UI, report actions, and session-list IPC (2026-05-21)
 
 ## Entities
 
@@ -93,7 +95,8 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/validation-utils]] — Pure validation functions for settings fields (FT-02)
 - [[wiki/entities/project-registry]] — Persisted registry of local projects for future agent sessions (FT-14A)
 - [[wiki/entities/project-matcher]] — Pure heuristic scorer/suggester for FT-14D primary and secondary project recommendations (FT-14D)
-- [[wiki/entities/agent-session-manager]] — Main-process single-session lifecycle coordinator for agent runs (FT-14B)
+- [[wiki/entities/agent-session-manager]] — Main-process bounded concurrent session coordinator for agent runs (FT-14E)
+- [[wiki/entities/agent-session-persistence]] — Main-process retention and crash-recovery helper for persisted agent sessions (FT-14E)
 - [[wiki/entities/agent-runner-factory]] — Resolves settings into Claude, Codex, or Copilot SDK runners (FT-14B)
 - [[wiki/entities/agent-prompt-builder]] — Builds the single-project analysis prompt from bug, project, and architecture context (FT-14B)
 - [[wiki/entities/mcp-config-writer]] — Writes or merges project-local `.mcp.json` for Azure DevOps MCP without persisting the PAT (FT-14C)
@@ -139,9 +142,11 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/use-dashboard-hook]] — Renderer hook for session hydration, fetch/categorize actions, and progress subscription (FT-05)
 - [[wiki/entities/use-closed-bug-kpis-hook]] — Renderer hook for loading and deriving closed-history KPIs from a filtered catalog slice (FT-13)
 - [[wiki/entities/use-ai-cluster-hook]] — Renderer hook for similarity hydration, analysis progress, and stale detection (FT-10)
-- [[wiki/entities/use-agent-session-hook]] — Renderer hook for agent-session reconnect, streaming updates, abort, and IPC error fidelity (FT-14B)
+- [[wiki/entities/use-agent-sessions-hook]] — Renderer hook for FT-14E session summaries, selected detail, and workspace actions (FT-14E)
 - [[wiki/entities/dashboard-utils]] — Pure filter/sort/group/KPI utilities for the dashboard (FT-05)
-- [[wiki/entities/sessions-panel]] — Dashboard sessions view with streamed logs and Markdown final report (FT-14B)
+- [[wiki/entities/session-list-panel]] — Left-hand FT-14E summary list with filters, capacity state, and badges (FT-14E)
+- [[wiki/entities/session-detail-panel]] — Right-hand FT-14E detail view with logs, report rendering, and actions (FT-14E)
+- [[wiki/entities/session-workspace]] — FT-14E Dashboard sessions workspace composed from list, detail, and launcher surfaces (FT-14E)
 - [[wiki/entities/closed-bug-kpis-utility]] — Pure KPI aggregation helpers for historical closed bugs (FT-13)
 - [[wiki/entities/date-format-utility]] — Pure `formatDate()` helper for renderer session timestamps (FT-07)
 - [[wiki/entities/badge-color-utilities]] — Deterministic badge and tint color helpers for status/categories (FT-05)
@@ -169,7 +174,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/concepts/click-outside-exclusion-pattern]] — Document-level outside-click closing with `data-bug-click` exclusion markers (FT-06)
 - [[wiki/concepts/catalog-backed-selective-re-categorization]] — Dual-layer persistence pattern that reuses categorization only when catalog signatures still match current open-bug inputs (FT-12)
 - [[wiki/concepts/renderer-safe-closed-catalog-projection]] — Read-model pattern that exposes only closed historical bugs and fetch metadata to the renderer (FT-13)
-- [[wiki/concepts/single-active-agent-session-lifecycle]] — Main-process single-session model with bounded chunk retention and stale-callback protection (FT-14B)
+- [[wiki/concepts/bounded-concurrent-agent-session-lifecycle]] — Main-process concurrent agent-session model with bounded retention and crash recovery (FT-14E)
 - [[wiki/concepts/streaming-agent-session-ipc]] — Hybrid invoke/event IPC pattern for reconnectable agent-session streams (FT-14B)
 - [[wiki/concepts/read-only-agent-analysis-sandboxing]] — Analyze-only provider constraints for early agent integration (FT-14B)
 - [[wiki/concepts/mcp-capability-probe-and-fallback]] — Session-start capability probe that prefers Azure DevOps MCP and degrades to the full embedded bug prompt when unavailable (FT-14C)
@@ -180,13 +185,14 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/topics/electron-architecture]] — Three-process architecture, source structure, data flow
 - [[wiki/topics/renderer-ui]] — React SPA: HashRouter routing, component tree, styling stack
 - [[wiki/topics/agent-session-configuration-foundation]] — Settings-driven foundation for future agent-session execution: provider derivation, project registry, architecture context, and concurrency limits
-- [[wiki/topics/agent-analysis-sessions]] — End-to-end bug analysis flow from drawer action to streamed session logs and final Markdown report
+- [[wiki/topics/agent-analysis-sessions]] — End-to-end agent-analysis flow from launch surfaces to the persisted FT-14E session workspace
+- [[wiki/topics/agent-session-workspace]] — Dedicated FT-14E list/detail workspace for running and recent agent analyses
 - [[wiki/topics/cross-repo-agent-analysis]] — FT-14D extension of agent analysis with heuristic project preselection, optional secondary repos, and cross-repo prompt/log context
 - [[wiki/topics/mcp-backed-agent-analysis]] — Azure DevOps MCP-enhanced agent analysis flow with health check, runner-specific registration, and renderer fallback feedback
 - [[wiki/topics/llm-categorization-pipeline]] — End-to-end LLM categorization: IPC → chunking → provider → validation → progressive results
 - [[wiki/topics/ai-cluster-similar-bug-detection]] — End-to-end similar-bug detection: dashboard tab → session gate → IPC → per-category LLM analysis → persisted results
 - [[wiki/topics/dashboard-bug-exploration]] — Main triage workspace tying session data, dashboard derivation, filters, views, drawer drill-down, and categorization actions together
-- [[wiki/topics/session-persistence-lifecycle]] — Startup migration, session hydration, timestamp display, and user-triggered session reset (FT-07)
+- [[wiki/topics/session-persistence-lifecycle]] — Store-backed lifecycle for bug snapshots, historical catalog data, and retained FT-14E agent sessions
 - [[wiki/topics/historical-bug-catalog-lifecycle]] — End-to-end lifecycle of the persisted bug catalog across fetch, selective categorization, similarity, migration, and cleanup (FT-12)
 - [[wiki/topics/closed-bug-history-analytics]] — Top-level historical analytics flow for closed catalog bugs, from filtered IPC to KPI rendering (FT-13)
 

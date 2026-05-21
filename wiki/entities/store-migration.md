@@ -3,15 +3,16 @@ title: 'Store Migration'
 type: entity
 subtype: service
 created: 2026-05-01
-updated: 2026-05-17
+updated: 2026-05-21
 sources:
   [
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
-    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]'
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]'
   ]
-tags: [electron-store, persistence, migration, typescript, catalog, settings]
+tags: [electron-store, persistence, migration, typescript, catalog, settings, agent]
 lang: en
 ---
 
@@ -26,7 +27,7 @@ Main-process utility that upgrades persisted `electron-store` payloads to the cu
 ## Public API
 
 ```typescript
-export const CURRENT_SCHEMA_VERSION = 4
+export const CURRENT_SCHEMA_VERSION = 5
 
 export type Migration = {
   version: number
@@ -50,7 +51,8 @@ export function migrateStore(store: StoreAccess): void
 - Applies pending migrations in ascending version order, including FT-08's `github-copilot` → `openai` settings rewrite and `copilotAuthStatus` removal.
 - FT-12 adds migration v3, which back-populates `bugCatalog` from legacy v2 `session.bugs`, normalizes legacy bug fields before signature computation, and preserves similarity-history metadata when `session.similarityResults` already exists.
 - FT-14A adds migration v4, which backfills only missing settings keys for agent-provider selection, Copilot BYOK, project registry, architecture context, and max concurrent sessions.
-- Writes migrated `settings`, `session`, and `bugCatalog` back to the store before bumping `schemaVersion`, so a partial write cannot advertise a schema that has not actually been persisted yet.
+- FT-14E adds migration v5, which bootstraps the new `agentSessions` store key and raises legacy `maxConcurrentSessions` values of `1` to the new default `5`.
+- Writes migrated `settings`, `session`, `bugCatalog`, and `agentSessions` back to the store before bumping `schemaVersion`, so a partial write cannot advertise a schema that has not actually been persisted yet.
 - Falls back to `session = null` plus `schemaVersion = CURRENT_SCHEMA_VERSION` if a migration throws, keeping the app bootable even if cached session data is invalid.
 
 ## Dependencies
@@ -64,5 +66,6 @@ export function migrateStore(store: StoreAccess): void
 - [[wiki/concepts/schema-versioned-store-migration]]
 - [[wiki/concepts/settings-persistence-flow]]
 - [[wiki/topics/agent-session-configuration-foundation]]
+- [[wiki/topics/agent-session-workspace]]
 - [[wiki/topics/session-persistence-lifecycle]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

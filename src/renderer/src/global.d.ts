@@ -21,6 +21,9 @@ declare global {
       clearCatalog: () => Promise<unknown>
       getCatalogClosed: () => Promise<unknown>
       openExternal: (url: string) => Promise<unknown>
+      agentStart: (payload: unknown) => Promise<unknown>
+      agentListSessions: () => Promise<unknown>
+      onAgentSessionUpdated?: (callback: (data: unknown) => void) => () => void
     }
   }
 }

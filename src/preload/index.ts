@@ -63,7 +63,11 @@ const electronAPI = {
     ipcRenderer.invoke(IPC_CHANNELS.AGENT_SUGGEST_PROJECTS, payload),
   agentStart: (payload: unknown) => ipcRenderer.invoke(IPC_CHANNELS.AGENT_START, payload),
   agentAbort: (payload: unknown) => ipcRenderer.invoke(IPC_CHANNELS.AGENT_ABORT, payload),
-  agentGetSession: () => ipcRenderer.invoke(IPC_CHANNELS.AGENT_GET_SESSION),
+  agentGetSession: (sessionId?: string) =>
+    ipcRenderer.invoke(IPC_CHANNELS.AGENT_GET_SESSION, sessionId),
+  agentListSessions: () => ipcRenderer.invoke(IPC_CHANNELS.AGENT_LIST_SESSIONS),
+  agentSaveReport: (payload: { sessionId: string; defaultFilename?: string }) =>
+    ipcRenderer.invoke(IPC_CHANNELS.AGENT_SAVE_REPORT, payload),
   onAgentChunk: (callback: (data: unknown) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
     ipcRenderer.on(IPC_CHANNELS.AGENT_CHUNK, handler)
@@ -79,10 +83,10 @@ const electronAPI = {
     ipcRenderer.on(IPC_CHANNELS.AGENT_ERROR, handler)
     return () => ipcRenderer.removeListener(IPC_CHANNELS.AGENT_ERROR, handler)
   },
-  onAgentMcpStatus: (callback: (data: unknown) => void) => {
+  onAgentSessionUpdated: (callback: (data: unknown) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
-    ipcRenderer.on(IPC_CHANNELS.AGENT_MCP_STATUS, handler)
-    return () => ipcRenderer.removeListener(IPC_CHANNELS.AGENT_MCP_STATUS, handler)
+    ipcRenderer.on(IPC_CHANNELS.AGENT_SESSION_UPDATED, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.AGENT_SESSION_UPDATED, handler)
   }
 }
 

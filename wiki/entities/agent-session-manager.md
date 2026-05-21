@@ -3,16 +3,20 @@ title: 'Agent Session Manager'
 type: entity
 subtype: service
 created: 2026-05-18
-updated: 2026-05-20
+updated: 2026-05-21
 sources:
-	['[[wiki/sources/ft-14b-agent-sessions]]', '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]']
-tags: [agent, session, main-process, orchestration, abort]
+	[
+		'[[wiki/sources/ft-14b-agent-sessions]]',
+		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
+		'[[wiki/sources/ft-14e-multi-session-agent-workspace]]'
+	]
+tags: [agent, session, main-process, orchestration, abort, concurrency]
 lang: en
 ---
 
 ## Description
 
-Main-process lifecycle coordinator for FT-14B and FT-14D agent sessions. It owns the single in-memory `AgentSession`, the active `AbortController`, chunk retention, optional secondary-project metadata, provider usage statistics, and the guardrails that prevent stale provider callbacks from mutating a newer session.
+Main-process lifecycle coordinator for FT-14B through FT-14E agent sessions. It owns the in-memory session map, per-session abort controllers, optional secondary-project metadata, chunk retention, and the compatibility layer that still lets legacy consumers ask for the first running session when they do not provide an explicit ID.
 
 ## Location
 
@@ -20,26 +24,31 @@ Main-process lifecycle coordinator for FT-14B and FT-14D agent sessions. It owns
 
 ## Public API
 
-| Method         | Purpose                                                                |
-| -------------- | ---------------------------------------------------------------------- |
-| `getSession()` | Returns the current `AgentSession` or `null`                           |
-| `isRunning()`  | Returns `true` only when the current session status is `running`       |
-| `start(...)`   | Creates a new session, starts the runner, and returns the generated ID |
-| `abort(id)`    | Aborts the active session when the ID matches and it is still running  |
-| `clear()`      | Aborts an active run if needed, then resets all state                  |
+| Method                  | Purpose                                                                      |
+| ----------------------- | ---------------------------------------------------------------------------- |
+| `setMaxConcurrent(n)`   | Updates the allowed number of simultaneous running sessions                  |
+| `getSession(id?)`       | Returns the requested session by ID, or the first running session for compat |
+| `getAllSessions()`      | Returns every tracked session                                                |
+| `getRunningCount()`     | Returns how many sessions are currently `running`                            |
+| `isRunning()`           | Convenience wrapper over `getRunningCount() > 0`                             |
+| `start(...)`            | Creates a new session, starts the runner, and returns the generated ID       |
+| `abort(sessionId)`      | Aborts one running session by ID                                             |
+| `clearCompleted()`      | Removes all non-running sessions from memory                                 |
+| `removeSession(id)`     | Removes a session entirely, aborting first if it is still running            |
+| `restoreSessions(list)` | Rehydrates sessions restored from persistence                                |
+| `markStaleAsAborted()`  | Converts any in-memory `running` session to `aborted`                        |
 
 ## Key Behaviors
 
-- Keeps exactly one `currentSession` in memory.
-- Auto-clears previously finished sessions before accepting a new start request.
-- Rejects overlapping runs with `Sessione già in corso`.
-- Stores `secondaryProjectIds` in the session snapshot so reconnecting renderers can show the same project context that started the run.
-- Stores optional provider `usage` metrics in the completed session snapshot so the renderer can show token statistics without re-querying the SDK.
-- Enriches every streamed chunk with the generated `sessionId` before storing or forwarding it.
-- When a `tool_result` chunk mentions one of the resolved secondary paths, prefixes the chunk with `[secondary:{projectName}]` so the log keeps repository provenance visible.
-- Caps retained chunks at 500 entries with FIFO eviction to avoid unbounded renderer/main memory growth.
-- Marks aborted, completed, and error sessions with `completedAt` timestamps.
-- Ignores stale completion/error callbacks when the originating session has already been replaced or aborted.
+- Stores sessions in a `Map<string, AgentSession>` instead of a single active slot.
+- Enforces the FT-14E bounded-concurrency limit and throws when the limit has been reached.
+- Keeps `secondaryProjectIds` and provider `usage` inside the session snapshot so the renderer can reconnect or inspect history without recomputing context.
+- Enriches every streamed chunk with the owning `sessionId` before storing or forwarding it.
+- When a `tool_result` chunk mentions a resolved secondary path, prefixes it with `[secondary:{projectName}]` so cross-repo provenance remains visible.
+- Caps retained chunks at 500 entries per session with FIFO eviction.
+- Allows one session to be aborted without affecting unrelated running sessions.
+- Preserves backwards compatibility for legacy callers by returning the first running session when `getSession()` is called without an ID.
+- Ignores stale completion and error callbacks when the originating session is no longer the matching running target.
 
 ## Dependencies
 
@@ -48,7 +57,9 @@ Main-process lifecycle coordinator for FT-14B and FT-14D agent sessions. It owns
 
 ## See also
 
-- [[wiki/concepts/single-active-agent-session-lifecycle]]
+- [[wiki/entities/agent-session-persistence]]
+- [[wiki/concepts/bounded-concurrent-agent-session-lifecycle]]
 - [[wiki/concepts/streaming-agent-session-ipc]]
 - [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/agent-session-workspace]]

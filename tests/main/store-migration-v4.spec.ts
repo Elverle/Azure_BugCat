@@ -12,16 +12,17 @@ describe('store-migration v4', () => {
     store = { get: vi.fn(), set: vi.fn(), has: vi.fn() }
   })
 
-  it('CURRENT_SCHEMA_VERSION equals 4', () => {
-    expect(CURRENT_SCHEMA_VERSION).toBe(4)
+  it('CURRENT_SCHEMA_VERSION equals 5', () => {
+    expect(CURRENT_SCHEMA_VERSION).toBe(5)
   })
 
-  it('migrations array has 4 entries', () => {
-    expect(migrations).toHaveLength(4)
+  it('migrations array has 5 entries', () => {
+    expect(migrations).toHaveLength(5)
     expect(migrations[0].version).toBe(1)
     expect(migrations[1].version).toBe(2)
     expect(migrations[2].version).toBe(3)
     expect(migrations[3].version).toBe(4)
+    expect(migrations[4].version).toBe(5)
   })
 
   it('v3 store with only legacy settings gets v4 defaults added', () => {
@@ -60,7 +61,7 @@ describe('store-migration v4', () => {
     expect(migratedSettings.copilotByokBaseUrl).toBe('')
     expect(migratedSettings.projects).toEqual([])
     expect(migratedSettings.architectureContext).toBe('')
-    expect(migratedSettings.maxConcurrentSessions).toBe(1)
+    expect(migratedSettings.maxConcurrentSessions).toBe(5)
   })
 
   it('v3 store with existing fields preserves them after migration', () => {
@@ -95,10 +96,10 @@ describe('store-migration v4', () => {
     expect(migratedSettings.orgUrl).toBe('https://dev.azure.com/test')
   })
 
-  it('v4 store is a no-op (migrateStore does not call set)', () => {
+  it('v5 store is a no-op (migrateStore does not call set)', () => {
     store.has.mockReturnValue(true)
     store.get.mockImplementation((key: string) => {
-      if (key === 'schemaVersion') return 4
+      if (key === 'schemaVersion') return 5
       return undefined
     })
 
@@ -143,6 +144,6 @@ describe('store-migration v4', () => {
     expect(migratedSettings.copilotByokBaseUrl).toBe('')
     expect(migratedSettings.projects).toEqual([])
     expect(migratedSettings.architectureContext).toBe('')
-    expect(migratedSettings.maxConcurrentSessions).toBe(1)
+    expect(migratedSettings.maxConcurrentSessions).toBe(5)
   })
 })

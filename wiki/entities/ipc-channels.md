@@ -3,7 +3,7 @@ title: 'IPC Channel Constants'
 type: entity
 subtype: config
 created: 2026-04-29
-updated: 2026-05-20
+updated: 2026-05-21
 sources:
 	[
 		'[[wiki/sources/ft-01-scaffold]]',
@@ -15,6 +15,7 @@ sources:
 		'[[wiki/sources/ft-14b-agent-sessions]]',
 		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
 		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
+		'[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
 		'[[wiki/analyses/cancel-categorization-flow]]',
 		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
 	]
@@ -58,10 +59,12 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `AGENT_START`                   | `agent:start`                   | Agent Session |
 | `AGENT_ABORT`                   | `agent:abort`                   | Agent Session |
 | `AGENT_GET_SESSION`             | `agent:get-session`             | Agent Session |
+| `AGENT_LIST_SESSIONS`           | `agent:list-sessions`           | Agent Session |
+| `AGENT_SESSION_UPDATED`         | `agent:session-updated`         | Agent Session |
+| `AGENT_SAVE_REPORT`             | `agent:save-report`             | Agent Session |
 | `AGENT_CHUNK`                   | `agent:chunk`                   | Agent Session |
 | `AGENT_COMPLETED`               | `agent:completed`               | Agent Session |
 | `AGENT_ERROR`                   | `agent:error`                   | Agent Session |
-| `AGENT_MCP_STATUS`              | `agent:mcp-status`              | Agent Session |
 | `PROJECTS_GET`                  | `projects:get`                  | Projects      |
 | `PROJECTS_SET`                  | `projects:set`                  | Projects      |
 | `PROJECTS_VALIDATE_PATHS`       | `projects:validate-paths`       | Projects      |
@@ -80,6 +83,7 @@ export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
 - [[wiki/entities/open-external-ipc]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/agent-session-workspace]]
 - [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]

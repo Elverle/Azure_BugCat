@@ -3,7 +3,7 @@ title: 'Preload Bridge (contextBridge)'
 type: entity
 subtype: middleware
 created: 2026-04-29
-updated: 2026-05-20
+updated: 2026-05-21
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -15,6 +15,7 @@ sources:
     '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
     '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
+    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
     '[[wiki/analyses/cancel-categorization-flow]]',
     '[[wiki/analyses/dashboard-categorization-state-recovery]]'
   ]
@@ -59,11 +60,13 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 | `agentSuggestProjects(payload)`  | `agent:suggest-projects`        | invoke                   |
 | `agentStart(payload)`            | `agent:start`                   | invoke                   |
 | `agentAbort(payload)`            | `agent:abort`                   | invoke                   |
-| `agentGetSession()`              | `agent:get-session`             | invoke                   |
+| `agentGetSession(sessionId?)`    | `agent:get-session`             | invoke                   |
+| `agentListSessions()`            | `agent:list-sessions`           | invoke                   |
+| `agentSaveReport(payload)`       | `agent:save-report`             | invoke                   |
 | `onAgentChunk(cb)`               | `agent:chunk`                   | on (returns unsubscribe) |
 | `onAgentCompleted(cb)`           | `agent:completed`               | on (returns unsubscribe) |
 | `onAgentError(cb)`               | `agent:error`                   | on (returns unsubscribe) |
-| `onAgentMcpStatus(cb)`           | `agent:mcp-status`              | on (returns unsubscribe) |
+| `onAgentSessionUpdated(cb)`      | `agent:session-updated`         | on (returns unsubscribe) |
 | `getProjects()`                  | `projects:get`                  | invoke                   |
 | `setProjects(projects)`          | `projects:set`                  | invoke                   |
 | `validateProjectPaths(paths)`    | `projects:validate-paths`       | invoke                   |
@@ -93,20 +96,23 @@ declare global {
 - Cancellation remains explicit and whitelisted: the renderer can only abort the current categorization run through the dedicated method, not by touching arbitrary process state.
 - The status method is read-only and window-scoped: the renderer can query whether its own categorization is still active without receiving access to the controller itself.
 - FT-14A keeps privileged binary and filesystem actions in the same narrow bridge style: the renderer can request a fixed CLI check, a directory picker, and path validation, but cannot access `fs` or spawn arbitrary commands directly.
-- FT-14B follows the same pattern for agent sessions: the renderer cannot instantiate SDK clients or subscribe to arbitrary IPC channels, only to the dedicated chunk/completed/error/MCP-status streams exposed here.
+- FT-14B/FT-14E follow the same pattern for agent sessions: the renderer cannot instantiate SDK clients or subscribe to arbitrary IPC channels, only to the dedicated chunk/completed/error/update streams exposed here.
 - FT-14D keeps project suggestions inside that same explicit boundary: the renderer can ask for a recommendation, but the heuristic and store/session access stay in the main process.
+- FT-14E extends the boundary with a summary/detail split: the renderer can list sessions, fetch one detail record, request a report save, and subscribe to a narrow update event, but it still cannot enumerate raw store keys or write reports directly.
 
 ## See also
 
 - [[wiki/entities/ipc-handlers]] — main-process counterpart
 - [[wiki/entities/ipc-channels]] — channel constant definitions
 - [[wiki/entities/project-registry]]
-- [[wiki/entities/use-agent-session-hook]]
+- [[wiki/entities/use-agent-sessions-hook]]
+- [[wiki/entities/session-workspace]]
 - [[wiki/entities/analyze-start-panel]]
 - [[wiki/entities/open-external-ipc]]
 - [[wiki/entities/use-ai-cluster-hook]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/agent-session-workspace]]
 - [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/concepts/ipc-security-model]]

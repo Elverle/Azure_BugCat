@@ -45,12 +45,13 @@ export const store = new Store({
       copilotByokBaseUrl: '',
       projects: [],
       architectureContext: '',
-      maxConcurrentSessions: 1
+      maxConcurrentSessions: 5
     },
     session: null,
     bugCatalog: null,
     catalogMetadata: {
       lastClearedAt: null
-    }
+    },
+    agentSessions: []
   }
 })

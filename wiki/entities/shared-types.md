@@ -3,7 +3,7 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-20
+updated: 2026-05-21
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -17,6 +17,7 @@ sources:
     '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
     '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
+    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [typescript, types, shared, domain-model, catalog, settings, agent]
@@ -94,20 +95,25 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Agent sessions
 
-| Type                    | Purpose                                                                                                     |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `SessionMode`           | Session intent union, currently `'analyze' \| 'fix'`                                                        |
-| `AgentChunkType`        | Chunk classification: `text`, `tool_use`, `tool_result`, `status`                                           |
-| `AgentChunk`            | Streamed renderer-facing log event with `sessionId`, text, and metadata                                     |
-| `AgentSessionStatus`    | Session state union: `running`, `completed`, `aborted`, `error`                                             |
-| `AgentUsageStats`       | Provider-normalized usage snapshot with token counts, optional cache/reasoning metrics, duration, and model |
-| `AgentSession`          | Full FT-14 live session snapshot, now including optional `secondaryProjectIds` and `usage`                  |
-| `AgentStartPayload`     | Start request: `{ bugId, mode, primaryProjectId, secondaryProjectIds? }`                                    |
-| `AgentAbortPayload`     | Abort request: `{ sessionId }`                                                                              |
-| `AgentCompletedPayload` | Completion event: `{ sessionId, report, usage? }`                                                           |
-| `AgentErrorPayload`     | Error event: `{ sessionId, error }`                                                                         |
-| `McpStatus`             | Session-scoped MCP availability: `{ available, reason? }`                                                   |
-| `AgentMcpStatusPayload` | Event payload for renderer MCP badge updates                                                                |
+| Type                         | Purpose                                                                                                     |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `SessionMode`                | Session intent union, currently `'analyze' \| 'fix'`                                                        |
+| `AgentChunkType`             | Chunk classification: `text`, `tool_use`, `tool_result`, `status`                                           |
+| `AgentChunk`                 | Streamed renderer-facing log event with `sessionId`, text, and metadata                                     |
+| `AgentSessionStatus`         | Session state union: `running`, `completed`, `aborted`, `error`                                             |
+| `AgentUsageStats`            | Provider-normalized usage snapshot with token counts, optional cache/reasoning metrics, duration, and model |
+| `AgentSession`               | Full FT-14 live session snapshot, now including optional `secondaryProjectIds` and `usage`                  |
+| `AgentStartPayload`          | Start request: `{ bugId, mode, primaryProjectId, secondaryProjectIds? }`                                    |
+| `AgentAbortPayload`          | Abort request: `{ sessionId }`                                                                              |
+| `AgentCompletedPayload`      | Completion event: `{ sessionId, report, usage? }`                                                           |
+| `AgentErrorPayload`          | Error event: `{ sessionId, error }`                                                                         |
+| `McpStatus`                  | Session-scoped MCP availability: `{ available, reason? }`                                                   |
+| `AgentMcpStatusPayload`      | Event payload for renderer MCP badge updates                                                                |
+| `AgentSessionFilter`         | Summary-list filter union: `all` or one concrete `AgentSessionStatus`                                       |
+| `AgentSessionSummary`        | Workspace-friendly session row with status, chunk count, cached report metadata, and optional MCP status    |
+| `AgentSessionUpdatedPayload` | Narrow event payload for terminal-state list updates                                                        |
+| `AgentSaveReportPayload`     | Save-report request: `{ sessionId, defaultFilename? }`                                                      |
+| `PersistedAgentSession`      | `AgentSession` plus `persistedAt` metadata used only inside the store                                       |
 
 ### Project-suggestion preflight
 
@@ -173,6 +179,13 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `AgentUsageStats` normalizes provider-specific usage payloads into one renderer-safe shape so Claude, Codex, and Copilot can all feed the same statistics view.
 - `AgentCompletedPayload.usage` keeps token metrics tied to the same session-completion event that already delivers the final report, avoiding a second IPC round trip.
 
+## FT-14E Notes
+
+- `AgentSessionSummary` deliberately separates list concerns from full log/report detail so the workspace does not hydrate every stored chunk on mount.
+- `AgentSessionUpdatedPayload` exists because not every session transition carries a new chunk or final report, but the list still needs to react quickly to abort/completion state changes.
+- `PersistedAgentSession` formalizes the store-only shape for retained agent sessions without leaking `persistedAt` into the renderer model.
+- `AppSettings.maxConcurrentSessions` now defaults to `5` in newly initialized stores and is used as the runtime concurrency ceiling for FT-14E sessions.
+
 ## Cancellation Notes
 
 - `ErrorCode` now includes `OPERATION_CANCELLED` so intentional user aborts can be distinguished from `LLM_TIMEOUT`.
@@ -185,6 +198,7 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - [[wiki/entities/project-registry]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/agent-session-workspace]]
 - [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]

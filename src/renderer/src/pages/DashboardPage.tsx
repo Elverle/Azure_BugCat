@@ -12,8 +12,7 @@ import {
 } from 'lucide-react'
 import { useDashboard } from '@renderer/hooks/useDashboard'
 import { useAiCluster } from '@renderer/hooks/useAiCluster'
-import { useAgentSession } from '@renderer/hooks/useAgentSession'
-import { SessionsPanel } from '@renderer/components/dashboard/SessionsPanel'
+import { SessionWorkspace } from '@renderer/components/dashboard/SessionWorkspace'
 import { useBugDrawer } from '@renderer/hooks/useBugDrawer'
 import { DashboardHeader } from '@renderer/components/dashboard/DashboardHeader'
 import { ConfirmDialog } from '@renderer/components/ui/confirm-dialog'
@@ -66,14 +65,6 @@ export function DashboardPage(): JSX.Element {
     clearCategorizeError
   } = useDashboard()
 
-  const {
-    session: agentSession,
-    mcpStatus,
-    startSession,
-    abortSession,
-    clearSession
-  } = useAgentSession()
-
   const [filterState, setFilterState] = useState<FilterState>(EMPTY_FILTER_STATE)
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE)
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
@@ -86,6 +77,9 @@ export function DashboardPage(): JSX.Element {
     projectName: ''
   })
   const [projects, setProjects] = useState<ProjectEntry[]>([])
+  const [maxConcurrentSessions, setMaxConcurrentSessions] = useState(5)
+  const [agentRunningCount, setAgentRunningCount] = useState(0)
+  const [startingAgentSession, setStartingAgentSession] = useState(false)
   // Computed values
   const filteredBugs = useMemo(
     () => filterBugs(bugs, { ...filterState, searchText }),
@@ -165,8 +159,34 @@ export function DashboardPage(): JSX.Element {
         if (settings.projects) {
           setProjects(settings.projects)
         }
+        setMaxConcurrentSessions(settings.maxConcurrentSessions ?? 5)
       }
     })
+  }, [])
+
+  useEffect(() => {
+    let disposed = false
+
+    const refreshRunningCount = async (): Promise<void> => {
+      const sessions = (await window.electronAPI.agentListSessions()) as
+        | Array<{ status: string }>
+        | undefined
+
+      if (!disposed && sessions) {
+        setAgentRunningCount(sessions.filter((session) => session.status === 'running').length)
+      }
+    }
+
+    void refreshRunningCount()
+
+    const unsubscribe = window.electronAPI.onAgentSessionUpdated?.(() => {
+      void refreshRunningCount()
+    })
+
+    return () => {
+      disposed = true
+      unsubscribe?.()
+    }
   }, [])
 
   // Sort handler with tri-state toggle: asc → desc → none
@@ -229,10 +249,21 @@ export function DashboardPage(): JSX.Element {
 
   const handleAnalyze = useCallback(
     async (bugId: number, projectId: string, secondaryProjectIds: string[]) => {
-      await startSession(bugId, projectId, secondaryProjectIds)
-      setViewMode('sessions')
+      setStartingAgentSession(true)
+      try {
+        await window.electronAPI.agentStart({
+          bugId,
+          mode: 'analyze',
+          primaryProjectId: projectId,
+          secondaryProjectIds
+        })
+        setAgentRunningCount((count) => count + 1)
+        setViewMode('sessions')
+      } finally {
+        setStartingAgentSession(false)
+      }
     },
-    [startSession]
+    []
   )
 
   const handleSimilarityBugClick = useCallback(
@@ -337,8 +368,10 @@ export function DashboardPage(): JSX.Element {
             >
               <Bot className="w-4 h-4 mr-2 inline" />
               Sessioni
-              {agentSession?.status === 'running' && (
-                <span className="ml-1.5 inline-block w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+              {agentRunningCount > 0 && (
+                <span className="ml-1.5 inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full">
+                  {agentRunningCount}
+                </span>
               )}
             </button>
           </nav>
@@ -363,7 +396,12 @@ export function DashboardPage(): JSX.Element {
 
         {/* Bug list */}
         {viewMode === 'sessions' ? (
-          <SessionsPanel session={agentSession} mcpStatus={mcpStatus} onAbort={abortSession} />
+          <SessionWorkspace
+            maxConcurrentSessions={maxConcurrentSessions}
+            projects={projects}
+            bugs={bugs}
+            onRunningCountChange={setAgentRunningCount}
+          />
         ) : viewMode === 'similarity' ? (
           <DashboardSimilaritySection
             key={`${sessionInfo.fetchedAt ?? 'none'}-${sessionInfo.categorizedAt ?? 'none'}`}
@@ -436,7 +474,7 @@ export function DashboardPage(): JSX.Element {
         adoLinkEnabled={adoLinkEnabled}
         onAnalyze={handleAnalyze}
         projects={projects}
-        isAnalyzing={agentSession?.status === 'running'}
+        isAnalyzing={startingAgentSession || agentRunningCount >= maxConcurrentSessions}
       />
 
       <ConfirmDialog

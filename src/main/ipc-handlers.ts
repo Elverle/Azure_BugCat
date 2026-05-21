@@ -33,9 +33,18 @@ import {
   selectPrimaryProject,
   suggestSecondaryProjects
 } from './agent'
+import {
+  persistSession,
+  loadPersistedSessions,
+  pruneExpiredSessions,
+  markStaleRunning
+} from './agent/session-persistence'
 import type {
   AgentStartPayload,
   AgentAbortPayload,
+  AgentSessionSummary,
+  AgentSessionUpdatedPayload,
+  AgentSaveReportPayload,
   CategorizedBug,
   AgentChunk,
   McpStatus,
@@ -449,6 +458,24 @@ export function registerIPCHandlers(): void {
 
   // Agent Sessions
   const sessionManager = new SessionManager()
+  const sessionMcpStatus = new Map<string, McpStatus>()
+
+  // Initialize with persisted sessions and settings
+  {
+    const settings = store.get('settings') as AppSettings | null
+    if (settings?.maxConcurrentSessions) {
+      sessionManager.setMaxConcurrent(settings.maxConcurrentSessions)
+    }
+    const persisted = loadPersistedSessions()
+    const restored = markStaleRunning(persisted)
+    sessionManager.restoreSessions(restored)
+    pruneExpiredSessions()
+    restored
+      .filter(
+        (s) => s.status === 'aborted' && persisted.find((p) => p.id === s.id)?.status === 'running'
+      )
+      .forEach((s) => persistSession(s))
+  }
 
   ipcMain.handle(IPC_CHANNELS.AGENT_SUGGEST_PROJECTS, async (_event, payload: unknown) => {
     if (!payload || typeof payload !== 'object') {
@@ -647,9 +674,27 @@ export function registerIPCHandlers(): void {
         },
         (sid: string, report: string, usage) => {
           event.sender.send(IPC_CHANNELS.AGENT_COMPLETED, { sessionId: sid, report, usage })
+          const completedSession = sessionManager.getSession(sid)
+          if (completedSession) {
+            persistSession(completedSession)
+            event.sender.send(IPC_CHANNELS.AGENT_SESSION_UPDATED, {
+              sessionId: sid,
+              status: completedSession.status,
+              completedAt: completedSession.completedAt
+            } as AgentSessionUpdatedPayload)
+          }
         },
         (sid: string, error: AppErrorType) => {
           event.sender.send(IPC_CHANNELS.AGENT_ERROR, { sessionId: sid, error })
+          const erroredSession = sessionManager.getSession(sid)
+          if (erroredSession) {
+            persistSession(erroredSession)
+            event.sender.send(IPC_CHANNELS.AGENT_SESSION_UPDATED, {
+              sessionId: sid,
+              status: erroredSession.status,
+              completedAt: erroredSession.completedAt
+            } as AgentSessionUpdatedPayload)
+          }
         },
         secondaryProjectIds.length > 0 ? secondaryProjects.map((p) => p.id) : undefined,
         secondaryProjects.length > 0
@@ -657,8 +702,12 @@ export function registerIPCHandlers(): void {
           : undefined
       )
 
-      // Emit MCP status to renderer
-      event.sender.send(IPC_CHANNELS.AGENT_MCP_STATUS, { sessionId, mcpStatus })
+      // Track MCP status and persist running snapshot for crash recovery
+      sessionMcpStatus.set(sessionId, mcpStatus)
+      const startedSession = sessionManager.getSession(sessionId)
+      if (startedSession) {
+        persistSession(startedSession)
+      }
 
       return { sessionId, agentProvider, mcpStatus }
     } catch (error: unknown) {
@@ -676,13 +725,65 @@ export function registerIPCHandlers(): void {
           message: 'Sessione non trovata o non in esecuzione'
         }
       }
+      const abortedSession = sessionManager.getSession(sessionId)
+      if (abortedSession) {
+        persistSession(abortedSession)
+        const win = BrowserWindow.getFocusedWindow()
+        if (win) {
+          win.webContents.send(IPC_CHANNELS.AGENT_SESSION_UPDATED, {
+            sessionId,
+            status: abortedSession.status,
+            completedAt: abortedSession.completedAt
+          } as AgentSessionUpdatedPayload)
+        }
+      }
       return { aborted: true }
     } catch (error: unknown) {
       throw toRendererError(error)
     }
   })
 
-  ipcMain.handle(IPC_CHANNELS.AGENT_GET_SESSION, async () => {
-    return sessionManager.getSession()
+  ipcMain.handle(IPC_CHANNELS.AGENT_GET_SESSION, async (_event, sessionId?: string) => {
+    return sessionManager.getSession(sessionId)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.AGENT_LIST_SESSIONS, async () => {
+    const sessions = sessionManager.getAllSessions()
+    return sessions.map(
+      (s): AgentSessionSummary => ({
+        id: s.id,
+        bugId: s.bugId,
+        mode: s.mode,
+        primaryProjectId: s.primaryProjectId,
+        secondaryProjectIds: s.secondaryProjectIds,
+        agentProvider: s.agentProvider,
+        status: s.status,
+        startedAt: s.startedAt,
+        completedAt: s.completedAt,
+        report: s.report,
+        usage: s.usage,
+        error: s.error,
+        mcpStatus: sessionMcpStatus.get(s.id),
+        chunkCount: s.chunks.length
+      })
+    )
+  })
+
+  ipcMain.handle(IPC_CHANNELS.AGENT_SAVE_REPORT, async (_event, payload: unknown) => {
+    const { sessionId, defaultFilename } = payload as AgentSaveReportPayload
+    const session = sessionManager.getSession(sessionId)
+    if (!session?.report) {
+      throw { code: 'AGENT_SESSION_NOT_FOUND', message: 'Sessione o report non trovato' }
+    }
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) throw { code: 'UNKNOWN_ERROR', message: 'Nessuna finestra attiva' }
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      defaultPath: defaultFilename || `bug-${session.bugId}-report.md`,
+      filters: [{ name: 'Markdown', extensions: ['md'] }]
+    })
+    if (canceled || !filePath) return { saved: false }
+    const { writeFile } = await import('fs/promises')
+    await writeFile(filePath, session.report, 'utf-8')
+    return { saved: true, filePath }
   })
 }

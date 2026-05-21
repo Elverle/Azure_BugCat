@@ -3,26 +3,27 @@ title: 'Sessions Panel'
 type: entity
 subtype: component
 created: 2026-05-18
-updated: 2026-05-20
+updated: 2026-05-21
 sources:
 	[
 		'[[wiki/sources/ft-14b-agent-sessions]]',
 		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
-		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]'
+		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
+		'[[wiki/sources/ft-14e-multi-session-agent-workspace]]'
 	]
-tags: [react, component, dashboard, agent, markdown, logs]
+tags: [react, component, dashboard, agent, markdown, logs, legacy, removed]
 lang: en
 ---
 
 ## Description
 
-Dashboard component that renders the FT-14B agent-session experience. It shows the empty state, running status and abort action, error messaging, an accordion log of streamed chunks, a Markdown-rendered final report after completion, and a dedicated `Statistiche` section for provider token usage when the runner exposes it.
+Historical FT-14B single-session Dashboard component. It was superseded by [[wiki/entities/session-workspace]] in FT-14E and removed from the codebase in `fix-06` once the last compatibility references disappeared.
 
 ## Location
 
-`src/renderer/src/components/dashboard/SessionsPanel.tsx`
+Removed from the codebase in `fix-06`. The active replacement is [[wiki/entities/session-detail-panel]] inside [[wiki/entities/session-workspace]].
 
-## Props
+## Former Props
 
 | Prop        | Type                   | Purpose                             |
 | ----------- | ---------------------- | ----------------------------------- |
@@ -30,7 +31,7 @@ Dashboard component that renders the FT-14B agent-session experience. It shows t
 | `mcpStatus` | `McpStatus \| null`    | Current session MCP/fallback status |
 | `onAbort`   | `() => void`           | Aborts an active running session    |
 
-## Key Behaviors
+## Historical Behaviors
 
 - Shows a dedicated empty state when no FT-14B session has been started or reconnected.
 - Keeps the session header always visible with status badge, MCP/fallback badge, start time, completion time, and abort action.
@@ -51,6 +52,8 @@ Dashboard component that renders the FT-14B agent-session experience. It shows t
 
 ## See also
 
+- [[wiki/entities/session-workspace]]
+- [[wiki/entities/session-detail-panel]]
 - [[wiki/entities/use-agent-session-hook]]
 - [[wiki/entities/dashboard-page]]
 - [[wiki/topics/mcp-backed-agent-analysis]]

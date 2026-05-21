@@ -12,18 +12,29 @@ import {
   FileText,
   BarChart3,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Copy,
+  Save,
+  ExternalLink
 } from 'lucide-react'
-import type { AgentSession, AgentChunk, AgentUsageStats, McpStatus } from '@shared/types'
+import type { AgentSession, AgentChunk, AgentUsageStats } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
 
-interface SessionsPanelProps {
+interface SessionDetailPanelProps {
   session: AgentSession | null
-  mcpStatus: McpStatus | null
-  onAbort: () => void
+  onAbort: (sessionId: string) => void
+  onCopyReport: (sessionId: string) => void
+  onSaveReport: (sessionId: string, bugId: number) => void
+  onOpenBug: (bugId: number) => void
 }
 
-export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProps): JSX.Element {
+export function SessionDetailPanel({
+  session,
+  onAbort,
+  onCopyReport,
+  onSaveReport,
+  onOpenBug
+}: SessionDetailPanelProps): JSX.Element {
   const logEndRef = useRef<HTMLDivElement>(null)
   const [logOpen, setLogOpen] = useState(true)
   const [reportOpen, setReportOpen] = useState(true)
@@ -40,21 +51,21 @@ export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProp
     return (
       <div className="flex flex-col items-center justify-center h-64 text-center">
         <Bot className="w-12 h-12 text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-600">Nessuna sessione attiva</h3>
-        <p className="text-sm text-gray-400 mt-1">
-          Apri il dettaglio di un bug e clicca &quot;Analizza&quot; per avviare una sessione.
-        </p>
+        <h3 className="text-lg font-medium text-gray-600">Seleziona una sessione dalla lista</h3>
+        <p className="text-sm text-gray-400 mt-1">Clicca su una sessione per vederne i dettagli.</p>
       </div>
     )
   }
 
+  const progressPercent =
+    session.status === 'running' ? Math.min(95, (session.chunks.length / 50) * 100) : 100
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-      {/* Session header — always visible */}
+      {/* Session header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
         <div className="flex items-center gap-3">
           <SessionStatusBadge status={session.status} />
-          <McpStatusBadge mcpStatus={mcpStatus} />
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Bug #{session.bugId} — Analisi</h3>
             <p className="text-xs text-gray-500">
@@ -67,7 +78,7 @@ export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProp
         </div>
         {session.status === 'running' && (
           <button
-            onClick={onAbort}
+            onClick={() => onAbort(session.id)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md border border-red-200 transition-colors"
           >
             <StopCircle size={14} />
@@ -75,6 +86,16 @@ export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProp
           </button>
         )}
       </div>
+
+      {/* Progress bar for running sessions */}
+      {session.status === 'running' && (
+        <div className="h-1.5 bg-gray-100">
+          <div
+            className="h-full bg-blue-500 transition-all duration-500 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      )}
 
       {/* Error message */}
       {session.status === 'error' && session.error && (
@@ -144,9 +165,35 @@ export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProp
               <Markdown remarkPlugins={[remarkGfm]}>{session.report}</Markdown>
             </div>
           )}
+
+          {/* Action bar */}
+          <div className="flex items-center gap-2 px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <button
+              onClick={() => onCopyReport(session.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded-md transition-colors"
+            >
+              <Copy size={12} />
+              Copia Report
+            </button>
+            <button
+              onClick={() => onSaveReport(session.id, session.bugId)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded-md transition-colors"
+            >
+              <Save size={12} />
+              Salva .md
+            </button>
+            <button
+              onClick={() => onOpenBug(session.bugId)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded-md transition-colors"
+            >
+              <ExternalLink size={12} />
+              Apri Bug in ADO
+            </button>
+          </div>
         </div>
       )}
 
+      {/* Stats accordion */}
       {session.status !== 'running' && (
         <div
           className={
@@ -176,6 +223,8 @@ export function SessionsPanel({ session, mcpStatus, onAbort }: SessionsPanelProp
     </div>
   )
 }
+
+// --- Helper Components ---
 
 function SessionUsagePanel({ usage }: { usage?: AgentUsageStats }): JSX.Element {
   if (!usage) {
@@ -218,14 +267,8 @@ function formatMetric(value: number | undefined): string {
 }
 
 function formatDuration(value: number | undefined): string {
-  if (value === undefined) {
-    return 'n/d'
-  }
-
-  if (value < 1000) {
-    return `${value} ms`
-  }
-
+  if (value === undefined) return 'n/d'
+  if (value < 1000) return `${value} ms`
   return `${(value / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} s`
 }
 
@@ -298,25 +341,4 @@ function ChunkLine({ chunk }: { chunk: AgentChunk }): JSX.Element {
         </div>
       )
   }
-}
-
-function McpStatusBadge({ mcpStatus }: { mcpStatus: McpStatus | null }): JSX.Element | null {
-  if (!mcpStatus) return null
-
-  if (mcpStatus.available) {
-    return (
-      <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700">
-        MCP
-      </span>
-    )
-  }
-
-  return (
-    <span
-      className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 cursor-help"
-      title={mcpStatus.reason ?? 'MCP non disponibile — analisi con prompt completo'}
-    >
-      Fallback
-    </span>
-  )
 }
