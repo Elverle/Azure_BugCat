@@ -3,12 +3,13 @@ title: 'useSettings Hook'
 type: entity
 subtype: hook
 created: 2026-04-29
-updated: 2026-05-17
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-02-settings]]',
     '[[wiki/sources/ft-08-generic-provider]]',
-    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]'
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]'
   ]
 tags: [react, hook, state-management, settings, ipc, agent, projects]
 lang: en
@@ -16,7 +17,7 @@ lang: en
 
 ## Description
 
-Central state management hook for the Settings page. It owns form state, validation, dirty tracking, IPC load/save, connection tests, FT-14A agent-provider derivation, project registry CRUD, and save-time sanitization/path validation.
+Central state management hook for the Settings page. It owns form state, validation, dirty tracking, IPC load/save, connection tests, FT-14A agent-provider derivation, project registry CRUD, and FT-14G's code-source-aware sanitization and path-validation flow.
 
 ## Location
 
@@ -75,7 +76,7 @@ export interface UseSettingsReturn {
 - **Dirty tracking:** `isDirty = JSON.stringify(settings) !== JSON.stringify(originalSettings)`
 - **`canSave`:** `isDirty && isSettingsValid(errors) && !saving`
 - **Auto-derivation:** After initial load, switching `llmProvider` to `anthropic` or `openai` writes `agentProvider = 'claude-sdk'` or `'codex-sdk'` into state.
-- **Save flow:** Mark all fields touched, including per-project keys → sanitize hidden dependent fields → validate → validate project paths through IPC → if valid, call `setSettings()` IPC → update `originalSettings`
+- **Save flow:** Mark all fields touched, including per-project keys → sanitize hidden dependent fields → validate → validate project paths through IPC only when `codeSource === 'local'` → if valid, call `setSettings()` IPC → update `originalSettings`
 - **Test connections:** Race IPC call against 5 s timeout → structured result
 - **Auto-dismiss:** Test results clear after 5 s via `useEffect` timers
 - **Categories helpers:** `categoriesToText` (join with `\n`), `textToCategories` (split, trim, deduplicate)
@@ -113,7 +114,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   copilotByokApiKey: '',
   projects: [],
   architectureContext: '',
-  maxConcurrentSessions: 1
+  maxConcurrentSessions: 1,
+  codeSource: 'local'
 }
 ```
 
@@ -128,6 +130,12 @@ const DEFAULT_SETTINGS: AppSettings = {
 - Project path validation is intentionally deferred to save time because the renderer is not allowed to hit `fs` directly.
 - Per-project validation visibility uses synthetic touched keys such as `project-0-path`.
 
+## FT-14G Notes
+
+- `DEFAULT_SETTINGS` now includes `codeSource: 'local'`, which preserves pre-FT-14G behavior for fresh renderer state.
+- The save flow no longer calls the privileged path-validation IPC when `codeSource === 'mcp-repos'`, which keeps the Settings experience aligned with the optional `ProjectEntry.path` contract.
+- The hook still persists one unified `AppSettings` object, so switching between local and MCP-repos mode does not require a separate project-registry store.
+
 ## Dependencies
 
 - [[wiki/entities/validation-utils]] — `validateSettings()`, `isSettingsValid()`
@@ -139,6 +147,7 @@ const DEFAULT_SETTINGS: AppSettings = {
 - [[wiki/entities/settings-page]] — consumer
 - [[wiki/entities/project-registry]]
 - [[wiki/concepts/agent-provider-auto-derivation]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/concepts/settings-sanitization-before-save]]
 - [[wiki/concepts/dynamic-collection-touched-state]]
 - [[wiki/concepts/form-validation-pattern]]

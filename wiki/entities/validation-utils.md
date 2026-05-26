@@ -3,13 +3,14 @@ title: 'Validation Utilities'
 type: entity
 subtype: library
 created: 2026-04-29
-updated: 2026-05-18
+updated: 2026-05-26
 sources:
 	[
 		'[[wiki/sources/ft-02-settings]]',
 		'[[wiki/sources/ft-08-generic-provider]]',
 		'[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
-		'[[wiki/sources/ft-14b-agent-sessions]]'
+		'[[wiki/sources/ft-14b-agent-sessions]]',
+		'[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]'
 	]
 tags: [typescript, validation, pure-functions, settings, projects]
 lang: en
@@ -17,7 +18,7 @@ lang: en
 
 ## Description
 
-Pure validation functions for Settings fields. No React dependencies, no IPC side effects, and every validator returns `string | null` so the hook can aggregate errors consistently. FT-14A extends the module with project-entry, architecture-context, concurrency, and conditional agent/BYOK validation, while FT-14B refines the agent-key rules for the Claude runtime.
+Pure validation functions for Settings fields. No React dependencies, no IPC side effects, and every validator returns `string | null` so the hook can aggregate errors consistently. FT-14A extends the module with project-entry, architecture-context, concurrency, and conditional agent/BYOK validation, FT-14B refines the agent-key rules for the Claude runtime, and FT-14G makes project-path requirements conditional on the selected code source.
 
 ## Location
 
@@ -25,18 +26,18 @@ Pure validation functions for Settings fields. No React dependencies, no IPC sid
 
 ## Validators
 
-| Function                                       | Field(s)                                     | Rule                                                                                       |
-| ---------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `validateOrgUrl(url)`                          | `orgUrl`                                     | Required; must match `https://dev.azure.com/{org}` or `https://{org}.visualstudio.com`     |
-| `validateRequired(value, fieldName)`           | `projectName`, `pat`, conditional agent keys | Non-empty after trim                                                                       |
-| `validateUUID(value)`                          | `queryId`                                    | Required; must be valid UUID format                                                        |
-| `validateIntRange(value, min, max, fieldName)` | `topN`, `chunkSize`, `maxConcurrentSessions` | Must be integer within range                                                               |
-| `validateApiKey(value, provider)`              | `apiKey`                                     | Required for all current providers                                                         |
-| `validateBaseUrl(value, provider)`             | `baseUrl`                                    | Required only for `generic`; must be a valid URL and use HTTPS, except localhost/127.0.0.1 |
-| `validateMaxLength(value, max, fieldName)`     | `architectureContext`, project metadata      | Enforces field-specific max lengths                                                        |
-| `validateProjectEntry(project)`                | `ProjectEntry` fields                        | Validates required name/path plus max-length constraints                                   |
-| `validateArchitectureContext(value)`           | `architectureContext`                        | Maximum 1000 characters                                                                    |
-| `validateMaxConcurrentSessions(value)`         | `maxConcurrentSessions`                      | Integer range `1..5`                                                                       |
+| Function                                       | Field(s)                                     | Rule                                                                                        |
+| ---------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `validateOrgUrl(url)`                          | `orgUrl`                                     | Required; must match `https://dev.azure.com/{org}` or `https://{org}.visualstudio.com`      |
+| `validateRequired(value, fieldName)`           | `projectName`, `pat`, conditional agent keys | Non-empty after trim                                                                        |
+| `validateUUID(value)`                          | `queryId`                                    | Required; must be valid UUID format                                                         |
+| `validateIntRange(value, min, max, fieldName)` | `topN`, `chunkSize`, `maxConcurrentSessions` | Must be integer within range                                                                |
+| `validateApiKey(value, provider)`              | `apiKey`                                     | Required for all current providers                                                          |
+| `validateBaseUrl(value, provider)`             | `baseUrl`                                    | Required only for `generic`; must be a valid URL and use HTTPS, except localhost/127.0.0.1  |
+| `validateMaxLength(value, max, fieldName)`     | `architectureContext`, project metadata      | Enforces field-specific max lengths                                                         |
+| `validateProjectEntry(project, codeSource?)`   | `ProjectEntry` fields                        | Validates required name plus code-source-aware path requirements and max-length constraints |
+| `validateArchitectureContext(value)`           | `architectureContext`                        | Maximum 1000 characters                                                                     |
+| `validateMaxConcurrentSessions(value)`         | `maxConcurrentSessions`                      | Integer range `1..5`                                                                        |
 
 ## Aggregate Functions
 
@@ -62,6 +63,11 @@ const ADO_ORG_URL_REGEX = /^https:\/\/(dev\.azure\.com\/[^/\s]+|[^/\s]+\.visuals
 - `copilotByokApiKey` becomes required only when `agentProvider === 'copilot-sdk'` and `copilotByokEnabled === true`.
 - Project-entry errors are flattened into the same record as top-level Settings errors, which keeps the `useSettings` API unchanged.
 
+## FT-14G Notes
+
+- `validateProjectEntry()` now accepts `codeSource` so `path` can be skipped entirely in `mcp-repos` mode.
+- `validateSettings()` forwards `settings.codeSource` into every project-row validation, which keeps renderer error behavior consistent with the main-process `agent:start` routing.
+
 ## FT-14B Notes
 
 - Manual `claude-sdk` selection no longer forces `agentApiKey`; the runner may fall back to local Claude Code authentication.
@@ -72,4 +78,5 @@ const ADO_ORG_URL_REGEX = /^https:\/\/(dev\.azure\.com\/[^/\s]+|[^/\s]+\.visuals
 - [[wiki/entities/use-settings-hook]] — consumer
 - [[wiki/concepts/form-validation-pattern]]
 - [[wiki/concepts/dynamic-collection-touched-state]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/topics/agent-analysis-sessions]]

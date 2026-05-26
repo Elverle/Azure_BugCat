@@ -3,15 +3,19 @@ title: 'Project Registry Section'
 type: entity
 subtype: component
 created: 2026-05-17
-updated: 2026-05-21
-sources: ['[[wiki/sources/ft-14a-agent-configuration-project-registry]]']
+updated: 2026-05-26
+sources:
+  [
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]'
+  ]
 tags: [react, component, settings, projects, registry]
 lang: en
 ---
 
 ## Description
 
-Settings card for managing the list of local projects that future agent sessions may work against. It renders a CRUD interface over `AppSettings.projects`, including typed metadata, a directory picker, and field-level error display keyed per project row.
+Settings card for managing the list of projects that future agent sessions may work against. FT-14G makes the same registry support two different execution models: local filesystem targets and Azure DevOps repository identifiers.
 
 ## Location
 
@@ -24,6 +28,7 @@ interface ProjectRegistrySectionProps {
   projects: ProjectEntry[]
   errors: Record<string, string | null>
   touched: Record<string, boolean>
+  codeSource: CodeSource
   onAddProject: () => void
   onUpdateProject: (id: string, updates: Partial<ProjectEntry>) => void
   onRemoveProject: (id: string) => void
@@ -35,7 +40,8 @@ interface ProjectRegistrySectionProps {
 
 - Shows an empty-state hint when no projects are registered.
 - Adds new rows through `onAddProject()`, with row-local editing handled by `onUpdateProject(id, updates)`.
-- Uses a folder-picker button that delegates path selection to the main process instead of exposing filesystem access in the renderer.
+- In `local` mode, shows the `path` field plus a folder-picker button that delegates directory selection to the main process instead of exposing filesystem access in the renderer.
+- In `mcp-repos` mode, hides the `path` field and instead explains that `project.name` is treated as the Azure DevOps repository name.
 - Supports the `backend`, `frontend`, and `shared` project-type radio group.
 - Accepts keyword entry as comma-separated text, keeps the raw typed draft visible while editing, and normalizes it to a trimmed string array for persistence.
 - Shows validation messages only for the specific touched fields of each row, not for every untouched field in a newly created project.
@@ -54,4 +60,5 @@ interface ProjectRegistrySectionProps {
 
 - [[wiki/entities/settings-page]]
 - [[wiki/concepts/dynamic-collection-touched-state]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/topics/agent-session-configuration-foundation]]

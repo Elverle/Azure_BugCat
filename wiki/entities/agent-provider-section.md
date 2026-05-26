@@ -8,7 +8,8 @@ sources:
   [
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
-    '[[wiki/sources/ft-14f-provider-auth-parity-analysis]]'
+    '[[wiki/sources/ft-14f-provider-auth-parity-analysis]]',
+    '[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]'
   ]
 tags: [react, component, settings, agent, byok]
 lang: en
@@ -16,7 +17,7 @@ lang: en
 
 ## Description
 
-Settings card that configures which agent runtime should be used for agent sessions. It combines auto-derived provider badges, manual provider selection for non-derived LLMs, optional manual credentials/model inputs, Copilot BYOK controls, a Codex CLI installation check, and an FT-14F Copilot connectivity probe.
+Settings card that configures which agent runtime and code-access mode should be used for agent sessions. It combines FT-14G's code-source selector with auto-derived provider badges, manual provider selection for non-derived LLMs, optional manual credentials/model inputs, Copilot BYOK controls, a Codex CLI installation check, and an FT-14F Copilot connectivity probe.
 
 ## Location
 
@@ -38,6 +39,8 @@ interface AgentProviderSectionProps {
 
 ## Behavior
 
+- Shows an FT-14G radio selector for `Filesystem locale` vs `MCP Azure DevOps Repos` and stores the choice in `settings.codeSource`.
+- Explains the selected mode inline: local mode requires valid project paths, while MCP-repos mode reads code through Azure DevOps and does not require local checkouts.
 - Shows a non-editable `Claude Code SDK (automatico)` badge when `llmProvider === 'anthropic'`.
 - Shows a non-editable `Codex CLI (automatico)` badge when `llmProvider === 'openai'`.
 - Falls back to a manual dropdown only for `gemini`, `generic`, and `openrouter` LLM selections.
@@ -68,6 +71,7 @@ interface AgentProviderSectionProps {
 
 - [[wiki/entities/settings-page]]
 - [[wiki/concepts/agent-provider-auto-derivation]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/concepts/proactive-agent-configuration-blocking]]
 - [[wiki/concepts/settings-sanitization-before-save]]
 - [[wiki/topics/agent-session-configuration-foundation]]

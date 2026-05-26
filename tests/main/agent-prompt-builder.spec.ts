@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildAnalyzePrompt, buildMcpPrompt } from '@main/agent/prompt-builder'
+import { buildAnalyzePrompt, buildMcpPrompt, buildMcpReposPrompt } from '@main/agent/prompt-builder'
 import type { CategorizedBug, ProjectEntry } from '@shared/types'
 
 const mockBug: CategorizedBug = {
@@ -268,5 +268,91 @@ describe('buildMcpPrompt — userContext', () => {
   it('wraps user context in fenced delimiters', () => {
     const result = buildMcpPrompt(123, mockProject, '', undefined, undefined, undefined, 'A note')
     expect(result).toContain('---\nA note\n---')
+  })
+})
+
+describe('buildMcpReposPrompt', () => {
+  it('output contains bug ID', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '')
+    expect(result).toContain('123')
+  })
+
+  it('output contains MCP repo tool names', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '')
+    expect(result).toContain('repo_list_repos_by_project')
+    expect(result).toContain('repo_list_directory')
+    expect(result).toContain('repo_get_file_content')
+    expect(result).toContain('repo_get_repo_by_name_or_id')
+  })
+
+  it('output contains repo name from project.name', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '')
+    expect(result).toContain('hotel-frontend')
+  })
+
+  it('output does NOT contain any local filesystem path', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '')
+    expect(result).not.toContain('/Users/dev/hotel-frontend')
+  })
+
+  it('output contains architecture context when provided', () => {
+    const result = buildMcpReposPrompt(123, mockProject, 'Monorepo with NX workspace')
+    expect(result).toContain('Architecture Context')
+    expect(result).toContain('Monorepo with NX workspace')
+  })
+
+  it('output does NOT contain architecture context section when empty', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '')
+    expect(result).not.toContain('## Architecture Context')
+  })
+
+  it('includes secondary projects by repo name without paths', () => {
+    const result = buildMcpReposPrompt(
+      123,
+      mockProject,
+      '',
+      undefined,
+      undefined,
+      secondaryProjects
+    )
+    expect(result).toContain('hotel-api')
+    expect(result).toContain('hotel-common')
+    expect(result).not.toContain('/Users/dev/hotel-api')
+    expect(result).not.toContain('/Users/dev/hotel-common')
+  })
+
+  it('omits secondary projects section when undefined', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '')
+    expect(result).not.toContain('Secondary Projects')
+  })
+
+  it('omits secondary projects section when empty array', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '', undefined, undefined, [])
+    expect(result).not.toContain('Secondary Projects')
+  })
+
+  it('includes user context when provided', () => {
+    const result = buildMcpReposPrompt(
+      123,
+      mockProject,
+      '',
+      undefined,
+      undefined,
+      undefined,
+      'Check auth module'
+    )
+    expect(result).toContain('## Note utente')
+    expect(result).toContain('Check auth module')
+  })
+
+  it('omits user context when undefined', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '')
+    expect(result).not.toContain('## Note utente')
+  })
+
+  it('instructs agent to use ONLY MCP tools for code reading', () => {
+    const result = buildMcpReposPrompt(123, mockProject, '')
+    expect(result.toLowerCase()).toContain('only')
+    expect(result.toLowerCase()).toContain('mcp')
   })
 })

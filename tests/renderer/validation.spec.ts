@@ -28,7 +28,8 @@ const validSettings: AppSettings = {
   agentProvider: 'none',
   projects: [],
   architectureContext: '',
-  maxConcurrentSessions: 1
+  maxConcurrentSessions: 1,
+  codeSource: 'local'
 }
 
 describe('validation utils', () => {
@@ -252,5 +253,63 @@ describe('validateSettings — new FT-14A fields', () => {
       copilotByokApiKey: ''
     })
     expect(errors.copilotByokApiKey).toBeNull()
+  })
+})
+
+describe('validateProjectEntry — codeSource mcp-repos', () => {
+  const validProject: ProjectEntry = {
+    id: 'p1',
+    name: 'MyProject',
+    path: '/home/user/project',
+    type: 'backend',
+    description: 'A project',
+    keywords: ['api']
+  }
+
+  it('returns no path error when codeSource is mcp-repos', () => {
+    const errors = validateProjectEntry({ ...validProject, path: '' }, 'mcp-repos')
+    expect(errors.path).toBeNull()
+  })
+
+  it('returns no path error when path is undefined in mcp-repos mode', () => {
+    const errors = validateProjectEntry({ ...validProject, path: undefined }, 'mcp-repos')
+    expect(errors.path).toBeNull()
+  })
+
+  it('still validates name in mcp-repos mode', () => {
+    const errors = validateProjectEntry({ ...validProject, name: '', path: undefined }, 'mcp-repos')
+    expect(errors.name).toBe('Name is required')
+  })
+
+  it('requires path when codeSource is local', () => {
+    const errors = validateProjectEntry({ ...validProject, path: '' }, 'local')
+    expect(errors.path).toBe('Path is required')
+  })
+
+  it('requires path when codeSource is undefined (default)', () => {
+    const errors = validateProjectEntry({ ...validProject, path: '' })
+    expect(errors.path).toBe('Path is required')
+  })
+})
+
+describe('validateSettings — codeSource mcp-repos skips project paths', () => {
+  it('returns no project path error when codeSource is mcp-repos', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      codeSource: 'mcp-repos',
+      projects: [{ id: 'p1', name: 'MyRepo', type: 'backend', description: '', keywords: [] }]
+    })
+    expect(errors['project-0-path']).toBeNull()
+  })
+
+  it('returns project path error when codeSource is local', () => {
+    const errors = validateSettings({
+      ...validSettings,
+      codeSource: 'local',
+      projects: [
+        { id: 'p1', name: 'MyRepo', path: '', type: 'backend', description: '', keywords: [] }
+      ]
+    })
+    expect(errors['project-0-path']).toBe('Path is required')
   })
 })

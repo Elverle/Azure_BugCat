@@ -2,6 +2,7 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                                                                                                                                             |
 | ---------- | -------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-26 | scan FT-14G                | GitHub Copilot | Scanned FT-14G code-source selection for agent analysis. Added a dedicated concept for `codeSource`, documented schema v6 plus Settings/UI validation changes, and updated the MCP/local runtime pages so prompt selection and Claude tool filtering reflect the selected source deterministically.               |
 | 2026-05-26 | update min-09              | GitHub Copilot | Added optional `Note per l'analisi` input for agent-session launches. The renderer keeps the note ephemeral per bug, `agent:start` trims and caps it at 2000 characters, and both prompt variants inject the same fenced `## Note utente` block before the task instructions.                                     |
 | 2026-05-26 | scan FT-14F                | GitHub Copilot | Scanned FT-14F provider/auth parity for analysis. Added the agent-availability helper entity and proactive blocking concept, documented Codex CLI preflight plus Copilot diagnostics, and updated the relevant agent-session, dashboard, IPC, preload, and tracker pages.                                         |
 | 2026-05-21 | update fix-07              | GitHub Copilot | Fixed the project keyword editor in Settings so comma and space remain typeable while editing. The component now keeps a freeform draft string and only normalizes to the stored keyword array for validation/persistence, and the wiki tracker was updated accordingly.                                          |
@@ -65,6 +66,38 @@ Pages updated:
 - [[wiki/entities/session-workspace]]
 - [[wiki/topics/agent-analysis-sessions]]
 - [[wiki/topics/agent-session-configuration-foundation]]
+
+## [2026-05-26] scan | FT-14G - Code Source Selection: MCP Repos vs Local Filesystem
+
+Scanned FT-14G after the agent-analysis flow gained a deterministic `codeSource` setting. Settings can now choose between local filesystem reads and Azure DevOps MCP repo reads, schema v6 backfills the new field, project-path validation is skipped in MCP-repos mode, and the Claude runner plus prompt builder now align their tool surface to the selected source instead of relying on implicit fallback behavior.
+
+Pages created:
+
+- [[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/agent-prompt-builder]]
+- [[wiki/entities/claude-sdk-runner]]
+- [[wiki/entities/agent-provider-section]]
+- [[wiki/entities/project-registry-section]]
+- [[wiki/entities/use-settings-hook]]
+- [[wiki/entities/validation-utils]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/store-migration]]
+- [[wiki/entities/project-registry]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/settings-page]]
+- [[wiki/concepts/schema-versioned-store-migration]]
+- [[wiki/concepts/settings-persistence-flow]]
+- [[wiki/concepts/read-only-agent-analysis-sandboxing]]
+- [[wiki/concepts/mcp-capability-probe-and-fallback]]
+- [[wiki/topics/agent-session-configuration-foundation]]
+- [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
+- [[wiki/topics/cross-repo-agent-analysis]]
 
 ## [2026-05-26] update | min-09 - Note per l'analisi opzionali
 

@@ -1,4 +1,4 @@
-import type { AppSettings, LLMProviderType, ProjectEntry } from '@shared/types'
+import type { AppSettings, CodeSource, LLMProviderType, ProjectEntry } from '@shared/types'
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
@@ -98,10 +98,13 @@ export function validateMaxLength(value: string, max: number, fieldName: string)
   return null
 }
 
-export function validateProjectEntry(project: ProjectEntry): Record<string, string | null> {
+export function validateProjectEntry(
+  project: ProjectEntry,
+  codeSource?: CodeSource
+): Record<string, string | null> {
   const errors: Record<string, string | null> = {
     name: validateRequired(project.name, 'Name') ?? validateMaxLength(project.name, 60, 'Name'),
-    path: validateRequired(project.path, 'Path'),
+    path: codeSource === 'mcp-repos' ? null : validateRequired(project.path ?? '', 'Path'),
     description: project.description
       ? validateMaxLength(project.description, 300, 'Description')
       : null,
@@ -176,7 +179,7 @@ export function validateSettings(settings: AppSettings): Record<string, string |
 
   // Project-level validation
   for (let i = 0; i < settings.projects.length; i++) {
-    const projectErrors = validateProjectEntry(settings.projects[i])
+    const projectErrors = validateProjectEntry(settings.projects[i], settings.codeSource)
     for (const [field, error] of Object.entries(projectErrors)) {
       errors[`project-${i}-${field}`] = error
     }

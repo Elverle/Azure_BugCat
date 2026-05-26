@@ -1,4 +1,10 @@
-import type { AgentChunk, AgentUsageStats, LLMProviderType, SessionMode } from '@shared/types'
+import type {
+  AgentChunk,
+  AgentUsageStats,
+  CodeSource,
+  LLMProviderType,
+  SessionMode
+} from '@shared/types'
 
 export interface RunParams {
   prompt: string
@@ -14,6 +20,7 @@ export interface RunParams {
   adoPat?: string
   adoOrgUrl?: string
   adoProjectName?: string
+  codeSource?: CodeSource
   abortSignal: AbortSignal
   onChunk: (chunk: AgentChunk) => void
 }

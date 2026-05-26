@@ -201,6 +201,7 @@ export function SettingsPage() {
         projects={settings.projects}
         errors={errors}
         touched={touched}
+        codeSource={settings.codeSource}
         onAddProject={addProject}
         onUpdateProject={updateProject}
         onRemoveProject={removeProject}

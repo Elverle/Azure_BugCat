@@ -43,9 +43,14 @@ export class ClaudeSDKRunner implements AgentRunner {
         env.PERSONAL_ACCESS_TOKEN = encodePat(params.adoPat)
       }
 
-      const allowedTools = params.mcpAvailable
-        ? ['Read', 'Glob', 'Grep', 'mcp__azure-devops']
-        : ['Read', 'Glob', 'Grep']
+      let allowedTools: string[]
+      if (params.codeSource === 'mcp-repos') {
+        allowedTools = ['mcp__azure-devops']
+      } else if (params.mcpAvailable) {
+        allowedTools = ['Read', 'Glob', 'Grep', 'mcp__azure-devops']
+      } else {
+        allowedTools = ['Read', 'Glob', 'Grep']
+      }
 
       const messages = query({
         prompt: params.prompt,

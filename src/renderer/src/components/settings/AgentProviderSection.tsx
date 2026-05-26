@@ -82,6 +82,38 @@ export function AgentProviderSection({
       </h2>
 
       <div className="space-y-4">
+        {/* Code Source selector */}
+        <div>
+          <Label className="text-sm font-medium">Sorgente codice per analisi</Label>
+          <div className="flex gap-4 mt-1">
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="codeSource"
+                checked={settings.codeSource === 'local'}
+                onChange={() => onFieldChange('codeSource', 'local')}
+                className="accent-blue-600"
+              />
+              Filesystem locale
+            </label>
+            <label className="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="radio"
+                name="codeSource"
+                checked={settings.codeSource === 'mcp-repos'}
+                onChange={() => onFieldChange('codeSource', 'mcp-repos')}
+                className="accent-blue-600"
+              />
+              MCP Azure DevOps Repos
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            {settings.codeSource === 'mcp-repos'
+              ? "L'agente leggerà il codice direttamente dai repository Azure DevOps via MCP. Non servono path locali."
+              : "L'agente leggerà il codice dal filesystem locale. I progetti devono avere un percorso valido."}
+          </p>
+        </div>
+
         {/* Provider selection / auto badge */}
         {isAnthropicAuto && (
           <div>

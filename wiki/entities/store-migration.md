@@ -3,14 +3,15 @@ title: 'Store Migration'
 type: entity
 subtype: service
 created: 2026-05-01
-updated: 2026-05-21
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
-    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]'
+    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
+    '[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]'
   ]
 tags: [electron-store, persistence, migration, typescript, catalog, settings, agent]
 lang: en
@@ -27,7 +28,7 @@ Main-process utility that upgrades persisted `electron-store` payloads to the cu
 ## Public API
 
 ```typescript
-export const CURRENT_SCHEMA_VERSION = 5
+export const CURRENT_SCHEMA_VERSION = 6
 
 export type Migration = {
   version: number
@@ -52,6 +53,7 @@ export function migrateStore(store: StoreAccess): void
 - FT-12 adds migration v3, which back-populates `bugCatalog` from legacy v2 `session.bugs`, normalizes legacy bug fields before signature computation, and preserves similarity-history metadata when `session.similarityResults` already exists.
 - FT-14A adds migration v4, which backfills only missing settings keys for agent-provider selection, Copilot BYOK, project registry, architecture context, and max concurrent sessions.
 - FT-14E adds migration v5, which bootstraps the new `agentSessions` store key and raises legacy `maxConcurrentSessions` values of `1` to the new default `5`.
+- FT-14G adds migration v6, which backfills `settings.codeSource = 'local'` only when the key is missing, preserving explicit operator choices in already-upgraded stores.
 - Writes migrated `settings`, `session`, `bugCatalog`, and `agentSessions` back to the store before bumping `schemaVersion`, so a partial write cannot advertise a schema that has not actually been persisted yet.
 - Falls back to `session = null` plus `schemaVersion = CURRENT_SCHEMA_VERSION` if a migration throws, keeping the app bootable even if cached session data is invalid.
 
@@ -64,6 +66,7 @@ export function migrateStore(store: StoreAccess): void
 
 - [[wiki/entities/electron-store]]
 - [[wiki/concepts/schema-versioned-store-migration]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/concepts/settings-persistence-flow]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-session-workspace]]

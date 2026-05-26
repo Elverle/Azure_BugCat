@@ -27,6 +27,7 @@ import {
   createRunner,
   buildAnalyzePrompt,
   buildMcpPrompt,
+  buildMcpReposPrompt,
   AgentNotConfiguredError,
   writeMcpConfig,
   checkMcpHealth,
@@ -646,21 +647,29 @@ export function registerIPCHandlers(): void {
         throw { code: 'STORE_ERROR', message: `Progetto ${primaryProjectId} non trovato` }
 
       // Resolve secondary projects
+      const codeSource = settings.codeSource ?? 'local'
       const secondaryProjects: ProjectEntry[] = []
       if (secondaryProjectIds.length > 0) {
-        const { existsSync, statSync } = await import('fs')
-        for (const secId of secondaryProjectIds) {
-          const secProject = settings.projects?.find((p) => p.id === secId)
-          if (!secProject) continue
-          if (!secProject.path.trim()) continue
-          if (!existsSync(secProject.path)) continue
-          try {
-            const stat = statSync(secProject.path)
-            if (!stat.isDirectory()) continue
-          } catch {
-            continue
+        if (codeSource === 'mcp-repos') {
+          for (const secId of secondaryProjectIds) {
+            const secProject = settings.projects?.find((p) => p.id === secId)
+            if (secProject) secondaryProjects.push(secProject)
           }
-          secondaryProjects.push(secProject)
+        } else {
+          const { existsSync, statSync } = await import('fs')
+          for (const secId of secondaryProjectIds) {
+            const secProject = settings.projects?.find((p) => p.id === secId)
+            if (!secProject) continue
+            if (!secProject.path || !secProject.path.trim()) continue
+            if (!existsSync(secProject.path)) continue
+            try {
+              const stat = statSync(secProject.path)
+              if (!stat.isDirectory()) continue
+            } catch {
+              continue
+            }
+            secondaryProjects.push(secProject)
+          }
         }
       }
 
@@ -726,34 +735,95 @@ export function registerIPCHandlers(): void {
             pat: settings.pat,
             timeoutMs: 5000
           })
-
-          // Write .mcp.json for Claude/Codex (file-based MCP)
-          if (mcpStatus.available && agentProvider !== 'copilot-sdk') {
-            await writeMcpConfig(project.path, settings.orgUrl)
-          }
         } catch {
           mcpStatus = { available: false, reason: 'Errore durante il check MCP' }
         }
       }
 
-      // Choose prompt based on MCP availability
-      const prompt = mcpStatus.available
-        ? buildMcpPrompt(
-            bug.id,
-            project,
-            settings.architectureContext ?? '',
-            settings.orgUrl,
-            settings.projectName,
-            secondaryProjects.length > 0 ? secondaryProjects : undefined,
-            trimmedUserContext
-          )
-        : buildAnalyzePrompt(
-            bug,
-            project,
-            settings.architectureContext ?? '',
-            secondaryProjects.length > 0 ? secondaryProjects : undefined,
-            trimmedUserContext
-          )
+      // In mcp-repos mode, MCP is mandatory
+      if (codeSource === 'mcp-repos' && !mcpStatus.available) {
+        throw {
+          code: 'AGENT_NOT_CONFIGURED',
+          message: 'MCP Azure DevOps non disponibile. In modalità MCP Repos è obbligatorio.'
+        }
+      }
+
+      // Compute primaryPath
+      let primaryPath: string
+      if (codeSource === 'mcp-repos') {
+        const { tmpdir } = await import('os')
+        const { join } = await import('path')
+        const { mkdirSync } = await import('fs')
+        primaryPath = join(tmpdir(), 'bugcat-agent')
+        mkdirSync(primaryPath, { recursive: true })
+      } else {
+        if (!project.path || !project.path.trim()) {
+          throw {
+            code: 'AGENT_NOT_CONFIGURED',
+            message: 'Il progetto non ha un percorso locale configurato'
+          }
+        }
+        const { existsSync, statSync } = await import('fs')
+        if (!existsSync(project.path)) {
+          throw {
+            code: 'AGENT_NOT_CONFIGURED',
+            message: `Il percorso del progetto non esiste: ${project.path}`
+          }
+        }
+        try {
+          const stat = statSync(project.path)
+          if (!stat.isDirectory()) {
+            throw {
+              code: 'AGENT_NOT_CONFIGURED',
+              message: `Il percorso del progetto non è una directory: ${project.path}`
+            }
+          }
+        } catch (fsErr: unknown) {
+          if (fsErr && typeof fsErr === 'object' && 'code' in fsErr) throw fsErr
+          throw {
+            code: 'AGENT_NOT_CONFIGURED',
+            message: `Impossibile accedere al percorso del progetto: ${project.path}`
+          }
+        }
+        primaryPath = project.path
+      }
+
+      // Write .mcp.json for Claude/Codex (file-based MCP)
+      if (mcpStatus.available && agentProvider !== 'copilot-sdk') {
+        await writeMcpConfig(primaryPath, settings.orgUrl)
+      }
+
+      // Choose prompt based on code source and MCP availability
+      let prompt: string
+      if (codeSource === 'mcp-repos') {
+        prompt = buildMcpReposPrompt(
+          bug.id,
+          project,
+          settings.architectureContext ?? '',
+          settings.orgUrl,
+          settings.projectName,
+          secondaryProjects.length > 0 ? secondaryProjects : undefined,
+          trimmedUserContext
+        )
+      } else if (mcpStatus.available) {
+        prompt = buildMcpPrompt(
+          bug.id,
+          project,
+          settings.architectureContext ?? '',
+          settings.orgUrl,
+          settings.projectName,
+          secondaryProjects.length > 0 ? secondaryProjects : undefined,
+          trimmedUserContext
+        )
+      } else {
+        prompt = buildAnalyzePrompt(
+          bug,
+          project,
+          settings.architectureContext ?? '',
+          secondaryProjects.length > 0 ? secondaryProjects : undefined,
+          trimmedUserContext
+        )
+      }
 
       // Generate session ID early so we can emit MCP status before session starts
       const sessionId = sessionManager.start(
@@ -764,9 +834,11 @@ export function registerIPCHandlers(): void {
         runner,
         prompt,
         {
-          primaryPath: project.path,
+          primaryPath,
           secondaryPaths:
-            secondaryProjects.length > 0 ? secondaryProjects.map((p) => p.path) : undefined,
+            codeSource === 'local' && secondaryProjects.length > 0
+              ? secondaryProjects.map((p) => p.path!)
+              : undefined,
           mode,
           apiKey: resolvedApiKey,
           baseUrl: resolvedBaseUrl,
@@ -775,7 +847,8 @@ export function registerIPCHandlers(): void {
           mcpAvailable: mcpStatus.available,
           adoPat: settings.pat,
           adoOrgUrl: settings.orgUrl,
-          adoProjectName: settings.projectName
+          adoProjectName: settings.projectName,
+          codeSource
         },
         (chunk: AgentChunk) => {
           event.sender.send(IPC_CHANNELS.AGENT_CHUNK, chunk)

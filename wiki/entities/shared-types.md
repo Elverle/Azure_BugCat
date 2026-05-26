@@ -18,6 +18,7 @@ sources:
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
     '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
     '[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
+    '[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
 tags: [typescript, types, shared, domain-model, catalog, settings, agent]
@@ -41,6 +42,7 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | `LLMProviderType`   | Union: `'openai' \| 'anthropic' \| 'generic' \| 'gemini' \| 'openrouter'`                                                                                     |
 | `AgentProviderType` | Union: `'claude-sdk' \| 'codex-sdk' \| 'copilot-sdk' \| 'none'`                                                                                               |
 | `ProjectType`       | Union: `'backend' \| 'frontend' \| 'shared'`                                                                                                                  |
+| `CodeSource`        | Union: `'local' \| 'mcp-repos'`, used to route project validation, prompt assembly, and runner tool access                                                    |
 | `ErrorCode`         | Union of known error codes, now including FT-14B agent-session failures such as `AGENT_NOT_CONFIGURED`, `AGENT_SESSION_ACTIVE`, and `AGENT_SESSION_NOT_FOUND` |
 
 ### Bug types
@@ -56,12 +58,12 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 
 ### Configuration
 
-| Type                | Purpose                                                                                                                       |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `ProjectEntry`      | One registered local project with path, type, description, and keywords                                                       |
-| `CopilotByokConfig` | Narrow helper shape for Copilot bring-your-own-key configuration                                                              |
-| `AppSettings`       | Full settings object, now including agent-provider state, project registry, architecture context, concurrency, and LLM fields |
-| `SessionData`       | Open-snapshot bug cache with fetch/categorize timestamps, optional `lastFetchNewCount`, plus optional `similarityResults`     |
+| Type                | Purpose                                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ProjectEntry`      | One registered project with optional local path, type, description, and keywords                                                           |
+| `CopilotByokConfig` | Narrow helper shape for Copilot bring-your-own-key configuration                                                                           |
+| `AppSettings`       | Full settings object, now including agent-provider state, project registry, architecture context, concurrency, code source, and LLM fields |
+| `SessionData`       | Open-snapshot bug cache with fetch/categorize timestamps, optional `lastFetchNewCount`, plus optional `similarityResults`                  |
 
 ### Error & Progress
 
@@ -157,6 +159,12 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `ProjectEntry` is deliberately lightweight: FT-14A stores operator-supplied metadata only and does not infer repository status or language details from the path.
 - `BinaryCheckResult` keeps the Codex CLI check structured and non-throwing across the IPC boundary.
 
+## FT-14G Notes
+
+- `ProjectEntry.path` is now optional so the same registry can represent either local directories or Azure DevOps repositories.
+- `AppSettings.codeSource` formalizes whether agent analysis should read code from local disk or via MCP repo tools.
+- Runner-side `RunParams` receive the same `CodeSource` union so prompts, IPC routing, and SDK tool permissions all operate from the same shared contract.
+
 ## FT-14B Notes
 
 - `AgentSession` is intentionally renderer-safe but main-process owned; reconnect works by sending the current snapshot across IPC rather than persisting session runtime state to `electron-store`.
@@ -202,6 +210,7 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - [[wiki/entities/electron-store]] — persists `AppSettings`, `SessionData`, and `BugCatalog`
 - [[wiki/entities/ipc-handlers]] — serves settings/session over IPC
 - [[wiki/entities/project-registry]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]
 - [[wiki/topics/agent-session-workspace]]

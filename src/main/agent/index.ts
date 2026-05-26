@@ -1,6 +1,6 @@
 export { SessionManager } from './session-manager'
 export { createRunner, AgentNotConfiguredError } from './runner-factory'
-export { buildAnalyzePrompt, buildMcpPrompt } from './prompt-builder'
+export { buildAnalyzePrompt, buildMcpPrompt, buildMcpReposPrompt } from './prompt-builder'
 export { selectPrimaryProject, suggestSecondaryProjects } from './project-matcher'
 export {
   writeMcpConfig,

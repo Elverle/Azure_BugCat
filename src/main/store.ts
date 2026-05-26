@@ -45,7 +45,8 @@ export const store = new Store({
       copilotByokBaseUrl: '',
       projects: [],
       architectureContext: '',
-      maxConcurrentSessions: 5
+      maxConcurrentSessions: 5,
+      codeSource: 'local'
     },
     session: null,
     bugCatalog: null,

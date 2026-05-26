@@ -10,7 +10,8 @@ sources:
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
     '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
     '[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
-    '[[wiki/sources/ft-14f-provider-auth-parity-analysis]]'
+    '[[wiki/sources/ft-14f-provider-auth-parity-analysis]]',
+    '[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]'
   ]
 tags: [agent, dashboard, ipc, sessions, analysis]
 lang: en
@@ -18,7 +19,7 @@ lang: en
 
 ## Overview
 
-FT-14B realizes the FT-14A settings foundation as a live operator workflow for bug-by-bug codebase analysis. FT-14C extends that workflow so each session can optionally fetch live Azure DevOps work item context through MCP before reading the local codebase. FT-14D adds a smart launch preflight with primary and secondary project selection. FT-14E then replaces the old single-session tab with a bounded multi-session workspace that persists recent runs, restores them after crashes, and separates list summaries from full session detail. FT-14F adds provider/auth parity checks so invalid configurations are blocked before click, while privileged preflight remains enforced in the main process. min-09 adds optional operator notes that travel through the same start flow and are fenced into the final prompt as background-only context.
+FT-14B realizes the FT-14A settings foundation as a live operator workflow for bug-by-bug codebase analysis. FT-14C extends that workflow so each session can optionally fetch live Azure DevOps work item context through MCP before reading the local codebase. FT-14D adds a smart launch preflight with primary and secondary project selection. FT-14E then replaces the old single-session tab with a bounded multi-session workspace that persists recent runs, restores them after crashes, and separates list summaries from full session detail. FT-14F adds provider/auth parity checks so invalid configurations are blocked before click, while privileged preflight remains enforced in the main process. FT-14G adds a deterministic code-source choice so sessions can either read code from local paths or from Azure DevOps repositories via MCP repo tools. min-09 adds optional operator notes that travel through the same start flow and are fenced into the final prompt as background-only context.
 
 ## End-to-End Flow
 
@@ -36,12 +37,12 @@ BugDetailDrawer
           -> resolve session bug + registered project(s) + settings
           -> trim / truncate optional userContext
           -> checkMcpHealth()
-          -> buildMcpPrompt() or buildAnalyzePrompt()
+          -> buildMcpReposPrompt() or buildMcpPrompt() or buildAnalyzePrompt()
             -> optional fenced ## Note utente block
           -> createRunner()
           -> SessionManager.start()
             -> Claude / Codex / Copilot SDK runner
-              -> optional Azure DevOps MCP tools
+              -> local filesystem tools or Azure DevOps MCP repo tools, depending on codeSource
               -> optional secondary repo reads
               -> AGENT_CHUNK / AGENT_COMPLETED / AGENT_ERROR
               -> running snapshot persisted
@@ -62,12 +63,13 @@ Dashboard Sessioni tab
 - FT-14F blocks launch proactively when projects are missing, agent sessions are explicitly disabled, Codex manual auth is incomplete, or Copilot BYOK configuration is incomplete.
 - Recent sessions survive app restarts through persisted `agentSessions`; restored `running` sessions are marked `aborted` instead of being resumed.
 - Session start computes one MCP availability decision and reuses it for the prompt, runner params, and renderer badge.
-- MCP unavailability is non-fatal: the run falls back to the original full prompt instead of blocking `analyze`.
+- MCP unavailability is non-fatal only in `local` mode; FT-14G `mcp-repos` mode blocks `analyze` because MCP is the selected code transport.
 - Codex auto/manual paths still run a real CLI preflight inside `agent:start`, so missing `codex` cannot slip past renderer gating.
 - Single-project registries bypass FT-14D suggestion IPC and go straight to `agent:start`.
-- Secondary projects stay optional and are rendered into the prompt only when at least one survives validation.
+- Secondary projects stay optional and are rendered into the prompt only when at least one survives validation or registry resolution for the selected code source.
 - min-09 notes stay optional and ephemeral: AnalyzeStartPanel resets them on bug changes, blank values are dropped, and the main process caps the payload at 2000 characters.
-- The same `## Note utente` block is injected into both MCP and fallback prompts, so MCP availability does not change how operator context is framed.
+- The same `## Note utente` block is injected into every prompt variant, so code source and MCP availability do not change how operator context is framed.
+- Local mode still treats the primary project path as a hard guard, while MCP-repos mode no longer requires local checkout paths at all.
 - Reads coming from secondary repositories are visibly tagged in the live session log.
 - The UI auto-switches to the `Sessioni` tab immediately after `Analizza` starts.
 - The `Sessioni` tab shows a numeric badge with the running-session count rather than a single binary in-progress indicator.
@@ -103,6 +105,7 @@ Dashboard Sessioni tab
 - [[wiki/topics/agent-session-workspace]]
 - [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/concepts/bounded-concurrent-agent-session-lifecycle]]
 - [[wiki/concepts/streaming-agent-session-ipc]]
 - [[wiki/concepts/cross-repo-project-suggestion-heuristics]]

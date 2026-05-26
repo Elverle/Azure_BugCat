@@ -12,17 +12,18 @@ describe('store-migration v4', () => {
     store = { get: vi.fn(), set: vi.fn(), has: vi.fn() }
   })
 
-  it('CURRENT_SCHEMA_VERSION equals 5', () => {
-    expect(CURRENT_SCHEMA_VERSION).toBe(5)
+  it('CURRENT_SCHEMA_VERSION equals 6', () => {
+    expect(CURRENT_SCHEMA_VERSION).toBe(6)
   })
 
-  it('migrations array has 5 entries', () => {
-    expect(migrations).toHaveLength(5)
+  it('migrations array has 6 entries', () => {
+    expect(migrations).toHaveLength(6)
     expect(migrations[0].version).toBe(1)
     expect(migrations[1].version).toBe(2)
     expect(migrations[2].version).toBe(3)
     expect(migrations[3].version).toBe(4)
     expect(migrations[4].version).toBe(5)
+    expect(migrations[5].version).toBe(6)
   })
 
   it('v3 store with only legacy settings gets v4 defaults added', () => {
@@ -96,10 +97,10 @@ describe('store-migration v4', () => {
     expect(migratedSettings.orgUrl).toBe('https://dev.azure.com/test')
   })
 
-  it('v5 store is a no-op (migrateStore does not call set)', () => {
+  it('v6 store is a no-op (migrateStore does not call set)', () => {
     store.has.mockReturnValue(true)
     store.get.mockImplementation((key: string) => {
-      if (key === 'schemaVersion') return 5
+      if (key === 'schemaVersion') return 6
       return undefined
     })
 

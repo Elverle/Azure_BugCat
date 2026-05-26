@@ -991,6 +991,11 @@ describe('registerIPCHandlers', () => {
   })
 
   describe('AGENT_START', () => {
+    beforeEach(() => {
+      existsSyncMock.mockReturnValue(true)
+      statSyncMock.mockReturnValue({ isDirectory: () => true })
+    })
+
     const agentSettings: AppSettings = {
       ...baseSettings,
       llmProvider: 'openrouter',

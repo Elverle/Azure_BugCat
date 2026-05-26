@@ -2,7 +2,7 @@
 title: 'Settings Persistence Flow'
 type: concept
 created: 2026-04-29
-updated: 2026-05-17
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-02-settings]]',
@@ -10,7 +10,8 @@ sources:
     '[[wiki/sources/ft-04-llm-provider]]',
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/sources/ft-08-generic-provider]]',
-    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]'
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]'
   ]
 tags: [electron, ipc, electron-store, persistence, settings, session, agent, projects]
 lang: en
@@ -18,7 +19,7 @@ lang: en
 
 ## Definition
 
-Settings and session data flow from the React renderer through the Electron IPC bridge to the main process, where they are persisted in an encrypted `electron-store`. FT-07 extends this concept with an explicit startup migration step and a user-triggered session reset path. FT-14A further extends the same flow with dependent-field sanitization and save-time filesystem validation for project paths.
+Settings and session data flow from the React renderer through the Electron IPC bridge to the main process, where they are persisted in an encrypted `electron-store`. FT-07 extends this concept with an explicit startup migration step and a user-triggered session reset path. FT-14A further extends the same flow with dependent-field sanitization and save-time filesystem validation for project paths. FT-14G adds one more persisted behavioral switch, `codeSource`, which changes whether path validation runs at all.
 
 ## Data Flow
 
@@ -50,7 +51,7 @@ Renderer
 
 1. `app.whenReady()` calls [[wiki/entities/store-migration]] before registering IPC handlers.
 2. The migration layer detects legacy stores via `store.has('schemaVersion')`.
-3. Pending migrations transform the persisted `settings`/`session` payloads in version order, including FT-08's provider cleanup and FT-14A's schema v4 settings backfill.
+3. Pending migrations transform the persisted `settings`/`session` payloads in version order, including FT-08's provider cleanup, FT-14A's schema v4 settings backfill, and FT-14G's schema v6 `codeSource` backfill.
 4. Migrated data is written back first, then the current schema version is stored before normal app flows continue.
 
 ### Settings load/save
@@ -59,7 +60,7 @@ Renderer
 2. Preload invokes `ipcRenderer.invoke('settings:get')`.
 3. Main process reads `store.get('settings')`.
 4. Renderer stores the loaded payload as both current and original state.
-5. On save, FT-14A sanitizes dependent fields, validates project paths through IPC, and only then sends the final payload through `settings:set`.
+5. On save, FT-14A sanitizes dependent fields, FT-14G validates project paths through IPC only in local mode, and only then sends the final payload through `settings:set`.
 6. Main process persists the sanitized full `AppSettings` object into the encrypted store.
 
 ### Session read/write/clear
@@ -80,6 +81,7 @@ Renderer
 - Credentials (PAT, API keys) are encrypted at rest via [[wiki/entities/electron-store]].
 - Only whitelisted IPC channels are exposed via [[wiki/entities/preload-bridge]].
 - Project-path verification happens in the main process, so the renderer never receives direct filesystem access.
+- In FT-14G MCP-repos mode the renderer never asks the main process to validate project paths, which avoids forcing a local-checkout requirement onto repository-name-only configurations.
 - Sanitization clears hidden BYOK/manual-agent values before persistence, reducing stale-secret retention.
 - No raw `ipcRenderer` access exists in the renderer — see [[wiki/concepts/ipc-security-model]].
 
@@ -89,6 +91,7 @@ Renderer
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/electron-store]]
 - [[wiki/entities/store-migration]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/concepts/settings-sanitization-before-save]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/concepts/ipc-security-model]]

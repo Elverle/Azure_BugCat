@@ -3,13 +3,14 @@ title: 'Settings Page'
 type: entity
 subtype: component
 created: 2026-04-29
-updated: 2026-05-21
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-02-settings]]',
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]',
-    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]'
+    '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
+    '[[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]]'
   ]
 tags: [react, page, settings, ui, session, catalog, agent, projects]
 lang: en
@@ -71,6 +72,7 @@ Top-level page component for application configuration. It now composes six sect
 - Owns local state for the Codex CLI binary check result and loading flag, then passes that state into [[wiki/entities/agent-provider-section]].
 - Hosts the FT-14A agent-session preparation surface without executing any agent workflow yet.
 - Hosts the FT-14A project registry, where keyword input is entered as comma-separated text and normalized only after editing so punctuation remains typeable.
+- FT-14G passes `settings.codeSource` into [[wiki/entities/project-registry-section]] so the registry can switch between local-path editing and MCP-repo identification.
 - Renders a session danger zone card that explains the destructive impact of clearing the current snapshot while preserving historical catalog data.
 - Renders a second danger zone card for deleting the historical bug catalog while preserving the current session snapshot.
 - Opens separate [[wiki/entities/confirm-dialog]] instances before invoking `window.electronAPI.clearSession()` and `window.electronAPI.clearCatalog()`.
@@ -90,6 +92,7 @@ No props — uses `useSettings()` hook directly for settings state and local `us
 - [[wiki/entities/project-registry-section]]
 - [[wiki/entities/architecture-context-section]]
 - [[wiki/entities/categories-section]]
+- [[wiki/concepts/code-source-selection-for-agent-analysis]]
 - [[wiki/entities/button-component]] — Save and destructive actions
 - [[wiki/entities/confirm-dialog]] — guarded clear-session flow
 - `lucide-react` — icons (`Shield`, `Loader2`, `CheckCircle2`, `XCircle`, `X`, `AlertTriangle`)

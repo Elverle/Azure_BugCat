@@ -8,6 +8,8 @@ export type AgentProviderType = 'claude-sdk' | 'codex-sdk' | 'copilot-sdk' | 'no
 
 export type ProjectType = 'backend' | 'frontend' | 'shared'
 
+export type CodeSource = 'local' | 'mcp-repos'
+
 export type ErrorCode =
   | 'ADO_AUTH_ERROR'
   | 'ADO_NOT_FOUND'
@@ -49,7 +51,7 @@ export interface CategorizedBug extends BugItem {
 export interface ProjectEntry {
   id: string
   name: string
-  path: string
+  path?: string
   type: ProjectType
   description: string
   keywords: string[]
@@ -84,6 +86,7 @@ export interface AppSettings {
   projects: ProjectEntry[]
   architectureContext: string
   maxConcurrentSessions: number
+  codeSource: CodeSource
 }
 
 export interface SessionData {

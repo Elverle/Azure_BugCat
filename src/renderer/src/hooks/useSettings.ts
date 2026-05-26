@@ -22,7 +22,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   copilotByokApiKey: '',
   projects: [],
   architectureContext: '',
-  maxConcurrentSessions: 1
+  maxConcurrentSessions: 1,
+  codeSource: 'local'
 }
 
 type ResultMessage = { type: 'success' | 'error'; message: string }
@@ -177,15 +178,19 @@ export function useSettings(): UseSettingsReturn {
     // Run full validation
     const currentErrors = validateSettings(sanitized)
 
-    // Validate project paths via main process
-    const projectPaths = sanitized.projects.map((p) => p.path)
+    // Validate project paths via main process (only in local mode)
+    const projectPaths =
+      sanitized.codeSource === 'local'
+        ? sanitized.projects.map((p) => p.path ?? '').filter((p) => p.length > 0)
+        : []
     if (projectPaths.length > 0) {
       try {
         const pathResults = (await (window as any).electronAPI.validateProjectPaths(
           projectPaths
         )) as Record<string, string | null>
         for (let i = 0; i < sanitized.projects.length; i++) {
-          const pathError = pathResults[sanitized.projects[i].path]
+          const projPath = sanitized.projects[i].path ?? ''
+          const pathError = pathResults[projPath]
           if (pathError) {
             currentErrors[`project-${i}-path`] = pathError
           }

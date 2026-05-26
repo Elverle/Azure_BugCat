@@ -13,17 +13,18 @@ describe('store-migration', () => {
   })
 
   describe('exports', () => {
-    it('should export CURRENT_SCHEMA_VERSION as 5', () => {
-      expect(CURRENT_SCHEMA_VERSION).toBe(5)
+    it('should export CURRENT_SCHEMA_VERSION as 6', () => {
+      expect(CURRENT_SCHEMA_VERSION).toBe(6)
     })
 
-    it('should export migrations array with five entries', () => {
-      expect(migrations).toHaveLength(5)
+    it('should export migrations array with six entries', () => {
+      expect(migrations).toHaveLength(6)
       expect(migrations[0].version).toBe(1)
       expect(migrations[1].version).toBe(2)
       expect(migrations[2].version).toBe(3)
       expect(migrations[3].version).toBe(4)
       expect(migrations[4].version).toBe(5)
+      expect(migrations[5].version).toBe(6)
     })
   })
 
@@ -53,7 +54,7 @@ describe('store-migration', () => {
     it('should not run migration when version is ahead of current (forward-compat)', () => {
       store.has.mockReturnValue(true)
       store.get.mockImplementation((key: string) => {
-        if (key === 'schemaVersion') return 5
+        if (key === 'schemaVersion') return 6
         return undefined
       })
 
@@ -296,7 +297,7 @@ describe('store-migration', () => {
         })
       )
       expect(store.set).toHaveBeenCalledWith('bugCatalog', null)
-      expect(store.set).toHaveBeenCalledWith('schemaVersion', 5)
+      expect(store.set).toHaveBeenCalledWith('schemaVersion', 6)
     })
 
     it('migrateStore persists bugCatalog key during migration', () => {
@@ -361,6 +362,20 @@ describe('store-migration', () => {
 
       // Restore original migrations
       migrations.splice(0, migrations.length, ...originalMigrations)
+    })
+  })
+
+  describe('migration v6 — codeSource default', () => {
+    it('sets codeSource to local when missing', () => {
+      const data = { settings: { llmProvider: 'openai' } }
+      const result = migrations[5].up(data)
+      expect((result.settings as any).codeSource).toBe('local')
+    })
+
+    it('does not overwrite codeSource if already set', () => {
+      const data = { settings: { codeSource: 'mcp-repos' } }
+      const result = migrations[5].up(data)
+      expect((result.settings as any).codeSource).toBe('mcp-repos')
     })
   })
 })

@@ -9,6 +9,7 @@ const defaultProps = {
   projects: [] as ProjectEntry[],
   errors: {} as Record<string, string | null>,
   touched: {} as Record<string, boolean>,
+  codeSource: 'local' as const,
   onAddProject: vi.fn(),
   onUpdateProject: vi.fn(),
   onRemoveProject: vi.fn(),

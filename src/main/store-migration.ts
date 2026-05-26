@@ -1,6 +1,6 @@
 import { computeInputSignature } from './utils/catalog-merge'
 
-export const CURRENT_SCHEMA_VERSION = 5
+export const CURRENT_SCHEMA_VERSION = 6
 
 export type Migration = {
   version: number
@@ -121,6 +121,16 @@ export const migrations: Migration[] = [
       if (data.settings && typeof data.settings === 'object') {
         const settings = data.settings as Record<string, unknown>
         if (settings.maxConcurrentSessions === 1) settings.maxConcurrentSessions = 5
+      }
+      return data
+    }
+  },
+  {
+    version: 6,
+    up: (data) => {
+      if (data.settings && typeof data.settings === 'object') {
+        const settings = data.settings as Record<string, unknown>
+        if (settings.codeSource === undefined) settings.codeSource = 'local'
       }
       return data
     }

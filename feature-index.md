@@ -43,3 +43,4 @@ Track every deliverable here using explicit prefixes:
 | 33  | fix-07  | Keyword dei progetti in Settings: input comma-separated con draft libero e parsing in array                                                                                | Complete |
 | 34  | FT-14F  | Parità provider e modalità auth per Analisi: renderer-side availability check, Codex binary preflight, blocking UI e Test Copilot button                                   | Complete |
 | 35  | min-09  | Note per l'analisi opzionali: textarea collapsible, `userContext` su `agent:start`, validazione main-process a 2000 caratteri e sezione `## Note utente` fenced nel prompt | Complete |
+| 36  | FT-14G  | Code Source Selection - MCP Repos vs Local Filesystem                                                                                                                      | Complete |

@@ -4,12 +4,13 @@ import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Textarea } from '@renderer/components/ui/textarea'
 import { Button } from '@renderer/components/ui/button'
-import type { ProjectEntry } from '@shared/types'
+import type { ProjectEntry, CodeSource } from '@shared/types'
 
 interface ProjectRegistrySectionProps {
   projects: ProjectEntry[]
   errors: Record<string, string | null>
   touched: Record<string, boolean>
+  codeSource: CodeSource
   onAddProject: () => void
   onUpdateProject: (id: string, updates: Partial<ProjectEntry>) => void
   onRemoveProject: (id: string) => void
@@ -20,6 +21,7 @@ export function ProjectRegistrySection({
   projects,
   errors,
   touched,
+  codeSource,
   onAddProject,
   onUpdateProject,
   onRemoveProject,
@@ -99,29 +101,37 @@ export function ProjectRegistrySection({
               )}
             </div>
 
-            {/* Path */}
-            <div>
-              <Label htmlFor={`project-${index}-path`}>Percorso</Label>
-              <div className="flex gap-2">
-                <Input
-                  id={`project-${index}-path`}
-                  type="text"
-                  value={project.path}
-                  onChange={(e) => onUpdateProject(project.id, { path: e.target.value })}
-                  className="flex-1"
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => handleSelectPath(project.id)}
-                  title="Seleziona cartella"
-                >
-                  📁
-                </Button>
+            {/* Path — only shown in local mode */}
+            {codeSource === 'local' && (
+              <div>
+                <Label htmlFor={`project-${index}-path`}>Percorso</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id={`project-${index}-path`}
+                    type="text"
+                    value={project.path ?? ''}
+                    onChange={(e) => onUpdateProject(project.id, { path: e.target.value })}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => handleSelectPath(project.id)}
+                    title="Seleziona cartella"
+                  >
+                    📁
+                  </Button>
+                </div>
+                {touched[`project-${index}-path`] && errors[`project-${index}-path`] && (
+                  <p className="text-xs text-red-500 mt-1">{errors[`project-${index}-path`]}</p>
+                )}
               </div>
-              {touched[`project-${index}-path`] && errors[`project-${index}-path`] && (
-                <p className="text-xs text-red-500 mt-1">{errors[`project-${index}-path`]}</p>
-              )}
-            </div>
+            )}
+            {codeSource === 'mcp-repos' && (
+              <p className="text-xs text-gray-500 italic">
+                In modalità MCP Repos il nome del progetto viene usato come identificativo del
+                repository Azure DevOps.
+              </p>
+            )}
 
             {/* Type */}
             <div>
