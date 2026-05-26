@@ -2,7 +2,7 @@
 title: 'Cross-Repo Agent Analysis'
 type: topic
 created: 2026-05-20
-updated: 2026-05-20
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
@@ -16,7 +16,7 @@ lang: en
 
 ## Overview
 
-FT-14D extends the base agent-session workflow so one bug analysis can span multiple registered repositories without turning the session into a write-capable multi-repo operation. One project remains the primary execution root, while optional secondary repositories are attached as read-only context for code search and root-cause discovery.
+FT-14D extends the base agent-session workflow so one bug analysis can span multiple registered repositories without turning the session into a write-capable multi-repo operation. One project remains the primary execution root, while optional secondary repositories are attached as read-only context for code search and root-cause discovery. min-09 keeps that same topology but lets the operator add a free-text note that applies to the whole analysis run, regardless of how many repositories are attached.
 
 ## End-to-End Flow
 
@@ -28,9 +28,10 @@ BugDetailDrawer
         -> selectPrimaryProject()
         -> suggestSecondaryProjects()
   -> operator may override primary / toggle secondaries
-    -> DashboardPage.handleAnalyze(bugId, primaryProjectId, secondaryProjectIds)
+    -> optional Note per l'analisi
+    -> DashboardPage.handleAnalyze(bugId, primaryProjectId, secondaryProjectIds, userContext?)
       -> preload bridge agentStart()
-        -> ipc-handlers validate IDs + resolve existing directories
+        -> ipc-handlers validate IDs + resolve existing directories + normalize optional userContext
           -> buildAnalyzePrompt() or buildMcpPrompt()
             -> SessionManager.start()
               -> runner reads primary path + optional secondary paths
@@ -42,6 +43,8 @@ BugDetailDrawer
 - The primary repository remains the only execution root; secondaries are contextual inputs.
 - The UI never calls the suggestion IPC when exactly one project is registered.
 - The `Secondary Projects` prompt section is emitted only when at least one valid secondary repository survives resolution.
+- min-09 operator notes are orthogonal to project selection: they can be supplied with or without secondaries and never change primary/secondary resolution.
+- The same fenced note block is shared with every prompt variant, so cross-repo context and operator hints remain separate sections.
 - Both main and renderer keep the session chunk history capped at 500 entries.
 - Tool results that mention a secondary path are prefixed with `[secondary:{name}]` so operators can tell which repository produced a read.
 

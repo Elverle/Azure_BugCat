@@ -603,8 +603,14 @@ export function registerIPCHandlers(): void {
         bugId,
         mode,
         primaryProjectId,
-        secondaryProjectIds: rawSecondaryIds
+        secondaryProjectIds: rawSecondaryIds,
+        userContext: rawUserContext
       } = payload as AgentStartPayload
+
+      const trimmedUserContext =
+        typeof rawUserContext === 'string' && rawUserContext.trim()
+          ? rawUserContext.trim().slice(0, 2000)
+          : undefined
 
       if (typeof bugId !== 'number' || !Number.isFinite(bugId)) {
         throw { code: 'UNKNOWN_ERROR', message: 'bugId deve essere un numero valido' }
@@ -738,13 +744,15 @@ export function registerIPCHandlers(): void {
             settings.architectureContext ?? '',
             settings.orgUrl,
             settings.projectName,
-            secondaryProjects.length > 0 ? secondaryProjects : undefined
+            secondaryProjects.length > 0 ? secondaryProjects : undefined,
+            trimmedUserContext
           )
         : buildAnalyzePrompt(
             bug,
             project,
             settings.architectureContext ?? '',
-            secondaryProjects.length > 0 ? secondaryProjects : undefined
+            secondaryProjects.length > 0 ? secondaryProjects : undefined,
+            trimmedUserContext
           )
 
       // Generate session ID early so we can emit MCP status before session starts

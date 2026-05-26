@@ -23,7 +23,8 @@ export interface UseAgentSessionsReturn {
   startSession: (
     bugId: number,
     primaryProjectId: string,
-    secondaryProjectIds?: string[]
+    secondaryProjectIds?: string[],
+    userContext?: string
   ) => Promise<void>
   abortSession: (sessionId: string) => Promise<void>
   copyReport: (sessionId: string) => Promise<void>
@@ -186,9 +187,20 @@ export function useAgentSessions(): UseAgentSessionsReturn {
 
   // Start a new session
   const startSession = useCallback(
-    async (bugId: number, primaryProjectId: string, secondaryProjectIds?: string[]) => {
+    async (
+      bugId: number,
+      primaryProjectId: string,
+      secondaryProjectIds?: string[],
+      userContext?: string
+    ) => {
       const api = window.electronAPI as any
-      await api.agentStart({ bugId, mode: 'analyze', primaryProjectId, secondaryProjectIds })
+      await api.agentStart({
+        bugId,
+        mode: 'analyze',
+        primaryProjectId,
+        secondaryProjectIds,
+        userContext
+      })
       // Re-fetch list to include the new session
       const list = (await api.agentListSessions?.()) as AgentSessionSummary[] | undefined
       if (list) setAllSessions(list)

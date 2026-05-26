@@ -23,27 +23,28 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ### Features
 
-| #   | ID     | Descrizione                                                 | Status |
-| --- | ------ | ----------------------------------------------------------- | ------ |
-| 1   | FT-01  | Scaffold Electron + Infrastruttura Base                     | Done   |
-| 2   | FT-02  | Pagina Settings e Persistenza Configurazione                | Done   |
-| 3   | FT-03  | Azure DevOps Bug Fetching (Main Process)                    | Done   |
-| 4   | FT-04  | LLM Provider Abstraction e Categorizzazione                 | Done   |
-| 5   | FT-05  | Dashboard Principale: Tabella, Filtri e Raggruppamenti      | Done   |
-| 6   | FT-06  | Pannello Dettaglio Bug (Drawer)                             | Done   |
-| 7   | FT-07  | Persistenza Dati e Gestione Sessione                        | Done   |
-| 8   | FT-08  | GenericProvider OpenAI-compatible e rimozione Copilot       | Done   |
-| 9   | FT-09  | Structured output JSON Schema per tutti i provider LLM      | Done   |
-| 10  | FT-10  | AI Cluster - Similar Bug Detection                          | Done   |
-| 11  | FT-11  | OpenRouter SDK Provider                                     | Done   |
-| 12  | FT-12  | Incremental Session Cache e Re-Categorizzazione Selettiva   | Done   |
-| 13  | FT-13  | Storico Chiusi - KPI storici per bug closed/done            | Done   |
-| 14  | FT-14A | Agent Configuration & Project Registry                      | Done   |
-| 15  | FT-14B | Agent Sessions end-to-end per analisi bug                   | Done   |
-| 16  | FT-14C | MCP Azure DevOps integration con fallback per agent session | Done   |
-| 17  | FT-14D | Analisi cross-repo e suggerimento progetti                  | Done   |
-| 18  | FT-14E | Workspace multi-session per sessioni agente con recovery    | Done   |
-| 19  | FT-14F | Parità provider e modalità auth per Analisi                 | Done   |
+| #   | ID     | Descrizione                                                                | Status |
+| --- | ------ | -------------------------------------------------------------------------- | ------ |
+| 1   | FT-01  | Scaffold Electron + Infrastruttura Base                                    | Done   |
+| 2   | FT-02  | Pagina Settings e Persistenza Configurazione                               | Done   |
+| 3   | FT-03  | Azure DevOps Bug Fetching (Main Process)                                   | Done   |
+| 4   | FT-04  | LLM Provider Abstraction e Categorizzazione                                | Done   |
+| 5   | FT-05  | Dashboard Principale: Tabella, Filtri e Raggruppamenti                     | Done   |
+| 6   | FT-06  | Pannello Dettaglio Bug (Drawer)                                            | Done   |
+| 7   | FT-07  | Persistenza Dati e Gestione Sessione                                       | Done   |
+| 8   | FT-08  | GenericProvider OpenAI-compatible e rimozione Copilot                      | Done   |
+| 9   | FT-09  | Structured output JSON Schema per tutti i provider LLM                     | Done   |
+| 10  | FT-10  | AI Cluster - Similar Bug Detection                                         | Done   |
+| 11  | FT-11  | OpenRouter SDK Provider                                                    | Done   |
+| 12  | FT-12  | Incremental Session Cache e Re-Categorizzazione Selettiva                  | Done   |
+| 13  | FT-13  | Storico Chiusi - KPI storici per bug closed/done                           | Done   |
+| 14  | FT-14A | Agent Configuration & Project Registry                                     | Done   |
+| 15  | FT-14B | Agent Sessions end-to-end per analisi bug                                  | Done   |
+| 16  | FT-14C | MCP Azure DevOps integration con fallback per agent session                | Done   |
+| 17  | FT-14D | Analisi cross-repo e suggerimento progetti                                 | Done   |
+| 18  | FT-14E | Workspace multi-session per sessioni agente con recovery                   | Done   |
+| 19  | FT-14F | Parità provider e modalità auth per Analisi                                | Done   |
+| 20  | min-09 | Note per l'analisi opzionali con validazione main-process e prompt fencing | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 

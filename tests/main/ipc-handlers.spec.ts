@@ -1096,6 +1096,63 @@ describe('registerIPCHandlers', () => {
         )
       ).rejects.toMatchObject({ code: 'AGENT_NOT_CONFIGURED' })
     })
+
+    it('passes trimmed userContext to prompt builder', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return agentSettings
+        if (key === 'session') return { bugs: sessionBugs }
+        return null
+      })
+      sessionManagerStartMock.mockReturnValue('ctx-session-id')
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_START)
+      await handler!(
+        { sender: { send: vi.fn() } },
+        {
+          bugId: 42,
+          mode: 'analyze',
+          primaryProjectId: 'proj-1',
+          userContext: '  Check auth module  '
+        }
+      )
+
+      // buildAnalyzePrompt is called (MCP defaults to unavailable in test mock)
+      expect(buildAnalyzePromptMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        undefined,
+        'Check auth module'
+      )
+    })
+
+    it('passes undefined to prompt builder when userContext is whitespace', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return agentSettings
+        if (key === 'session') return { bugs: sessionBugs }
+        return null
+      })
+      sessionManagerStartMock.mockReturnValue('ctx-session-id-2')
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_START)
+      await handler!(
+        { sender: { send: vi.fn() } },
+        {
+          bugId: 42,
+          mode: 'analyze',
+          primaryProjectId: 'proj-1',
+          userContext: '   '
+        }
+      )
+
+      expect(buildAnalyzePromptMock).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        undefined,
+        undefined
+      )
+    })
   })
 
   describe('AGENT_ABORT', () => {

@@ -3,7 +3,7 @@ title: 'useAgentSessions Hook'
 type: entity
 subtype: hook
 created: 2026-05-21
-updated: 2026-05-21
+updated: 2026-05-26
 sources: ['[[wiki/sources/ft-14e-multi-session-agent-workspace]]']
 tags: [react, hook, agent, ipc, workspace, sessions]
 lang: en
@@ -19,21 +19,21 @@ Renderer hook that powers the FT-14E session workspace. It hydrates session summ
 
 ## Returned API
 
-| Field / Method                                         | Purpose                                                                    |
-| ------------------------------------------------------ | -------------------------------------------------------------------------- |
-| `sessions`                                             | Filtered `AgentSessionSummary[]` for the current status tab                |
-| `allSessions`                                          | Full summary list regardless of filter                                     |
-| `selectedSession`                                      | Full `AgentSession` for the selected list row                              |
-| `selectedSessionId`                                    | Active detail target or `null`                                             |
-| `runningCount`                                         | Count of sessions whose status is `running`                                |
-| `statusFilter`                                         | Current summary filter (`all`, `running`, `completed`, `error`, `aborted`) |
-| `selectSession(id)`                                    | Selects a row and fetches full detail through `agent:get-session`          |
-| `setStatusFilter(filter)`                              | Updates the summary tab filter                                             |
-| `startSession(bugId, primaryProjectId, secondaryIds?)` | Starts a new analyze session and refreshes the summary list                |
-| `abortSession(sessionId)`                              | Aborts the target session through IPC                                      |
-| `copyReport(sessionId)`                                | Copies the summary's cached report to the system clipboard                 |
-| `saveReport(sessionId, bugId)`                         | Opens the main-process save dialog for the session report                  |
-| `openBugInAdo(bugId)`                                  | Builds and opens the Azure DevOps work item URL from persisted settings    |
+| Field / Method                                                       | Purpose                                                                    |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `sessions`                                                           | Filtered `AgentSessionSummary[]` for the current status tab                |
+| `allSessions`                                                        | Full summary list regardless of filter                                     |
+| `selectedSession`                                                    | Full `AgentSession` for the selected list row                              |
+| `selectedSessionId`                                                  | Active detail target or `null`                                             |
+| `runningCount`                                                       | Count of sessions whose status is `running`                                |
+| `statusFilter`                                                       | Current summary filter (`all`, `running`, `completed`, `error`, `aborted`) |
+| `selectSession(id)`                                                  | Selects a row and fetches full detail through `agent:get-session`          |
+| `setStatusFilter(filter)`                                            | Updates the summary tab filter                                             |
+| `startSession(bugId, primaryProjectId, secondaryIds?, userContext?)` | Starts a new analyze session and refreshes the summary list                |
+| `abortSession(sessionId)`                                            | Aborts the target session through IPC                                      |
+| `copyReport(sessionId)`                                              | Copies the summary's cached report to the system clipboard                 |
+| `saveReport(sessionId, bugId)`                                       | Opens the main-process save dialog for the session report                  |
+| `openBugInAdo(bugId)`                                                | Builds and opens the Azure DevOps work item URL from persisted settings    |
 
 ## Key Behaviors
 
@@ -42,6 +42,7 @@ Renderer hook that powers the FT-14E session workspace. It hydrates session summ
 - Routes chunk, completion, error, and `agent:session-updated` events only into the selected session detail when the IDs match.
 - Guards against stale async detail responses by comparing the resolved session ID against a ref that tracks the latest selection.
 - Keeps the selected detail session capped at 500 chunks to mirror the main-process session manager.
+- Forwards optional min-09 `userContext` to `agent:start` unchanged and leaves trimming, truncation, and prompt fencing to the main process.
 - Refreshes the full summary list after `agent:start` instead of trying to synthesize a complete optimistic summary locally.
 - Reads ADO settings lazily only when `openBugInAdo()` is invoked, keeping most workspace interactions independent from the broader Dashboard state.
 

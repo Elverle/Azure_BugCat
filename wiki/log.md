@@ -2,6 +2,7 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                                                                                                                                             |
 | ---------- | -------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-26 | update min-09              | GitHub Copilot | Added optional `Note per l'analisi` input for agent-session launches. The renderer keeps the note ephemeral per bug, `agent:start` trims and caps it at 2000 characters, and both prompt variants inject the same fenced `## Note utente` block before the task instructions.                                     |
 | 2026-05-26 | scan FT-14F                | GitHub Copilot | Scanned FT-14F provider/auth parity for analysis. Added the agent-availability helper entity and proactive blocking concept, documented Codex CLI preflight plus Copilot diagnostics, and updated the relevant agent-session, dashboard, IPC, preload, and tracker pages.                                         |
 | 2026-05-21 | update fix-07              | GitHub Copilot | Fixed the project keyword editor in Settings so comma and space remain typeable while editing. The component now keeps a freeform draft string and only normalizes to the stored keyword array for validation/persistence, and the wiki tracker was updated accordingly.                                          |
 | 2026-05-21 | update fix-06              | GitHub Copilot | Removed the now-unused FT-14B single-session renderer residue after FT-14E. The Dashboard drawer now starts sessions directly through the multi-session path, the dead `agent:mcp-status` push event was removed, obsolete renderer tests were deleted, and the wiki/tracker pages were aligned with the cleanup. |
@@ -64,6 +65,26 @@ Pages updated:
 - [[wiki/entities/session-workspace]]
 - [[wiki/topics/agent-analysis-sessions]]
 - [[wiki/topics/agent-session-configuration-foundation]]
+
+## [2026-05-26] update | min-09 - Note per l'analisi opzionali
+
+Updated the agent-analysis wiki after min-09 added optional operator notes to analysis starts. The renderer now exposes a collapsible `Note per l'analisi` textarea that resets on bug changes, the `agent:start` contract accepts `userContext`, and the main process trims, caps, and injects the note into both prompt variants as a fenced background-only section before `## Your Task`.
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/agent-prompt-builder]]
+- [[wiki/entities/analyze-start-panel]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/shared-types]]
+- [[wiki/entities/use-agent-sessions-hook]]
+- [[wiki/entities/session-workspace]]
+- [[wiki/entities/dashboard-page]]
+- [[wiki/concepts/streaming-agent-session-ipc]]
+- [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/cross-repo-agent-analysis]]
+- [[wiki/topics/mcp-backed-agent-analysis]]
+- [[wiki/topics/agent-session-workspace]]
 
 ## [2026-05-03] analysis | Dashboard categorization state recovery
 

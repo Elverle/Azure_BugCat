@@ -2,7 +2,7 @@
 title: 'Streaming Agent Session IPC'
 type: concept
 created: 2026-05-18
-updated: 2026-05-21
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-14b-agent-sessions]]',
@@ -30,7 +30,7 @@ AnalyzeStartPanel / DashboardPage
     -> ipc-handlers resolve bug/session/settings for FT-14D preflight
   -> DashboardPage.handleAnalyze() or SessionWorkspace.startSession()
     -> preload bridge invoke('agent:start')
-      -> ipc-handlers resolve bug/project/settings
+      -> ipc-handlers resolve bug/project/settings and normalize optional userContext
         -> SessionManager + concrete runner
           -> runner emits normalized AgentChunk values
             -> BrowserWindow sender.send('agent:chunk' | 'agent:completed' | 'agent:error' | 'agent:session-updated')
@@ -43,6 +43,7 @@ AnalyzeStartPanel / DashboardPage
 
 - Reconnect-on-mount is possible because session state sits behind `agent:get-session` and `agent:list-sessions` in the main process.
 - FT-14D keeps recommendation RPC separate from the long-lived chunk stream, so preflight UI state can change without coupling to session streaming.
+- min-09 extends the same command path with optional operator notes while keeping normalization privileged: renderer launchers capture free text, but `agent:start` owns trimming, truncation, and prompt-safe placement.
 - The renderer receives provider-agnostic `AgentChunk` payloads instead of SDK-native event types.
 - Structured error codes survive the IPC boundary and stay meaningful in the UI.
 - FT-14E can update summaries without polling because terminal transitions emit `agent:session-updated` separately from the full chunk stream.

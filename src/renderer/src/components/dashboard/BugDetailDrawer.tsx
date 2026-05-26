@@ -24,7 +24,12 @@ interface BugDetailDrawerProps {
   hasNext: boolean
   onViewInAdo: () => void
   adoLinkEnabled: boolean
-  onAnalyze?: (bugId: number, primaryProjectId: string, secondaryProjectIds: string[]) => void
+  onAnalyze?: (
+    bugId: number,
+    primaryProjectId: string,
+    secondaryProjectIds: string[],
+    userContext?: string
+  ) => void
   projects?: ProjectEntry[]
   isAnalyzing?: boolean
   agentAvailability?: { available: boolean; reason?: string }

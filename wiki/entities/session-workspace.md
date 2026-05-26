@@ -38,6 +38,7 @@ Composite Dashboard surface that replaces the old FT-14B single-session tab. It 
 - Auto-selects the newest session when the summary list grows, which keeps freshly started work immediately visible.
 - Opens a modal overlay for new-session creation instead of overloading the list surface with launch controls.
 - Reuses [[wiki/entities/analyze-start-panel]] inside that modal so FT-14D project suggestion logic stays consistent between the drawer and the workspace launcher.
+- Forwards optional min-09 operator notes from the reused launcher into [[wiki/entities/use-agent-sessions-hook]] without persisting them in workspace-local state.
 - Initializes the new-session dialog with the first available bug when the current Dashboard slice is non-empty.
 - FT-14F forwards the same availability/hint pair used by the drawer so the workspace launcher cannot start from a looser configuration state.
 

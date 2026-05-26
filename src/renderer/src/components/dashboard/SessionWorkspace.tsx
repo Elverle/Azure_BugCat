@@ -69,8 +69,13 @@ export function SessionWorkspace({
   }, [])
 
   const handleAnalyze = useCallback(
-    async (bugId: number, primaryProjectId: string, secondaryProjectIds: string[]) => {
-      await startSession(bugId, primaryProjectId, secondaryProjectIds)
+    async (
+      bugId: number,
+      primaryProjectId: string,
+      secondaryProjectIds: string[],
+      userContext?: string
+    ) => {
+      await startSession(bugId, primaryProjectId, secondaryProjectIds, userContext)
       setShowNewSessionDialog(false)
     },
     [startSession]

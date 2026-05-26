@@ -3,7 +3,7 @@ title: 'Agent Prompt Builder'
 type: entity
 subtype: library
 created: 2026-05-18
-updated: 2026-05-20
+updated: 2026-05-26
 sources:
 	[
 		'[[wiki/sources/ft-14b-agent-sessions]]',
@@ -16,7 +16,7 @@ lang: en
 
 ## Description
 
-Pure helper that builds the session prompt for FT-14B, FT-14C, and FT-14D. It now supports both the original full bug-embedding prompt and the shorter MCP-oriented prompt used when Azure DevOps MCP is available, plus a conditional read-only `Secondary Projects` section for cross-repo analysis.
+Pure helper that builds the session prompt for FT-14B, FT-14C, and FT-14D. It now supports both the original full bug-embedding prompt and the shorter MCP-oriented prompt used when Azure DevOps MCP is available, plus a conditional read-only `Secondary Projects` section for cross-repo analysis and an optional fenced `## Note utente` section for operator-supplied analysis hints.
 
 ## Location
 
@@ -31,6 +31,7 @@ Pure helper that builds the session prompt for FT-14B, FT-14C, and FT-14D. It no
 - Project context block: selected project metadata from FT-14A registry
 - Optional architecture context block
 - Optional FT-14D `Secondary Projects` table with secondary repo name, path, type, and description
+- Optional `userContext?: string` block injected as `## Note utente` before `## Your Task`
 - Explicit task list: inspect code, identify likely root cause, list affected files/components, suggest next steps, produce a structured report
 
 ### `buildMcpPrompt()`
@@ -39,6 +40,13 @@ Pure helper that builds the session prompt for FT-14B, FT-14C, and FT-14D. It no
 - Still includes project metadata plus optional architecture context so local code navigation stays grounded.
 - Adds DevOps organization and project labels for operator-visible context without embedding the full bug payload.
 - Reuses the same FT-14D secondary-project table when optional cross-repo context is available.
+- Reuses the same optional fenced `## Note utente` section as the non-MCP prompt so operator hints survive the MCP/fallback branch.
+
+## min-09 Notes
+
+- Both prompt variants accept `userContext?: string` and inject it only when the trimmed value is non-empty.
+- The operator note is emitted after architecture/secondary-project context and before `## Your Task`, so it can enrich the investigation without replacing the prompt contract.
+- The section is wrapped in `---` delimiters and explicitly labeled as background information only, which reduces the chance that user prose is interpreted as higher-priority instructions.
 
 ## FT-14D Notes
 
@@ -52,6 +60,7 @@ Pure helper that builds the session prompt for FT-14B, FT-14C, and FT-14D. It no
 - The MCP prompt intentionally does not embed bug title, description, categorization, or other fields that MCP should fetch live.
 - FT-14D secondary projects are guidance-only context and never replace the primary project block.
 - Empty description, tags, and keywords are normalized into explicit placeholders instead of omitted sections.
+- min-09 keeps note handling symmetric across MCP and fallback prompts, so MCP availability changes transport, not operator-visible note semantics.
 
 ## Dependencies
 

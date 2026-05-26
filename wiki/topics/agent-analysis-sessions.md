@@ -18,7 +18,7 @@ lang: en
 
 ## Overview
 
-FT-14B realizes the FT-14A settings foundation as a live operator workflow for bug-by-bug codebase analysis. FT-14C extends that workflow so each session can optionally fetch live Azure DevOps work item context through MCP before reading the local codebase. FT-14D adds a smart launch preflight with primary and secondary project selection. FT-14E then replaces the old single-session tab with a bounded multi-session workspace that persists recent runs, restores them after crashes, and separates list summaries from full session detail. FT-14F adds provider/auth parity checks so invalid configurations are blocked before click, while privileged preflight remains enforced in the main process.
+FT-14B realizes the FT-14A settings foundation as a live operator workflow for bug-by-bug codebase analysis. FT-14C extends that workflow so each session can optionally fetch live Azure DevOps work item context through MCP before reading the local codebase. FT-14D adds a smart launch preflight with primary and secondary project selection. FT-14E then replaces the old single-session tab with a bounded multi-session workspace that persists recent runs, restores them after crashes, and separates list summaries from full session detail. FT-14F adds provider/auth parity checks so invalid configurations are blocked before click, while privileged preflight remains enforced in the main process. min-09 adds optional operator notes that travel through the same start flow and are fenced into the final prompt as background-only context.
 
 ## End-to-End Flow
 
@@ -27,14 +27,17 @@ BugDetailDrawer
   -> AnalyzeStartPanel
     -> checkAgentAvailability() / getAgentAvailabilityHint()
     -> optional agentSuggestProjects()
-  -> Analizza(primary + optional secondaries)
+    -> optional Note per l'analisi
+  -> Analizza(primary + optional secondaries + optional userContext)
     -> DashboardPage.handleAnalyze()
       -> preload bridge agentStart()
         -> ipc-handlers
           -> optional Codex CLI preflight
           -> resolve session bug + registered project(s) + settings
+          -> trim / truncate optional userContext
           -> checkMcpHealth()
           -> buildMcpPrompt() or buildAnalyzePrompt()
+            -> optional fenced ## Note utente block
           -> createRunner()
           -> SessionManager.start()
             -> Claude / Codex / Copilot SDK runner
@@ -63,6 +66,8 @@ Dashboard Sessioni tab
 - Codex auto/manual paths still run a real CLI preflight inside `agent:start`, so missing `codex` cannot slip past renderer gating.
 - Single-project registries bypass FT-14D suggestion IPC and go straight to `agent:start`.
 - Secondary projects stay optional and are rendered into the prompt only when at least one survives validation.
+- min-09 notes stay optional and ephemeral: AnalyzeStartPanel resets them on bug changes, blank values are dropped, and the main process caps the payload at 2000 characters.
+- The same `## Note utente` block is injected into both MCP and fallback prompts, so MCP availability does not change how operator context is framed.
 - Reads coming from secondary repositories are visibly tagged in the live session log.
 - The UI auto-switches to the `Sessioni` tab immediately after `Analizza` starts.
 - The `Sessioni` tab shows a numeric badge with the running-session count rather than a single binary in-progress indicator.

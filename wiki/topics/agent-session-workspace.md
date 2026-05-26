@@ -2,7 +2,7 @@
 title: 'Agent Session Workspace'
 type: topic
 created: 2026-05-21
-updated: 2026-05-21
+updated: 2026-05-26
 sources: ['[[wiki/sources/ft-14e-multi-session-agent-workspace]]']
 tags: [agent, dashboard, workspace, sessions, reports]
 lang: en
@@ -10,7 +10,7 @@ lang: en
 
 ## Overview
 
-FT-14E turns the Dashboard `Sessioni` tab into a dedicated workspace for recent and running agent analyses. Instead of rendering one live session inline, the tab now separates session summaries from session detail, supports status filtering, keeps a visible concurrency budget, and exposes post-run report actions without leaving the workspace.
+FT-14E turns the Dashboard `Sessioni` tab into a dedicated workspace for recent and running agent analyses. Instead of rendering one live session inline, the tab now separates session summaries from session detail, supports status filtering, keeps a visible concurrency budget, and exposes post-run report actions without leaving the workspace. min-09 reuses the same launcher surface for optional operator notes, so workspace-started sessions match drawer-started sessions.
 
 ## End-to-End Flow
 
@@ -27,6 +27,7 @@ DashboardPage
 
 New session dialog
   -> AnalyzeStartPanel
+    -> optional Note per l'analisi
     -> agent:start
       -> summary list refresh
       -> auto-select newest session

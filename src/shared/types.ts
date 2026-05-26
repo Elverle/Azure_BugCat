@@ -222,6 +222,7 @@ export interface AgentStartPayload {
   mode: SessionMode
   primaryProjectId: string
   secondaryProjectIds?: string[]
+  userContext?: string
 }
 
 export interface AgentAbortPayload {

@@ -3,7 +3,7 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-21
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -103,7 +103,7 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | `AgentSessionStatus`         | Session state union: `running`, `completed`, `aborted`, `error`                                             |
 | `AgentUsageStats`            | Provider-normalized usage snapshot with token counts, optional cache/reasoning metrics, duration, and model |
 | `AgentSession`               | Full FT-14 live session snapshot, now including optional `secondaryProjectIds` and `usage`                  |
-| `AgentStartPayload`          | Start request: `{ bugId, mode, primaryProjectId, secondaryProjectIds? }`                                    |
+| `AgentStartPayload`          | Start request: `{ bugId, mode, primaryProjectId, secondaryProjectIds?, userContext? }`                      |
 | `AgentAbortPayload`          | Abort request: `{ sessionId }`                                                                              |
 | `AgentCompletedPayload`      | Completion event: `{ sessionId, report, usage? }`                                                           |
 | `AgentErrorPayload`          | Error event: `{ sessionId, error }`                                                                         |
@@ -173,6 +173,12 @@ _Added in FT-02._ Used by test connection stubs in [[wiki/entities/ipc-handlers]
 - `AgentSession.secondaryProjectIds` lets reconnecting renderers and session viewers preserve the cross-repo selection that started the run.
 - `AgentStartPayload.secondaryProjectIds` keeps secondary repo choice explicit instead of inferring it later from prompt text.
 - `ProjectSuggestionPayload` and `ProjectSuggestion` formalize the suggestion IPC contract so the renderer does not need to understand the heuristic implementation.
+
+## min-09 Notes
+
+- `AgentStartPayload.userContext` carries optional operator hints from launcher surfaces into the privileged `agent:start` boundary.
+- The field is intentionally optional and free-text because renderer components treat it as ephemeral UI state, not as persisted session configuration.
+- Main-process trimming and truncation own the trust-boundary normalization, so shared typing stays permissive while runtime enforcement remains centralized.
 
 ## min-08 Notes
 

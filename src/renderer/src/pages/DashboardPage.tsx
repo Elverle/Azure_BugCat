@@ -256,14 +256,20 @@ export function DashboardPage(): JSX.Element {
   }, [selectedBug, adoSettings, adoLinkEnabled])
 
   const handleAnalyze = useCallback(
-    async (bugId: number, projectId: string, secondaryProjectIds: string[]) => {
+    async (
+      bugId: number,
+      projectId: string,
+      secondaryProjectIds: string[],
+      userContext?: string
+    ) => {
       setStartingAgentSession(true)
       try {
         await window.electronAPI.agentStart({
           bugId,
           mode: 'analyze',
           primaryProjectId: projectId,
-          secondaryProjectIds
+          secondaryProjectIds,
+          userContext
         })
         setAgentRunningCount((count) => count + 1)
         setViewMode('sessions')

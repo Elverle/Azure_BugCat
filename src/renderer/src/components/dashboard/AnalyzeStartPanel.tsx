@@ -1,12 +1,17 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Bot, Loader2, AlertTriangle } from 'lucide-react'
+import { Bot, Loader2, AlertTriangle, ChevronDown, ChevronRight } from 'lucide-react'
 import type { CategorizedBug, ProjectEntry, ProjectSuggestion } from '@shared/types'
 
 interface AnalyzeStartPanelProps {
   bugId: number
   bug: CategorizedBug
   projects: ProjectEntry[]
-  onAnalyze: (bugId: number, primaryProjectId: string, secondaryProjectIds: string[]) => void
+  onAnalyze: (
+    bugId: number,
+    primaryProjectId: string,
+    secondaryProjectIds: string[],
+    userContext?: string
+  ) => void
   isAnalyzing: boolean
   agentAvailability?: { available: boolean; reason?: string }
   agentHint?: string | null
@@ -26,6 +31,14 @@ export function AnalyzeStartPanel({
     projects.length === 1 ? projects[0].id : ''
   )
   const [checkedSecondaries, setCheckedSecondaries] = useState<string[]>([])
+  const [userContext, setUserContext] = useState('')
+  const [contextExpanded, setContextExpanded] = useState(false)
+
+  // Reset userContext when bugId changes
+  useEffect(() => {
+    setUserContext('')
+    setContextExpanded(false)
+  }, [bugId])
 
   // Fetch suggestions on mount or when bug/projects change (only for multi-project)
   useEffect(() => {
@@ -90,9 +103,10 @@ export function AnalyzeStartPanel({
 
   const handleAnalyze = useCallback(() => {
     if (selectedPrimary) {
-      onAnalyze(bugId, selectedPrimary, checkedSecondaries)
+      const trimmed = userContext.trim() || undefined
+      onAnalyze(bugId, selectedPrimary, checkedSecondaries, trimmed)
     }
-  }, [bugId, selectedPrimary, checkedSecondaries, onAnalyze])
+  }, [bugId, selectedPrimary, checkedSecondaries, userContext, onAnalyze])
 
   // --- Render ---
 
@@ -116,9 +130,16 @@ export function AnalyzeStartPanel({
   // Single project: auto-select, direct start (no IPC needed)
   if (projects.length === 1) {
     return (
-      <div className="flex flex-col items-center justify-center mb-2">
+      <div className="flex flex-col items-center justify-center mb-2 space-y-2">
+        <UserContextCollapsible
+          expanded={contextExpanded}
+          onToggle={() => setContextExpanded((v) => !v)}
+          value={userContext}
+          onChange={setUserContext}
+          disabled={isAnalyzing}
+        />
         <button
-          onClick={() => onAnalyze(bugId, projects[0].id, [])}
+          onClick={() => onAnalyze(bugId, projects[0].id, [], userContext.trim() || undefined)}
           disabled={isAnalyzing}
           className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -191,6 +212,15 @@ export function AnalyzeStartPanel({
         </div>
       )}
 
+      {/* User context notes */}
+      <UserContextCollapsible
+        expanded={contextExpanded}
+        onToggle={() => setContextExpanded((v) => !v)}
+        value={userContext}
+        onChange={setUserContext}
+        disabled={isAnalyzing}
+      />
+
       {/* Analyze button */}
       <button
         onClick={handleAnalyze}
@@ -201,6 +231,61 @@ export function AnalyzeStartPanel({
         Analizza
       </button>
       {agentHint && <p className="text-xs text-gray-400 text-center mt-1">{agentHint}</p>}
+    </div>
+  )
+}
+
+const USER_CONTEXT_MAX = 2000
+
+function UserContextCollapsible({
+  expanded,
+  onToggle,
+  value,
+  onChange,
+  disabled
+}: {
+  expanded: boolean
+  onToggle: () => void
+  value: string
+  onChange: (v: string) => void
+  disabled: boolean
+}): JSX.Element {
+  return (
+    <div className="w-full border border-gray-100 rounded-md bg-gray-50">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center gap-1.5 w-full px-2 py-1.5 text-left"
+        disabled={disabled}
+      >
+        {expanded ? (
+          <ChevronDown size={12} className="text-gray-400" />
+        ) : (
+          <ChevronRight size={12} className="text-gray-400" />
+        )}
+        <span className="text-xs text-gray-500">Note per l&apos;analisi</span>
+        {!expanded && value.trim().length > 0 && (
+          <span className="ml-auto text-[10px] text-indigo-500 font-medium">compilato</span>
+        )}
+      </button>
+      {expanded && (
+        <div className="px-2 pb-2">
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            maxLength={USER_CONTEXT_MAX}
+            disabled={disabled}
+            rows={3}
+            placeholder="Hint, considerazioni o contesto aggiuntivo per l'agente..."
+            className="w-full text-xs border border-gray-200 rounded-md px-2 py-1.5 bg-white text-gray-700 resize-y focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50 placeholder:text-gray-300"
+          />
+          {value.length > 0 && (
+            <span className="text-[10px] text-gray-400 mt-0.5 block text-right">
+              {value.length}/{USER_CONTEXT_MAX}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

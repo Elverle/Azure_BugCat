@@ -68,7 +68,7 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 - Passes `openDrawer` into both [[wiki/entities/bug-table]] and [[wiki/entities/bug-card]], then shifts the page content with `pr-[400px]` while the drawer is open.
 - Embeds the FT-10 similarity workflow directly inside the `Similarità` tab, reusing [[wiki/entities/use-ai-cluster-hook]], [[wiki/entities/ai-cluster-category-section]], and [[wiki/entities/similarity-group-card]].
 - Adds a dedicated `Sessioni` tab that renders [[wiki/entities/session-workspace]] and shows a numeric badge with the current FT-14E running-session count.
-- Starts FT-14 sessions from the drawer by invoking `agent:start` directly through the preload bridge, then auto-switches the page into the `Sessioni` tab as soon as the invoke resolves.
+- Starts FT-14 sessions from the drawer by invoking `agent:start` directly through the preload bridge, now including optional min-09 operator notes when present, then auto-switches the page into the `Sessioni` tab as soon as the invoke resolves.
 - Receives running-count changes back from [[wiki/entities/session-workspace]] so the tab badge can stay correct even when sessions are started from inside the workspace itself.
 - Loads `orgUrl` and `projectName` once from the preload bridge and composes the Azure DevOps work item URL for [[wiki/entities/open-external-ipc]].
 - Shows two empty states: no session data loaded at all, or no bugs matching the current filters.
