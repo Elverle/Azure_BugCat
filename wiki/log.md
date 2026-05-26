@@ -2,6 +2,7 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                                                                                                                                             |
 | ---------- | -------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-26 | scan FT-14F                | GitHub Copilot | Scanned FT-14F provider/auth parity for analysis. Added the agent-availability helper entity and proactive blocking concept, documented Codex CLI preflight plus Copilot diagnostics, and updated the relevant agent-session, dashboard, IPC, preload, and tracker pages.                                         |
 | 2026-05-21 | update fix-07              | GitHub Copilot | Fixed the project keyword editor in Settings so comma and space remain typeable while editing. The component now keeps a freeform draft string and only normalizes to the stored keyword array for validation/persistence, and the wiki tracker was updated accordingly.                                          |
 | 2026-05-21 | update fix-06              | GitHub Copilot | Removed the now-unused FT-14B single-session renderer residue after FT-14E. The Dashboard drawer now starts sessions directly through the multi-session path, the dead `agent:mcp-status` push event was removed, obsolete renderer tests were deleted, and the wiki/tracker pages were aligned with the cleanup. |
 | 2026-05-21 | scan FT-14E                | GitHub Copilot | Scanned FT-14E multi-session agent workspace. Added persistence/workspace pages, documented bounded concurrent session recovery and list/detail IPC, and updated the tracker pages plus `feature-index.md`.                                                                                                       |
@@ -39,6 +40,30 @@
 | 2026-05-03 | analysis LLM cleanup       | GitHub Copilot | Documented the shared LLM provider cleanup, added pages for the new helper modules, and updated provider/service docs to reflect aligned timeout, parsing, and blocking-error behavior.                                                                                                                           |
 | 2026-05-03 | analysis cancel flow       | GitHub Copilot | Documented abort-aware categorization cancellation, updated IPC/dashboard/provider pages, and recorded the all-or-nothing persistence rule for cancel.                                                                                                                                                            |
 | 2026-05-03 | analysis dashboard state   | GitHub Copilot | Documented Dashboard remount recovery for active categorization, immediate cancelling feedback, and renderer-safe IPC error normalization.                                                                                                                                                                        |
+
+## [2026-05-26] scan | FT-14F - Provider/Auth Parity for Analysis
+
+Scanned FT-14F after the agent-analysis flow gained proactive provider/auth parity checks. The renderer now computes a pure availability result before launch, Settings can test Copilot connectivity in either subscription or provider-aware BYOK mode, and `agent:start` performs a Codex CLI preflight so missing local binaries fail before runner creation.
+
+Pages created:
+
+- [[wiki/sources/ft-14f-provider-auth-parity-analysis]]
+- [[wiki/entities/agent-availability]]
+- [[wiki/concepts/proactive-agent-configuration-blocking]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/analyze-start-panel]]
+- [[wiki/entities/agent-provider-section]]
+- [[wiki/entities/ipc-handlers]]
+- [[wiki/entities/ipc-channels]]
+- [[wiki/entities/preload-bridge]]
+- [[wiki/entities/dashboard-page]]
+- [[wiki/entities/bug-detail-drawer]]
+- [[wiki/entities/session-workspace]]
+- [[wiki/topics/agent-analysis-sessions]]
+- [[wiki/topics/agent-session-configuration-foundation]]
 
 ## [2026-05-03] analysis | Dashboard categorization state recovery
 

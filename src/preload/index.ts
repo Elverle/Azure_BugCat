@@ -51,6 +51,8 @@ const electronAPI = {
   // Agent
   checkAgentBinary: () => ipcRenderer.invoke(IPC_CHANNELS.AGENT_CHECK_BINARY),
   selectDirectory: () => ipcRenderer.invoke(IPC_CHANNELS.AGENT_SELECT_DIRECTORY),
+  agentTestCopilot: (settings?: unknown) =>
+    ipcRenderer.invoke(IPC_CHANNELS.AGENT_TEST_COPILOT, settings),
 
   // Projects
   getProjects: () => ipcRenderer.invoke(IPC_CHANNELS.PROJECTS_GET),

@@ -56,7 +56,10 @@ export const IPC_CHANNELS = {
   // Projects
   PROJECTS_GET: 'projects:get',
   PROJECTS_SET: 'projects:set',
-  PROJECTS_VALIDATE_PATHS: 'projects:validate-paths'
+  PROJECTS_VALIDATE_PATHS: 'projects:validate-paths',
+
+  // Agent Test
+  AGENT_TEST_COPILOT: 'agent:test-copilot'
 } as const
 
 export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]

@@ -417,6 +417,89 @@ export function registerIPCHandlers(): void {
     return result.filePaths[0] ?? null
   })
 
+  ipcMain.handle(
+    IPC_CHANNELS.AGENT_TEST_COPILOT,
+    async (
+      _event,
+      payload?: {
+        copilotByokEnabled?: boolean
+        copilotByokProvider?: string
+        copilotByokApiKey?: string
+        copilotByokBaseUrl?: string
+        agentProvider?: string
+        llmProvider?: string
+      }
+    ): Promise<{ success: boolean; message: string }> => {
+      const settings = payload
+        ? ({ ...payload } as Partial<AppSettings>)
+        : (store.get('settings') as AppSettings | null)
+      if (!settings) {
+        return { success: false, message: 'Settings non configurate' }
+      }
+
+      const effectiveProvider = payload
+        ? (payload.agentProvider ?? 'copilot-sdk')
+        : resolveAgentProviderType(settings as AppSettings)
+      if (effectiveProvider !== 'copilot-sdk') {
+        return { success: false, message: 'Provider agente non è Copilot SDK' }
+      }
+
+      if (settings.copilotByokEnabled) {
+        // BYOK mode: test API call branched by provider
+        const apiKey = settings.copilotByokApiKey?.trim()
+        const baseUrl =
+          settings.copilotByokBaseUrl?.trim() || resolveCopilotByokBaseUrl(settings as AppSettings)
+        if (!apiKey) {
+          return { success: false, message: 'API Key BYOK mancante' }
+        }
+        if (!baseUrl) {
+          return { success: false, message: 'Base URL BYOK mancante' }
+        }
+        try {
+          const { net } = await import('electron')
+          const provider = settings.copilotByokProvider
+          let url: string
+          let headers: Record<string, string> = {}
+
+          if (provider === 'anthropic') {
+            url = `${baseUrl}/v1/models`
+            headers = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }
+          } else if (provider === 'gemini') {
+            url = `${baseUrl}/v1beta/models?key=${encodeURIComponent(apiKey)}`
+          } else {
+            // openai, openrouter, generic
+            url = `${baseUrl}/models`
+            headers = { Authorization: `Bearer ${apiKey}` }
+          }
+
+          const response = await net.fetch(url, {
+            method: 'GET',
+            ...(Object.keys(headers).length > 0 ? { headers } : {})
+          })
+          if (response.ok) {
+            return { success: true, message: 'Connessione BYOK riuscita' }
+          }
+          return {
+            success: false,
+            message: `Errore API: ${response.status} ${response.statusText}`
+          }
+        } catch (err) {
+          return {
+            success: false,
+            message: `Errore connessione: ${err instanceof Error ? err.message : String(err)}`
+          }
+        }
+      } else {
+        // Subscription mode: configuration check only (SDK handles auth at runtime)
+        return {
+          success: true,
+          message:
+            'Modalità subscription Copilot configurata. La verifica della sessione avverrà al primo avvio.'
+        }
+      }
+    }
+  )
+
   // Projects
   ipcMain.handle(IPC_CHANNELS.PROJECTS_GET, async () => {
     const settings = store.get('settings') as AppSettings
@@ -576,6 +659,23 @@ export function registerIPCHandlers(): void {
       }
 
       const agentProvider = resolveAgentProviderType(settings)
+
+      // Codex binary preflight
+      if (agentProvider === 'codex-sdk') {
+        await new Promise<void>((resolve, reject) => {
+          execFile('codex', ['--version'], { timeout: 5000 }, (error) => {
+            if (error) {
+              reject({
+                code: 'AGENT_BINARY_MISSING',
+                message: 'Codex CLI non trovato. Installa con: npm i -g @openai/codex'
+              })
+            } else {
+              resolve()
+            }
+          })
+        })
+      }
+
       const resolvedApiKey = resolveAgentApiKey(settings)
       const resolvedBaseUrl = resolveCopilotByokBaseUrl(settings)
       const resolvedByokProvider = resolveCopilotByokProvider(settings)

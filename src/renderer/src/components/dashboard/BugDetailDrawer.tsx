@@ -27,6 +27,8 @@ interface BugDetailDrawerProps {
   onAnalyze?: (bugId: number, primaryProjectId: string, secondaryProjectIds: string[]) => void
   projects?: ProjectEntry[]
   isAnalyzing?: boolean
+  agentAvailability?: { available: boolean; reason?: string }
+  agentHint?: string | null
 }
 
 export default function BugDetailDrawer({
@@ -45,7 +47,9 @@ export default function BugDetailDrawer({
   adoLinkEnabled,
   onAnalyze,
   projects,
-  isAnalyzing
+  isAnalyzing,
+  agentAvailability,
+  agentHint
 }: BugDetailDrawerProps): JSX.Element {
   const drawerRef = useRef<HTMLDivElement>(null)
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null)
@@ -339,6 +343,8 @@ export default function BugDetailDrawer({
                 projects={projects ?? []}
                 onAnalyze={onAnalyze}
                 isAnalyzing={isAnalyzing ?? false}
+                agentAvailability={agentAvailability}
+                agentHint={agentHint}
               />
             )}
             <button

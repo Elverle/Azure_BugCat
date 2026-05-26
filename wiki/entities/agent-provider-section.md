@@ -3,11 +3,12 @@ title: 'Agent Provider Section'
 type: entity
 subtype: component
 created: 2026-05-17
-updated: 2026-05-18
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
-    '[[wiki/sources/ft-14b-agent-sessions]]'
+    '[[wiki/sources/ft-14b-agent-sessions]]',
+    '[[wiki/sources/ft-14f-provider-auth-parity-analysis]]'
   ]
 tags: [react, component, settings, agent, byok]
 lang: en
@@ -15,7 +16,7 @@ lang: en
 
 ## Description
 
-Settings card that configures which agent runtime should be used for agent sessions. It combines auto-derived provider badges, manual provider selection for non-derived LLMs, optional manual credentials/model inputs, Copilot BYOK controls, and a Codex CLI installation check.
+Settings card that configures which agent runtime should be used for agent sessions. It combines auto-derived provider badges, manual provider selection for non-derived LLMs, optional manual credentials/model inputs, Copilot BYOK controls, a Codex CLI installation check, and an FT-14F Copilot connectivity probe.
 
 ## Location
 
@@ -49,6 +50,9 @@ interface AgentProviderSectionProps {
 - Explains that Copilot BYOK is wired through the SDK `SessionConfig.provider` object, not through `CopilotClientOptions`.
 - Shows `agentModel` for Copilot SDK as well, so the persisted session model is visible and editable instead of remaining hidden after switching from another provider such as Claude Code SDK.
 - Clarifies that the Copilot model field is optional: when blank, BugCat falls back to the runner default for the selected Copilot mode/provider.
+- FT-14F adds a `Verifica connessione Copilot` button that accepts unsaved draft settings through preload IPC.
+- In Copilot subscription mode the test returns immediate configuration success without a network probe, because runtime auth is delegated to the SDK session startup.
+- In Copilot BYOK mode the test performs a provider-aware API probe: Anthropic uses `x-api-key`, Gemini uses the query-string key pattern, and OpenAI/OpenRouter/generic use a bearer token on `/models`.
 
 ## Dependencies
 
@@ -64,6 +68,7 @@ interface AgentProviderSectionProps {
 
 - [[wiki/entities/settings-page]]
 - [[wiki/concepts/agent-provider-auto-derivation]]
+- [[wiki/concepts/proactive-agent-configuration-blocking]]
 - [[wiki/concepts/settings-sanitization-before-save]]
 - [[wiki/topics/agent-session-configuration-foundation]]
 - [[wiki/topics/agent-analysis-sessions]]

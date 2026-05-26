@@ -8,6 +8,8 @@ interface AnalyzeStartPanelProps {
   projects: ProjectEntry[]
   onAnalyze: (bugId: number, primaryProjectId: string, secondaryProjectIds: string[]) => void
   isAnalyzing: boolean
+  agentAvailability?: { available: boolean; reason?: string }
+  agentHint?: string | null
 }
 
 export function AnalyzeStartPanel({
@@ -15,7 +17,9 @@ export function AnalyzeStartPanel({
   bug,
   projects,
   onAnalyze,
-  isAnalyzing
+  isAnalyzing,
+  agentAvailability,
+  agentHint
 }: AnalyzeStartPanelProps): JSX.Element {
   const [loading, setLoading] = useState(projects.length > 1)
   const [selectedPrimary, setSelectedPrimary] = useState<string>(
@@ -92,6 +96,15 @@ export function AnalyzeStartPanel({
 
   // --- Render ---
 
+  if (agentAvailability && !agentAvailability.available) {
+    return (
+      <div className="flex items-center gap-2 p-2 mb-2 rounded-md bg-amber-50 border border-amber-200">
+        <AlertTriangle size={14} className="text-amber-500 shrink-0" />
+        <p className="text-xs text-amber-700">{agentAvailability.reason}</p>
+      </div>
+    )
+  }
+
   if (projects.length === 0) {
     return (
       <p className="text-xs text-gray-400 text-center mb-2">
@@ -103,7 +116,7 @@ export function AnalyzeStartPanel({
   // Single project: auto-select, direct start (no IPC needed)
   if (projects.length === 1) {
     return (
-      <div className="flex items-center justify-center mb-2">
+      <div className="flex flex-col items-center justify-center mb-2">
         <button
           onClick={() => onAnalyze(bugId, projects[0].id, [])}
           disabled={isAnalyzing}
@@ -112,6 +125,7 @@ export function AnalyzeStartPanel({
           {isAnalyzing ? <Loader2 size={14} className="animate-spin" /> : <Bot size={14} />}
           Analizza
         </button>
+        {agentHint && <p className="text-xs text-gray-400 text-center mt-1">{agentHint}</p>}
       </div>
     )
   }
@@ -186,6 +200,7 @@ export function AnalyzeStartPanel({
         {isAnalyzing ? <Loader2 size={14} className="animate-spin" /> : <Bot size={14} />}
         Analizza
       </button>
+      {agentHint && <p className="text-xs text-gray-400 text-center mt-1">{agentHint}</p>}
     </div>
   )
 }

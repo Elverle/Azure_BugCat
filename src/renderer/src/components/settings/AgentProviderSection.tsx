@@ -1,5 +1,14 @@
 import { useState } from 'react'
-import { Terminal, Eye, EyeOff, CheckCircle2, XCircle, Loader2, AlertTriangle } from 'lucide-react'
+import {
+  Terminal,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  AlertTriangle,
+  Wifi
+} from 'lucide-react'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Select } from '@renderer/components/ui/select'
@@ -26,6 +35,11 @@ export function AgentProviderSection({
   binaryCheckLoading
 }: AgentProviderSectionProps): React.JSX.Element {
   const [showApiKey, setShowApiKey] = useState(false)
+  const [copilotTestLoading, setCopilotTestLoading] = useState(false)
+  const [copilotTestResult, setCopilotTestResult] = useState<{
+    success: boolean
+    message: string
+  } | null>(null)
 
   const isAnthropicAuto = settings.llmProvider === 'anthropic'
   const isOpenaiAuto = settings.llmProvider === 'openai'
@@ -298,6 +312,57 @@ export function AgentProviderSection({
                   )}
                 </div>
               </>
+            )}
+          </div>
+        )}
+
+        {/* Copilot connection test */}
+        {effectiveProvider === 'copilot-sdk' && (
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              disabled={copilotTestLoading}
+              onClick={async () => {
+                setCopilotTestLoading(true)
+                setCopilotTestResult(null)
+                try {
+                  const api = window.electronAPI as any
+                  const result = await api.agentTestCopilot({
+                    copilotByokEnabled: settings.copilotByokEnabled,
+                    copilotByokProvider: settings.copilotByokProvider,
+                    copilotByokApiKey: settings.copilotByokApiKey,
+                    copilotByokBaseUrl: settings.copilotByokBaseUrl,
+                    agentProvider: effectiveProvider,
+                    llmProvider: settings.llmProvider
+                  })
+                  setCopilotTestResult(result as { success: boolean; message: string })
+                } catch {
+                  setCopilotTestResult({ success: false, message: 'Errore durante il test' })
+                } finally {
+                  setCopilotTestLoading(false)
+                }
+              }}
+            >
+              {copilotTestLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              <Wifi className="w-4 h-4 mr-1" />
+              Verifica connessione Copilot
+            </Button>
+            {copilotTestResult && (
+              <span
+                className={`text-sm flex items-center gap-1 ${copilotTestResult.success ? 'text-green-600' : 'text-red-600'}`}
+              >
+                {copilotTestResult.success ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    {copilotTestResult.message}
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4" />
+                    {copilotTestResult.message}
+                  </>
+                )}
+              </span>
             )}
           </div>
         )}

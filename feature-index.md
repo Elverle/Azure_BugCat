@@ -41,3 +41,4 @@ Track every deliverable here using explicit prefixes:
 | 31  | FT-14E  | Workspace multi-session per sessioni agente con persistenza 24h, crash recovery, list/detail panels, badge MCP e azioni report             | Complete |
 | 32  | fix-06  | Rimozione del residuo legacy single-session dopo FT-14E: cleanup di hook/panel/test inutilizzati e del vecchio evento MCP dedicato         | Complete |
 | 33  | fix-07  | Keyword dei progetti in Settings: input comma-separated con draft libero e parsing in array                                                | Complete |
+| 34  | FT-14F  | Parità provider e modalità auth per Analisi: renderer-side availability check, Codex binary preflight, blocking UI e Test Copilot button   | Complete |

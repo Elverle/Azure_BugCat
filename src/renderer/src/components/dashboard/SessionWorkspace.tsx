@@ -11,13 +11,17 @@ interface SessionWorkspaceProps {
   projects: ProjectEntry[]
   bugs: CategorizedBug[]
   onRunningCountChange?: (count: number) => void
+  agentAvailability?: { available: boolean; reason?: string }
+  agentHint?: string | null
 }
 
 export function SessionWorkspace({
   maxConcurrentSessions,
   projects,
   bugs,
-  onRunningCountChange
+  onRunningCountChange,
+  agentAvailability,
+  agentHint
 }: SessionWorkspaceProps): JSX.Element {
   const {
     sessions,
@@ -146,6 +150,8 @@ export function SessionWorkspace({
                     projects={projects}
                     onAnalyze={handleAnalyze}
                     isAnalyzing={false}
+                    agentAvailability={agentAvailability}
+                    agentHint={agentHint}
                   />
                 )}
               </>

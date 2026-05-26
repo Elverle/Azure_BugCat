@@ -38,6 +38,7 @@ import {
   type GroupBy
 } from '@renderer/lib/dashboard-utils'
 import { cn } from '@renderer/lib/utils'
+import { checkAgentAvailability, getAgentAvailabilityHint } from '@renderer/lib/agent-availability'
 import type { AppSettings, CategorizedBug, ProjectEntry } from '@shared/types'
 
 type ViewMode = 'table' | 'card' | 'similarity' | 'sessions'
@@ -80,6 +81,11 @@ export function DashboardPage(): JSX.Element {
   const [maxConcurrentSessions, setMaxConcurrentSessions] = useState(5)
   const [agentRunningCount, setAgentRunningCount] = useState(0)
   const [startingAgentSession, setStartingAgentSession] = useState(false)
+  const [agentAvailability, setAgentAvailability] = useState<{
+    available: boolean
+    reason?: string
+  }>({ available: true })
+  const [agentHint, setAgentHint] = useState<string | null>(null)
   // Computed values
   const filteredBugs = useMemo(
     () => filterBugs(bugs, { ...filterState, searchText }),
@@ -160,6 +166,8 @@ export function DashboardPage(): JSX.Element {
           setProjects(settings.projects)
         }
         setMaxConcurrentSessions(settings.maxConcurrentSessions ?? 5)
+        setAgentAvailability(checkAgentAvailability(settings))
+        setAgentHint(getAgentAvailabilityHint(settings))
       }
     })
   }, [])
@@ -401,6 +409,8 @@ export function DashboardPage(): JSX.Element {
             projects={projects}
             bugs={bugs}
             onRunningCountChange={setAgentRunningCount}
+            agentAvailability={agentAvailability}
+            agentHint={agentHint}
           />
         ) : viewMode === 'similarity' ? (
           <DashboardSimilaritySection
@@ -475,6 +485,8 @@ export function DashboardPage(): JSX.Element {
         onAnalyze={handleAnalyze}
         projects={projects}
         isAnalyzing={startingAgentSession || agentRunningCount >= maxConcurrentSessions}
+        agentAvailability={agentAvailability}
+        agentHint={agentHint}
       />
 
       <ConfirmDialog

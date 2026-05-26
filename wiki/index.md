@@ -43,6 +43,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 16  | FT-14C | MCP Azure DevOps integration con fallback per agent session | Done   |
 | 17  | FT-14D | Analisi cross-repo e suggerimento progetti                  | Done   |
 | 18  | FT-14E | Workspace multi-session per sessioni agente con recovery    | Done   |
+| 19  | FT-14F | Parità provider e modalità auth per Analisi                 | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -66,6 +67,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]] — FT-14C MCP-backed Azure DevOps fetch for agent sessions with health check, prompt fallback, and UI status feedback (2026-05-20)
 - [[wiki/sources/ft-14d-cross-repo-project-suggestions]] — FT-14D cross-repo agent analysis: heuristic primary-project selection, optional secondary repos, conditional multi-repo prompts, and tagged secondary log provenance (2026-05-20)
 - [[wiki/sources/ft-14e-multi-session-agent-workspace]] — FT-14E bounded multi-session workspace: persisted recovery, summary/detail UI, report actions, and session-list IPC (2026-05-21)
+- [[wiki/sources/ft-14f-provider-auth-parity-analysis]] — FT-14F provider/auth parity: proactive renderer gating, Codex CLI preflight, Copilot connection diagnostics, and Claude local-auth hints (2026-05-26)
 
 ## Entities
 
@@ -98,6 +100,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/agent-session-manager]] — Main-process bounded concurrent session coordinator for agent runs (FT-14E)
 - [[wiki/entities/agent-session-persistence]] — Main-process retention and crash-recovery helper for persisted agent sessions (FT-14E)
 - [[wiki/entities/agent-runner-factory]] — Resolves settings into Claude, Codex, or Copilot SDK runners (FT-14B)
+- [[wiki/entities/agent-availability]] — Pure renderer-side availability and hint helper for FT-14 analysis starts (FT-14F)
 - [[wiki/entities/agent-prompt-builder]] — Builds the single-project analysis prompt from bug, project, and architecture context (FT-14B)
 - [[wiki/entities/mcp-config-writer]] — Writes or merges project-local `.mcp.json` for Azure DevOps MCP without persisting the PAT (FT-14C)
 - [[wiki/entities/mcp-health-check]] — Spawn-based Azure DevOps MCP readiness probe with timeout and crash-window handling (FT-14C)
@@ -179,6 +182,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/concepts/read-only-agent-analysis-sandboxing]] — Analyze-only provider constraints for early agent integration (FT-14B)
 - [[wiki/concepts/mcp-capability-probe-and-fallback]] — Session-start capability probe that prefers Azure DevOps MCP and degrades to the full embedded bug prompt when unavailable (FT-14C)
 - [[wiki/concepts/cross-repo-project-suggestion-heuristics]] — FT-14D rules for automatic primary-project scoring, secondary-project suggestion, and safe operator override (FT-14D)
+- [[wiki/concepts/proactive-agent-configuration-blocking]] — FT-14F two-layer guard that blocks invalid analysis starts in the renderer while preserving privileged main-process preflight (FT-14F)
 
 ## Topics
 

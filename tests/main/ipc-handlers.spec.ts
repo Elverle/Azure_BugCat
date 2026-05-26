@@ -21,7 +21,8 @@ const {
   sessionManagerStartMock,
   sessionManagerAbortMock,
   createRunnerMock,
-  buildAnalyzePromptMock
+  buildAnalyzePromptMock,
+  netFetchMock
 } = vi.hoisted(() => ({
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
   ipcMainHandle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -43,7 +44,8 @@ const {
   sessionManagerStartMock: vi.fn().mockReturnValue('test-session-id'),
   sessionManagerAbortMock: vi.fn().mockReturnValue(true),
   createRunnerMock: vi.fn().mockReturnValue({ run: vi.fn() }),
-  buildAnalyzePromptMock: vi.fn().mockReturnValue('mock analysis prompt')
+  buildAnalyzePromptMock: vi.fn().mockReturnValue('mock analysis prompt'),
+  netFetchMock: vi.fn()
 }))
 
 vi.mock('electron', () => ({
@@ -55,6 +57,9 @@ vi.mock('electron', () => ({
   },
   BrowserWindow: {
     getFocusedWindow: getFocusedWindow
+  },
+  net: {
+    fetch: netFetchMock
   }
 }))
 
@@ -166,6 +171,7 @@ describe('registerIPCHandlers', () => {
     sessionManagerAbortMock.mockReset().mockReturnValue(true)
     createRunnerMock.mockReset().mockReturnValue({ run: vi.fn() })
     buildAnalyzePromptMock.mockReset().mockReturnValue('mock analysis prompt')
+    netFetchMock.mockReset()
     registerIPCHandlers()
     // Clear store mocks after init so tests only see their own interactions
     storeGet.mockClear()
@@ -1058,6 +1064,13 @@ describe('registerIPCHandlers', () => {
     })
 
     it('throws when agent API key is missing', async () => {
+      // Codex binary preflight must succeed so flow reaches the API key check
+      execFileMock.mockImplementation(
+        (_cmd: string, _args: string[], _opts: unknown, cb: Function) => {
+          cb(null, '0.1.0', '')
+        }
+      )
+
       storeGet.mockImplementation((key: string) => {
         if (key === 'settings')
           return {
@@ -1102,6 +1115,145 @@ describe('registerIPCHandlers', () => {
       const handler = handlers.get(IPC_CHANNELS.AGENT_ABORT)
       await expect(handler!({}, { sessionId: 'nonexistent' })).rejects.toMatchObject({
         code: 'AGENT_SESSION_NOT_FOUND'
+      })
+    })
+  })
+
+  describe('AGENT_TEST_COPILOT', () => {
+    it('returns success for subscription mode without binary check', async () => {
+      const handler = handlers.get(IPC_CHANNELS.AGENT_TEST_COPILOT)
+      const result = await handler!(
+        {},
+        {
+          copilotByokEnabled: false,
+          agentProvider: 'copilot-sdk',
+          llmProvider: 'gemini'
+        }
+      )
+
+      expect(result).toEqual({
+        success: true,
+        message:
+          'Modalità subscription Copilot configurata. La verifica della sessione avverrà al primo avvio.'
+      })
+      expect(execFileMock).not.toHaveBeenCalled()
+    })
+
+    it('returns error when BYOK API key is missing', async () => {
+      const handler = handlers.get(IPC_CHANNELS.AGENT_TEST_COPILOT)
+      const result = await handler!(
+        {},
+        {
+          copilotByokEnabled: true,
+          copilotByokProvider: 'openai',
+          copilotByokApiKey: '',
+          copilotByokBaseUrl: 'https://api.openai.com/v1',
+          agentProvider: 'copilot-sdk'
+        }
+      )
+
+      expect(result).toEqual({ success: false, message: 'API Key BYOK mancante' })
+    })
+
+    it('calls /models with Bearer auth for openai BYOK', async () => {
+      netFetchMock.mockResolvedValue({ ok: true })
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_TEST_COPILOT)
+      const result = await handler!(
+        {},
+        {
+          copilotByokEnabled: true,
+          copilotByokProvider: 'openai',
+          copilotByokApiKey: 'sk-test',
+          copilotByokBaseUrl: 'https://api.openai.com/v1',
+          agentProvider: 'copilot-sdk'
+        }
+      )
+
+      expect(result).toEqual({ success: true, message: 'Connessione BYOK riuscita' })
+      expect(netFetchMock).toHaveBeenCalledWith('https://api.openai.com/v1/models', {
+        method: 'GET',
+        headers: { Authorization: 'Bearer sk-test' }
+      })
+    })
+
+    it('calls /v1/models with x-api-key for anthropic BYOK', async () => {
+      netFetchMock.mockResolvedValue({ ok: true })
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_TEST_COPILOT)
+      const result = await handler!(
+        {},
+        {
+          copilotByokEnabled: true,
+          copilotByokProvider: 'anthropic',
+          copilotByokApiKey: 'sk-ant-test',
+          copilotByokBaseUrl: 'https://api.anthropic.com',
+          agentProvider: 'copilot-sdk'
+        }
+      )
+
+      expect(result).toEqual({ success: true, message: 'Connessione BYOK riuscita' })
+      expect(netFetchMock).toHaveBeenCalledWith('https://api.anthropic.com/v1/models', {
+        method: 'GET',
+        headers: { 'x-api-key': 'sk-ant-test', 'anthropic-version': '2023-06-01' }
+      })
+    })
+
+    it('calls /v1beta/models with key query param for gemini BYOK', async () => {
+      netFetchMock.mockResolvedValue({ ok: true })
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_TEST_COPILOT)
+      const result = await handler!(
+        {},
+        {
+          copilotByokEnabled: true,
+          copilotByokProvider: 'gemini',
+          copilotByokApiKey: 'gem-key',
+          copilotByokBaseUrl: 'https://generativelanguage.googleapis.com',
+          agentProvider: 'copilot-sdk'
+        }
+      )
+
+      expect(result).toEqual({ success: true, message: 'Connessione BYOK riuscita' })
+      expect(netFetchMock).toHaveBeenCalledWith(
+        'https://generativelanguage.googleapis.com/v1beta/models?key=gem-key',
+        { method: 'GET' }
+      )
+    })
+
+    it('returns error message when BYOK fetch fails', async () => {
+      netFetchMock.mockResolvedValue({ ok: false, status: 401, statusText: 'Unauthorized' })
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_TEST_COPILOT)
+      const result = await handler!(
+        {},
+        {
+          copilotByokEnabled: true,
+          copilotByokProvider: 'openai',
+          copilotByokApiKey: 'bad-key',
+          copilotByokBaseUrl: 'https://api.openai.com/v1',
+          agentProvider: 'copilot-sdk'
+        }
+      )
+
+      expect(result).toEqual({ success: false, message: 'Errore API: 401 Unauthorized' })
+    })
+
+    it('falls back to store when no payload is provided', async () => {
+      storeGet.mockReturnValueOnce({
+        ...baseSettings,
+        llmProvider: 'openrouter',
+        agentProvider: 'copilot-sdk',
+        copilotByokEnabled: false
+      })
+
+      const handler = handlers.get(IPC_CHANNELS.AGENT_TEST_COPILOT)
+      const result = await handler!({})
+
+      expect(result).toEqual({
+        success: true,
+        message:
+          'Modalità subscription Copilot configurata. La verifica della sessione avverrà al primo avvio.'
       })
     })
   })

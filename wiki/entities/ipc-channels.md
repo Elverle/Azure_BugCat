@@ -3,7 +3,7 @@ title: 'IPC Channel Constants'
 type: entity
 subtype: config
 created: 2026-04-29
-updated: 2026-05-21
+updated: 2026-05-26
 sources:
 	[
 		'[[wiki/sources/ft-01-scaffold]]',
@@ -16,6 +16,7 @@ sources:
 		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
 		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
 		'[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
+		'[[wiki/sources/ft-14f-provider-auth-parity-analysis]]',
 		'[[wiki/analyses/cancel-categorization-flow]]',
 		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
 	]
@@ -55,6 +56,7 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `OPEN_EXTERNAL`                 | `shell:open-external`           | Shell         |
 | `AGENT_CHECK_BINARY`            | `agent:check-binary`            | Agent         |
 | `AGENT_SELECT_DIRECTORY`        | `agent:select-directory`        | Agent         |
+| `AGENT_TEST_COPILOT`            | `agent:test-copilot`            | Agent         |
 | `AGENT_SUGGEST_PROJECTS`        | `agent:suggest-projects`        | Agent Session |
 | `AGENT_START`                   | `agent:start`                   | Agent Session |
 | `AGENT_ABORT`                   | `agent:abort`                   | Agent Session |

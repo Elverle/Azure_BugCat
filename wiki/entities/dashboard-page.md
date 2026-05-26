@@ -3,7 +3,7 @@ title: 'Dashboard Page'
 type: entity
 subtype: component
 created: 2026-04-30
-updated: 2026-05-21
+updated: 2026-05-26
 sources:
 	[
 		'[[wiki/sources/ft-05-dashboard]]',
@@ -12,6 +12,7 @@ sources:
 		'[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
 		'[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
 		'[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
+		'[[wiki/sources/ft-14f-provider-auth-parity-analysis]]',
 		'[[wiki/sources/ft-11-openrouter-provider]]',
 		'[[wiki/analyses/cancel-categorization-flow]]',
 		'[[wiki/analyses/dashboard-categorization-state-recovery]]'
@@ -30,17 +31,22 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 
 ## Local State
 
-| State            | Type                                              | Purpose                                                          |
-| ---------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
-| `filterState`    | `FilterState`                                     | Active status/assignee/category filters                          |
-| `sortState`      | `SortState`                                       | Active table sort key + direction                                |
-| `groupBy`        | `GroupBy`                                         | Active grouping mode                                             |
-| `viewMode`       | `'table' \| 'card' \| 'similarity' \| 'sessions'` | Flat list, grouped cards, similarity analysis, or agent sessions |
-| `expandedGroups` | `Set<string>`                                     | Which accordion sections are open                                |
-| `searchText`     | `string`                                          | Debounced free-text filter term                                  |
-| `drawerWidth`    | `number`                                          | Current width of the resizable FT-06 drawer                      |
-| `adoSettings`    | `{ orgUrl, projectName }`                         | Cached ADO settings for the external work item link              |
-| `projects`       | `ProjectEntry[]`                                  | Cached FT-14A project registry entries for analysis              |
+| State                   | Type                                              | Purpose                                                          |
+| ----------------------- | ------------------------------------------------- | ---------------------------------------------------------------- |
+| `filterState`           | `FilterState`                                     | Active status/assignee/category filters                          |
+| `sortState`             | `SortState`                                       | Active table sort key + direction                                |
+| `groupBy`               | `GroupBy`                                         | Active grouping mode                                             |
+| `viewMode`              | `'table' \| 'card' \| 'similarity' \| 'sessions'` | Flat list, grouped cards, similarity analysis, or agent sessions |
+| `expandedGroups`        | `Set<string>`                                     | Which accordion sections are open                                |
+| `searchText`            | `string`                                          | Debounced free-text filter term                                  |
+| `drawerWidth`           | `number`                                          | Current width of the resizable FT-06 drawer                      |
+| `adoSettings`           | `{ orgUrl, projectName }`                         | Cached ADO settings for the external work item link              |
+| `projects`              | `ProjectEntry[]`                                  | Cached FT-14A project registry entries for analysis              |
+| `maxConcurrentSessions` | `number`                                          | Cached FT-14A/FT-14E session cap forwarded to the workspace      |
+| `agentRunningCount`     | `number`                                          | Current running-session count for the `Sessioni` tab badge       |
+| `startingAgentSession`  | `boolean`                                         | Temporary disable state while a drawer-launched session starts   |
+| `agentAvailability`     | `{ available: boolean; reason?: string }`         | FT-14F precomputed launch blocker derived from settings          |
+| `agentHint`             | `string \| null`                                  | FT-14F non-blocking guidance for local-auth providers            |
 
 ## Key Behaviors
 
@@ -52,6 +58,7 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 - Loads FT-14A registered projects from settings once so the drawer can offer project-scoped FT-14B analysis starts without requerying on every open.
 - Keeps the full `ProjectEntry[]` objects in local state so FT-14D can pass project type, description, and keywords into [[wiki/entities/analyze-start-panel]] without reloading settings.
 - Loads `maxConcurrentSessions` from settings and passes it into [[wiki/entities/session-workspace]] so capacity enforcement stays aligned with the main-process cap.
+- FT-14F also computes [[wiki/entities/agent-availability]] from the same settings read and propagates both the blocking result and the optional hint into the drawer and session workspace launchers.
 - Hydrates the current running-session count from `agent:list-sessions` and refreshes it from `agent:session-updated`, so the tab badge and drawer launch disable state stay aligned even when the sessions workspace is not mounted.
 - Builds `filterOptions` from the full bug dataset so users can still see available values even when the current result set is narrower.
 - Reconciles stale sub-category selections when macro-category choices change.
@@ -82,6 +89,7 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 - [[wiki/entities/bug-card]]
 - [[wiki/entities/bug-detail-drawer]]
 - [[wiki/entities/analyze-start-panel]]
+- [[wiki/entities/agent-availability]]
 - [[wiki/entities/group-accordion]]
 - [[wiki/entities/use-bug-drawer-hook]]
 - [[wiki/entities/ai-cluster-category-section]]
@@ -96,5 +104,6 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 - [[wiki/topics/agent-session-workspace]]
 - [[wiki/topics/cross-repo-agent-analysis]]
 - [[wiki/topics/mcp-backed-agent-analysis]]
+- [[wiki/concepts/proactive-agent-configuration-blocking]]
 - [[wiki/concepts/dashboard-derivation-pipeline]]
 - [[wiki/topics/renderer-ui]]

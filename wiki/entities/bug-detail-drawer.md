@@ -3,13 +3,14 @@ title: 'Bug Detail Drawer'
 type: entity
 subtype: component
 created: 2026-04-30
-updated: 2026-05-20
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-06-bug-detail-drawer]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
-    '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]'
+    '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
+    '[[wiki/sources/ft-14f-provider-auth-parity-analysis]]'
   ]
 tags: [react, component, dashboard, drawer, accessibility]
 lang: en
@@ -40,6 +41,8 @@ Fixed right-side detail panel used by the dashboard across the exploration, simi
 | `onAnalyze`             | `(bugId, primaryProjectId, secondaryProjectIds) => void` | Starts an FT-14 analysis session when provided          |
 | `projects`              | `ProjectEntry[]`                                         | Registered project choices shown in the footer selector |
 | `isAnalyzing`           | `boolean`                                                | Disables session start while another run is active      |
+| `agentAvailability`     | `{ available: boolean; reason?: string } \| undefined`   | Optional FT-14F blocker propagated to the launcher      |
+| `agentHint`             | `string \| null \| undefined`                            | Optional FT-14F non-blocking local-auth guidance        |
 
 ## Key Behaviors
 
@@ -50,7 +53,7 @@ Fixed right-side detail panel used by the dashboard across the exploration, simi
 - Shows a highlighted LLM card when categorization data exists, or an explicit `Non ancora categorizzato` placeholder when `macroCategory` is empty.
 - Formats created/updated timestamps with `it-IT`, joins tags inline, and renders `Nessuna descrizione disponibile` when description text is empty.
 - Resolves Azure DevOps inline attachment images asynchronously through the safe preload helper before injecting sanitized HTML.
-- When projects are available and `onAnalyze` is supplied, renders [[wiki/entities/analyze-start-panel]] so FT-14D can suggest a primary repo, expose optional secondary repositories, and still hand control back to [[wiki/entities/dashboard-page]].
+- When projects are available and `onAnalyze` is supplied, renders [[wiki/entities/analyze-start-panel]] so FT-14D can suggest a primary repo, expose optional secondary repositories, and still hand control back to [[wiki/entities/dashboard-page]]. FT-14F extends that same embedded surface with the shared availability blocker and optional Claude hint.
 - Delegates previous/next navigation and external-link behavior to parent callbacks so navigation logic and shell access stay outside the presentation component.
 
 ## Dependencies
@@ -65,6 +68,7 @@ Fixed right-side detail panel used by the dashboard across the exploration, simi
 - [[wiki/entities/analyze-start-panel]]
 - [[wiki/entities/dashboard-page]]
 - [[wiki/entities/open-external-ipc]]
+- [[wiki/concepts/proactive-agent-configuration-blocking]]
 - [[wiki/topics/dashboard-bug-exploration]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/cross-repo-agent-analysis]]

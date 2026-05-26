@@ -2,14 +2,15 @@
 title: 'Agent Analysis Sessions'
 type: topic
 created: 2026-05-18
-updated: 2026-05-21
+updated: 2026-05-26
 sources:
   [
     '[[wiki/sources/ft-14a-agent-configuration-project-registry]]',
     '[[wiki/sources/ft-14b-agent-sessions]]',
     '[[wiki/sources/ft-14c-mcp-azure-devops-agent-integration]]',
     '[[wiki/sources/ft-14d-cross-repo-project-suggestions]]',
-    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]'
+    '[[wiki/sources/ft-14e-multi-session-agent-workspace]]',
+    '[[wiki/sources/ft-14f-provider-auth-parity-analysis]]'
   ]
 tags: [agent, dashboard, ipc, sessions, analysis]
 lang: en
@@ -17,18 +18,20 @@ lang: en
 
 ## Overview
 
-FT-14B realizes the FT-14A settings foundation as a live operator workflow for bug-by-bug codebase analysis. FT-14C extends that workflow so each session can optionally fetch live Azure DevOps work item context through MCP before reading the local codebase. FT-14D adds a smart launch preflight with primary and secondary project selection. FT-14E then replaces the old single-session tab with a bounded multi-session workspace that persists recent runs, restores them after crashes, and separates list summaries from full session detail.
+FT-14B realizes the FT-14A settings foundation as a live operator workflow for bug-by-bug codebase analysis. FT-14C extends that workflow so each session can optionally fetch live Azure DevOps work item context through MCP before reading the local codebase. FT-14D adds a smart launch preflight with primary and secondary project selection. FT-14E then replaces the old single-session tab with a bounded multi-session workspace that persists recent runs, restores them after crashes, and separates list summaries from full session detail. FT-14F adds provider/auth parity checks so invalid configurations are blocked before click, while privileged preflight remains enforced in the main process.
 
 ## End-to-End Flow
 
 ```text
 BugDetailDrawer
   -> AnalyzeStartPanel
+    -> checkAgentAvailability() / getAgentAvailabilityHint()
     -> optional agentSuggestProjects()
   -> Analizza(primary + optional secondaries)
     -> DashboardPage.handleAnalyze()
       -> preload bridge agentStart()
         -> ipc-handlers
+          -> optional Codex CLI preflight
           -> resolve session bug + registered project(s) + settings
           -> checkMcpHealth()
           -> buildMcpPrompt() or buildAnalyzePrompt()
@@ -53,9 +56,11 @@ Dashboard Sessioni tab
 ## Runtime Guarantees
 
 - Up to `settings.maxConcurrentSessions` sessions can run at the same time in FT-14E.
+- FT-14F blocks launch proactively when projects are missing, agent sessions are explicitly disabled, Codex manual auth is incomplete, or Copilot BYOK configuration is incomplete.
 - Recent sessions survive app restarts through persisted `agentSessions`; restored `running` sessions are marked `aborted` instead of being resumed.
 - Session start computes one MCP availability decision and reuses it for the prompt, runner params, and renderer badge.
 - MCP unavailability is non-fatal: the run falls back to the original full prompt instead of blocking `analyze`.
+- Codex auto/manual paths still run a real CLI preflight inside `agent:start`, so missing `codex` cannot slip past renderer gating.
 - Single-project registries bypass FT-14D suggestion IPC and go straight to `agent:start`.
 - Secondary projects stay optional and are rendered into the prompt only when at least one survives validation.
 - Reads coming from secondary repositories are visibly tagged in the live session log.
@@ -63,10 +68,13 @@ Dashboard Sessioni tab
 - The `Sessioni` tab shows a numeric badge with the running-session count rather than a single binary in-progress indicator.
 - Abort is first-class and transitions the session to `aborted` without pretending the run completed successfully.
 - Final reports are rendered as Markdown tables/lists, not plain preformatted text, and the workspace exposes direct copy/save/open actions.
+- Claude without an explicit agent API key is treated as a supported local-auth path and surfaces only an informational hint, not a blocker.
+- Settings exposes a dedicated Copilot connection diagnostic: subscription mode returns immediate config-ready success, while BYOK mode probes the selected provider with provider-specific request wiring.
 
 ## Main Components
 
 - [[wiki/entities/agent-provider-section]]
+- [[wiki/entities/agent-availability]]
 - [[wiki/entities/project-registry]]
 - [[wiki/entities/project-matcher]]
 - [[wiki/entities/mcp-health-check]]
@@ -95,3 +103,4 @@ Dashboard Sessioni tab
 - [[wiki/concepts/cross-repo-project-suggestion-heuristics]]
 - [[wiki/concepts/read-only-agent-analysis-sandboxing]]
 - [[wiki/concepts/mcp-capability-probe-and-fallback]]
+- [[wiki/concepts/proactive-agent-configuration-blocking]]
