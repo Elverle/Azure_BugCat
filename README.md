@@ -52,9 +52,10 @@ I pacchetti vengono generati nella cartella `dist-electron/`.
 
 ### Windows
 
-- Il target configurato e `nsis`, quindi il risultato atteso e un installer `.exe`.
+- Il target configurato e `nsis`, quindi il risultato atteso e un installer `.exe` nella root di `dist-electron/`.
+- Se il packaging genera un file tipo `BugCat Setup 1.0.0.exe`, per la distribuzione puoi consegnare solo quell'installer.
+- La cartella `dist-electron/win-unpacked/` contiene invece la build portabile: `BugCat.exe` avvia direttamente l'app ma non e un installer, quindi per distribuirla devi condividere l'intera cartella oppure un suo `.zip`, non il solo `.exe`.
 - Esegui il packaging da una macchina Windows per ottenere il pacchetto piu lineare da distribuire agli utenti Windows.
-- Una volta generato l'installer, puoi condividerlo direttamente: l'utente lo apre e completa l'installazione guidata.
 
 ### macOS
 
@@ -160,6 +161,7 @@ wiki/         Base di conoscenza tecnica interna del progetto
 - Se il fetch Azure DevOps fallisce, ricontrolla Organization URL, Project Name, Query ID e PAT.
 - Se il test LLM fallisce, verifica API key, provider selezionato, model e Base URL del provider Generic.
 - Se una categorizzazione viene annullata, l'app ripristina il dataset persistito precedente e non mantiene risultati parziali.
+- Se `npm run package` si ferma dopo la creazione di `win-unpacked/` ma non genera l'installer NSIS, controlla l'errore `Cannot create symbolic link` durante l'estrazione di `winCodeSign`: su Windows devi eseguire il terminale come amministratore oppure abilitare Developer Mode e poi rilanciare il packaging.
 
 ## Riferimenti Aggiuntivi
 

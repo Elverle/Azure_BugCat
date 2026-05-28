@@ -2,7 +2,7 @@
 title: 'Analysis: Root README onboarding guide'
 type: analysis
 created: 2026-05-05
-updated: 2026-05-05
+updated: 2026-05-28
 sources:
   [
     '[[wiki/sources/ft-02-settings]]',
@@ -31,6 +31,8 @@ The repository initially lacked a root README, and the first version still focus
 - Added a practical quickstart with the essential Settings fields to complete on first run.
 - Reframed categorization and similarity in more functional terms, focused on triage, clustering, and duplicate detection.
 - Kept troubleshooting and maintenance commands available without centering the README on developer-only startup.
+- Clarified that the distributable Windows installer is the NSIS setup `.exe` in `dist-electron/`, while `win-unpacked/BugCat.exe` is only the portable app entry point and must not be shared on its own.
+- Recorded the current Windows packaging blocker observed in this repository: `electron-builder` can fail before generating the NSIS installer when the shell cannot create symlinks while unpacking `winCodeSign`.
 
 ## See also
 

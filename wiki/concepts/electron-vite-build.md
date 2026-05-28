@@ -56,6 +56,8 @@ Three-file split (`tsconfig.json` → references):
 - Product name: `BugCat`
 - Output: `dist-electron/`
 - Targets: NSIS (Win), DMG (macOS), AppImage (Linux)
+- On Windows, a successful NSIS build produces a setup `.exe` in `dist-electron/`, while `dist-electron/win-unpacked/` is only the portable unpacked app directory.
+- If the Windows packaging flow stops after `win-unpacked/` and logs `Cannot create symbolic link` while extracting `winCodeSign`, the shell lacks symlink privileges; rerun from an elevated terminal or enable Windows Developer Mode before packaging again.
 
 ## See also
 

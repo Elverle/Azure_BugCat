@@ -44,3 +44,4 @@ Track every deliverable here using explicit prefixes:
 | 34  | FT-14F  | Parità provider e modalità auth per Analisi: renderer-side availability check, Codex binary preflight, blocking UI e Test Copilot button                                   | Complete |
 | 35  | min-09  | Note per l'analisi opzionali: textarea collapsible, `userContext` su `agent:start`, validazione main-process a 2000 caratteri e sezione `## Note utente` fenced nel prompt | Complete |
 | 36  | FT-14G  | Code Source Selection - MCP Repos vs Local Filesystem                                                                                                                      | Complete |
+| 37  | fix-08  | Chiarimento documentazione packaging Windows: distinzione tra installer NSIS e build `win-unpacked`, con nota sul blocco `winCodeSign` per privilegi symlink               | Complete |
