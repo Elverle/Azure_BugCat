@@ -4,6 +4,7 @@ import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Textarea } from '@renderer/components/ui/textarea'
 import { Button } from '@renderer/components/ui/button'
+import { CollapsibleCard } from '@renderer/components/ui/collapsible-card'
 import type { ProjectEntry, CodeSource } from '@shared/types'
 
 interface ProjectRegistrySectionProps {
@@ -64,17 +65,15 @@ export function ProjectRegistrySection({
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <FolderOpen className="w-5 h-5" />
-          Progetti Registrati
-        </h2>
+    <CollapsibleCard
+      title="Progetti Registrati"
+      icon={<FolderOpen className="w-5 h-5" />}
+      headerAction={
         <Button variant="outline" onClick={onAddProject}>
           + Aggiungi progetto
         </Button>
-      </div>
-
+      }
+    >
       <div className="space-y-4">
         {projects.length === 0 && (
           <p className="text-sm text-gray-500 italic">
@@ -231,6 +230,6 @@ export function ProjectRegistrySection({
           </div>
         ))}
       </div>
-    </div>
+    </CollapsibleCard>
   )
 }

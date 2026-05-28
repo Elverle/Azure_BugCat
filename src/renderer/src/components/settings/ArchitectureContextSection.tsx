@@ -2,6 +2,7 @@ import { Building } from 'lucide-react'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Textarea } from '@renderer/components/ui/textarea'
+import { CollapsibleCard } from '@renderer/components/ui/collapsible-card'
 import type { AppSettings } from '@shared/types'
 
 interface ArchitectureContextSectionProps {
@@ -21,12 +22,7 @@ export function ArchitectureContextSection({
   const isOverLimit = charCount > 1000
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-        <Building className="w-5 h-5" />
-        Contesto Architetturale
-      </h2>
-
+    <CollapsibleCard title="Contesto Architetturale" icon={<Building className="w-5 h-5" />}>
       <div className="space-y-4">
         {/* Architecture context textarea */}
         <div>
@@ -64,6 +60,6 @@ export function ArchitectureContextSection({
           )}
         </div>
       </div>
-    </div>
+    </CollapsibleCard>
   )
 }

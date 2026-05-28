@@ -3,6 +3,7 @@ import { Database, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Button } from '@renderer/components/ui/button'
+import { CollapsibleCard } from '@renderer/components/ui/collapsible-card'
 import type { AppSettings } from '@shared/types'
 
 interface AdoConnectionSectionProps {
@@ -27,12 +28,7 @@ export function AdoConnectionSection({
   const [showPat, setShowPat] = useState(false)
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-        <Database className="w-5 h-5" />
-        Azure DevOps Connection
-      </h2>
-
+    <CollapsibleCard title="Azure DevOps Connection" icon={<Database className="w-5 h-5" />}>
       <div className="space-y-4">
         {/* Organization URL — full width */}
         <div>
@@ -132,6 +128,6 @@ export function AdoConnectionSection({
           )}
         </div>
       </div>
-    </div>
+    </CollapsibleCard>
   )
 }

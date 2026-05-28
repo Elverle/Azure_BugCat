@@ -4,6 +4,7 @@ import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Select } from '@renderer/components/ui/select'
 import { Button } from '@renderer/components/ui/button'
+import { CollapsibleCard } from '@renderer/components/ui/collapsible-card'
 import type { AppSettings } from '@shared/types'
 
 interface LlmProviderSectionProps {
@@ -44,12 +45,7 @@ export function LlmProviderSection({
   const [showApiKey, setShowApiKey] = useState(false)
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-        <Bot className="w-5 h-5" />
-        LLM Provider
-      </h2>
-
+    <CollapsibleCard title="LLM Provider" icon={<Bot className="w-5 h-5" />}>
       <div className="space-y-4">
         {/* Provider select — full width */}
         <div>
@@ -154,6 +150,6 @@ export function LlmProviderSection({
           )}
         </div>
       </div>
-    </div>
+    </CollapsibleCard>
   )
 }

@@ -3,6 +3,7 @@ import { Tags, Info } from 'lucide-react'
 import { Textarea } from '@renderer/components/ui/textarea'
 import { Button } from '@renderer/components/ui/button'
 import { Label } from '@renderer/components/ui/label'
+import { CollapsibleCard } from '@renderer/components/ui/collapsible-card'
 
 interface CategoriesSectionProps {
   categories: string[]
@@ -26,12 +27,7 @@ export function CategoriesSection({
   }, [categories, categoriesToText])
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-        <Tags className="w-5 h-5" />
-        Categories
-      </h2>
-
+    <CollapsibleCard title="Categories" icon={<Tags className="w-5 h-5" />}>
       <div className="space-y-4">
         <div>
           <Label htmlFor="categories">Categories (one per line)</Label>
@@ -64,6 +60,6 @@ export function CategoriesSection({
           When categories are empty, the LLM will auto-generate categories based on the bugs.
         </div>
       </div>
-    </div>
+    </CollapsibleCard>
   )
 }

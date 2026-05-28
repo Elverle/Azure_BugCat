@@ -13,6 +13,7 @@ import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Select } from '@renderer/components/ui/select'
 import { Button } from '@renderer/components/ui/button'
+import { CollapsibleCard } from '@renderer/components/ui/collapsible-card'
 import type { AppSettings, BinaryCheckResult } from '@shared/types'
 
 interface AgentProviderSectionProps {
@@ -75,12 +76,7 @@ export function AgentProviderSection({
         : 'Es. gpt-4.1'
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-        <Terminal className="w-5 h-5" />
-        Agent Provider
-      </h2>
-
+    <CollapsibleCard title="Agent Provider" icon={<Terminal className="w-5 h-5" />}>
       <div className="space-y-4">
         {/* Code Source selector */}
         <div>
@@ -399,6 +395,6 @@ export function AgentProviderSection({
           </div>
         )}
       </div>
-    </div>
+    </CollapsibleCard>
   )
 }
