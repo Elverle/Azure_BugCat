@@ -2,6 +2,7 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                                                                                                                                             |
 | ---------- | -------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-05-31 | update min-10              | GitHub Copilot | Refreshed release docs after the GitHub Releases pipeline and packaged-only `electron-updater` check: package targets now cover Windows/macOS/Linux x64+arm64, tag pushes publish with `--publish always`, and the current config has no icon paths so default Electron icons remain in use.                      |
 | 2026-05-28 | update fix-08              | GitHub Copilot | Clarified Windows packaging docs after reproducing the missing-installer case: `dist-electron/win-unpacked/BugCat.exe` is a portable app, not the NSIS installer, and the current `npm run package` failure is caused by missing Windows symlink privileges while unpacking `winCodeSign`.                        |
 | 2026-05-26 | scan FT-14G                | GitHub Copilot | Scanned FT-14G code-source selection for agent analysis. Added a dedicated concept for `codeSource`, documented schema v6 plus Settings/UI validation changes, and updated the MCP/local runtime pages so prompt selection and Claude tool filtering reflect the selected source deterministically.               |
 | 2026-05-26 | update min-09              | GitHub Copilot | Added optional `Note per l'analisi` input for agent-session launches. The renderer keeps the note ephemeral per bug, `agent:start` trims and caps it at 2000 characters, and both prompt variants inject the same fenced `## Note utente` block before the task instructions.                                     |
@@ -43,6 +44,25 @@
 | 2026-05-03 | analysis LLM cleanup       | GitHub Copilot | Documented the shared LLM provider cleanup, added pages for the new helper modules, and updated provider/service docs to reflect aligned timeout, parsing, and blocking-error behavior.                                                                                                                           |
 | 2026-05-03 | analysis cancel flow       | GitHub Copilot | Documented abort-aware categorization cancellation, updated IPC/dashboard/provider pages, and recorded the all-or-nothing persistence rule for cancel.                                                                                                                                                            |
 | 2026-05-03 | analysis dashboard state   | GitHub Copilot | Documented Dashboard remount recovery for active categorization, immediate cancelling feedback, and renderer-safe IPC error normalization.                                                                                                                                                                        |
+
+## [2026-05-31] update | min-10 - Release automation and auto-updates
+
+Updated the release documentation after the packaging config gained GitHub publishing, multi-platform targets, and a packaged-only electron-updater check.
+
+Pages created:
+
+- [[wiki/sources/min-10-release-automation-auto-updates]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/concepts/electron-vite-build]]
+- [[wiki/entities/electron-main-process]]
+
+Other docs updated:
+
+- README.md
+- feature-index.md
 
 ## [2026-05-26] scan | FT-14F - Provider/Auth Parity for Analysis
 

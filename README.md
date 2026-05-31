@@ -39,33 +39,46 @@ L'analisi di similarita interviene dopo la categorizzazione.
 - Cerca gruppi di bug che sembrano riferirsi allo stesso problema o a problemi molto vicini.
 - Aiuta a individuare duplicati, pattern ricorrenti e aree dove conviene consolidare il lavoro.
 
-## Distribuzione Per Utenti Windows E Mac
+## Distribuzione Multi-Piattaforma E GitHub Releases
 
-Se vuoi preparare un pacchetto da distribuire agli utenti finali, usa il comando di packaging invece di `npm run dev`.
+Per preparare pacchetti da distribuire agli utenti finali, usa il comando di packaging invece di `npm run dev`.
 
 ```bash
 npm install
 npm run package
 ```
 
-I pacchetti vengono generati nella cartella `dist-electron/`.
+I pacchetti locali vengono generati nella cartella `dist-electron/`.
 
-### Windows
+### Target Correnti
 
-- Il target configurato e `nsis`, quindi il risultato atteso e un installer `.exe` nella root di `dist-electron/`.
-- Se il packaging genera un file tipo `BugCat Setup 1.0.0.exe`, per la distribuzione puoi consegnare solo quell'installer.
-- La cartella `dist-electron/win-unpacked/` contiene invece la build portabile: `BugCat.exe` avvia direttamente l'app ma non e un installer, quindi per distribuirla devi condividere l'intera cartella oppure un suo `.zip`, non il solo `.exe`.
-- Esegui il packaging da una macchina Windows per ottenere il pacchetto piu lineare da distribuire agli utenti Windows.
+| Piattaforma | Target            | Architetture | Note                                                                                                                                        |
+| ----------- | ----------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Windows     | `nsis`            | x64, arm64   | Produce un installer `.exe`; `dist-electron/win-unpacked/` resta una build portabile e va distribuita come cartella/zip, non come solo exe. |
+| macOS       | `dmg`, `zip`      | x64, arm64   | Il `.dmg` e il formato da consegnare agli utenti; lo `.zip` accompagna il canale di update macOS.                                           |
+| Linux       | `AppImage`, `deb` | x64, arm64   | Produce pacchetti self-contained o installabili a seconda della distribuzione target.                                                       |
 
-### macOS
+### Release Su GitHub
 
-- Il target configurato e `dmg`, quindi per gli utenti Mac il pacchetto da distribuire e un file `.dmg`.
-- Per generare il pacchetto macOS in modo affidabile conviene eseguire `npm run package` da un Mac.
-- L'utente Mac apre il `.dmg`, trascina l'app in `Applications` e la avvia da li.
-- Se l'app non e firmata, al primo avvio puo essere necessario usare `tasto destro > Apri` per superare il blocco iniziale di Gatekeeper.
+La pipeline `.github/workflows/release.yml` pubblica i pacchetti su GitHub Releases quando viene pushato un tag che inizia con `v`.
+
+```bash
+git tag v1.0.1
+git push origin v1.0.1
+```
+
+Il workflow esegue una matrice su `windows-latest`, `macos-latest` e `ubuntu-latest`, installa le dipendenze con `npm ci`, poi lancia `npm run package -- --publish always` con `GH_TOKEN=${{ secrets.GITHUB_TOKEN }}`. La configurazione `electron-builder` usa il provider `github`, quindi gli artifact e i metadati di update vengono caricati nella release associata al tag.
+
+### Auto-Update
+
+L'app pacchettizzata usa `electron-updater` con provider GitHub. All'avvio, solo quando `app.isPackaged` e vero, il main process chiama `checkForUpdatesAndNotify()`: gli aggiornamenti vengono scaricati automaticamente e installati alla chiusura dell'app. Le build avviate in sviluppo con `npm run dev` non controllano gli update.
+
+### Icone
+
+Al momento non sono configurati percorsi `icon` in `electron-builder`: non ci sono quindi asset path rotti nella configurazione di packaging, ma i pacchetti useranno le icone Electron predefinite finche non verranno aggiunte icone esplicite per Windows, macOS e Linux.
 
 > [!NOTE]
-> Gli utenti finali che ricevono l'installer Windows o il pacchetto macOS non hanno bisogno di Node.js o npm.
+> Gli utenti finali che ricevono pacchetti da GitHub Releases non hanno bisogno di Node.js o npm.
 
 ## Quickstart Operativo
 
@@ -115,8 +128,8 @@ Alla prima apertura dell'app vai subito nella pagina `Settings` e compila questi
 
 - Node.js 20 o superiore
 - npm
-- Una macchina Windows per creare l'installer `.exe`
-- Una macchina macOS per creare il pacchetto `.dmg`
+- Un runner o una macchina del sistema operativo target per creare i pacchetti piu affidabili per quella piattaforma
+- Accesso GitHub con permesso di pubblicazione release; nel workflow ufficiale viene usato `secrets.GITHUB_TOKEN`
 
 ## Stack Tecnologico
 
@@ -125,6 +138,7 @@ Alla prima apertura dell'app vai subito nella pagina `Settings` e compila questi
 - Tailwind CSS
 - Vitest per test unitari e di integrazione
 - `electron-store` per la persistenza locale cifrata
+- `electron-builder` + `electron-updater` per packaging, GitHub Releases e auto-update
 
 ## Comandi Utili Per Manutenzione
 

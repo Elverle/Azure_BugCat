@@ -45,3 +45,4 @@ Track every deliverable here using explicit prefixes:
 | 35  | min-09  | Note per l'analisi opzionali: textarea collapsible, `userContext` su `agent:start`, validazione main-process a 2000 caratteri e sezione `## Note utente` fenced nel prompt | Complete |
 | 36  | FT-14G  | Code Source Selection - MCP Repos vs Local Filesystem                                                                                                                      | Complete |
 | 37  | fix-08  | Chiarimento documentazione packaging Windows: distinzione tra installer NSIS e build `win-unpacked`, con nota sul blocco `winCodeSign` per privilegi symlink               | Complete |
+| 38  | min-10  | Release automation e auto-update: publish GitHub Releases multi-piattaforma, check packaged-only con `electron-updater` e nota sulle icone Electron default                | Complete |

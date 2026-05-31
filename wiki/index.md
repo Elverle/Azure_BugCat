@@ -45,6 +45,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 18  | FT-14E | Workspace multi-session per sessioni agente con recovery                   | Done   |
 | 19  | FT-14F | Parità provider e modalità auth per Analisi                                | Done   |
 | 20  | min-09 | Note per l'analisi opzionali con validazione main-process e prompt fencing | Done   |
+| 22  | min-10 | Release automation e auto-update via GitHub Releases                       | Done   |
 | 21  | FT-14G | Code Source Selection - MCP Repos vs Local Filesystem                      | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
@@ -71,6 +72,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-14e-multi-session-agent-workspace]] — FT-14E bounded multi-session workspace: persisted recovery, summary/detail UI, report actions, and session-list IPC (2026-05-21)
 - [[wiki/sources/ft-14f-provider-auth-parity-analysis]] — FT-14F provider/auth parity: proactive renderer gating, Codex CLI preflight, Copilot connection diagnostics, and Claude local-auth hints (2026-05-26)
 - [[wiki/sources/ft-14g-code-source-selection-mcp-repos-vs-local-filesystem]] — FT-14G code-source routing: local paths remain optional only in MCP-repos mode, prompts and tools align to the selected source, and schema v6 backfills the new setting (2026-05-26)
+- [[wiki/sources/min-10-release-automation-auto-updates]] — min-10 release automation: GitHub Releases publishing, multi-platform package targets, packaged-only auto-update checks, and icon-path finding (2026-05-31)
 
 ## Entities
 

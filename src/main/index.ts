@@ -1,9 +1,22 @@
 import { app, BrowserWindow, shell } from 'electron'
+import { autoUpdater } from 'electron-updater'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { registerIPCHandlers } from './ipc-handlers'
 import { store } from './store'
 import { migrateStore } from './store-migration'
+
+function checkForUpdates(): void {
+  if (!app.isPackaged) {
+    return
+  }
+
+  autoUpdater.autoDownload = true
+  autoUpdater.autoInstallOnAppQuit = true
+  autoUpdater.checkForUpdatesAndNotify().catch((error) => {
+    console.error('Failed to check for updates:', error)
+  })
+}
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -47,6 +60,7 @@ app.whenReady().then(() => {
   migrateStore(store)
   registerIPCHandlers()
   createWindow()
+  checkForUpdates()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
