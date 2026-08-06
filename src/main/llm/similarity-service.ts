@@ -107,13 +107,14 @@ function parseSimilarityResponse(raw: string): SimilarityGroup[] {
     throw new SyntaxError('Invalid JSON in similarity response')
   }
 
-  if (!parsed || !Array.isArray(parsed.groups)) {
+  const groups = (parsed as { groups?: unknown }).groups
+  if (!Array.isArray(groups)) {
     console.warn('[Similarity] LLM response missing groups array, treating as empty')
     return []
   }
 
   // Validate and filter each group
-  return parsed.groups.filter(
+  return groups.filter(
     (g: unknown): g is SimilarityGroup =>
       g !== null &&
       typeof g === 'object' &&
