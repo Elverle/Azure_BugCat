@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { ChevronDown, ChevronRight, AlertCircle } from 'lucide-react'
 import { SimilarityGroupCard } from './SimilarityGroupCard'
 import type { SimilarityGroup, CategorizedBug } from '@shared/types'
-import { cn } from '@renderer/lib/utils'
 
 interface CategorySectionProps {
   category: string

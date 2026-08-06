@@ -59,34 +59,30 @@ function mapWorkItemToBug(item: WorkItemRaw): BugItem {
 export async function fetchBugsFromQuery(settings: AppSettings): Promise<BugItem[]> {
   const config = buildConfig(settings)
 
-  try {
-    const wiqlResponse = await fetchWiqlQuery(config)
+  const wiqlResponse = await fetchWiqlQuery(config)
 
-    if (wiqlResponse.workItems.length === 0) {
-      throwAppError('ADO_EMPTY', 'Nessun bug trovato nella query')
-    }
-
-    let ids = wiqlResponse.workItems.map((wi) => wi.id)
-
-    if (config.topN > 0) {
-      ids = ids.slice(0, config.topN)
-    }
-
-    const batches: number[][] = []
-    for (let i = 0; i < ids.length; i += ADO_BATCH_SIZE) {
-      batches.push(ids.slice(i, i + ADO_BATCH_SIZE))
-    }
-
-    const results: WorkItemRaw[] = []
-    for (const batch of batches) {
-      const items = await fetchWorkItemsBatch(config, batch)
-      results.push(...items)
-    }
-
-    return results.map(mapWorkItemToBug)
-  } catch (error: unknown) {
-    throw error
+  if (wiqlResponse.workItems.length === 0) {
+    throwAppError('ADO_EMPTY', 'Nessun bug trovato nella query')
   }
+
+  let ids = wiqlResponse.workItems.map((wi) => wi.id)
+
+  if (config.topN > 0) {
+    ids = ids.slice(0, config.topN)
+  }
+
+  const batches: number[][] = []
+  for (let i = 0; i < ids.length; i += ADO_BATCH_SIZE) {
+    batches.push(ids.slice(i, i + ADO_BATCH_SIZE))
+  }
+
+  const results: WorkItemRaw[] = []
+  for (const batch of batches) {
+    const items = await fetchWorkItemsBatch(config, batch)
+    results.push(...items)
+  }
+
+  return results.map(mapWorkItemToBug)
 }
 
 export async function testAdoConnection(settings: AppSettings): Promise<TestConnectionResult> {

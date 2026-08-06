@@ -111,29 +111,25 @@ export function registerIPCHandlers(): void {
     const settings = store.get('settings') as AppSettings | null
     if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
 
-    try {
-      const fetchedBugs = await fetchBugsFromQuery(settings)
-      const now = new Date().toISOString()
-      const catalog = store.get('bugCatalog') as BugCatalog | null
-      const { updatedCatalog, sessionBugs, newBugCount } = mergeFetchIntoCatalog(
-        fetchedBugs,
-        catalog,
-        now
-      )
+    const fetchedBugs = await fetchBugsFromQuery(settings)
+    const now = new Date().toISOString()
+    const catalog = store.get('bugCatalog') as BugCatalog | null
+    const { updatedCatalog, sessionBugs, newBugCount } = mergeFetchIntoCatalog(
+      fetchedBugs,
+      catalog,
+      now
+    )
 
-      store.set('bugCatalog', updatedCatalog)
+    store.set('bugCatalog', updatedCatalog)
 
-      const updatedSession: SessionData = {
-        bugs: sessionBugs,
-        fetchedAt: now,
-        lastFetchNewCount: newBugCount
-      }
-      store.set('session', updatedSession)
-
-      return updatedSession.bugs
-    } catch (error: unknown) {
-      throw error
+    const updatedSession: SessionData = {
+      bugs: sessionBugs,
+      fetchedAt: now,
+      lastFetchNewCount: newBugCount
     }
+    store.set('session', updatedSession)
+
+    return updatedSession.bugs
   })
   ipcMain.handle(
     IPC_CHANNELS.ADO_TEST_CONNECTION,

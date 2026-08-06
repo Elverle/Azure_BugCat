@@ -22,6 +22,8 @@ export function CategoriesSection({
   const [textValue, setTextValue] = useState(() => categoriesToText(categories))
 
   useEffect(() => {
+    // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTextValue(categoriesToText(categories))
   }, [categories, categoriesToText])
 

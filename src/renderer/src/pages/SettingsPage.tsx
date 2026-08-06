@@ -16,7 +16,6 @@ export function SettingsPage() {
     loading,
     saving,
     saveResult,
-    isDirty,
     canSave,
     updateField,
     save,

@@ -24,6 +24,8 @@ export function useBugDrawer(bugList: CategorizedBug[]): UseBugDrawerReturn {
   // Auto-close if selected bug is no longer in the filtered list
   useEffect(() => {
     if (isOpen && selectedBug && currentIndex === -1) {
+      // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsOpen(false)
       setSelectedBug(null)
     }
@@ -34,6 +36,8 @@ export function useBugDrawer(bugList: CategorizedBug[]): UseBugDrawerReturn {
     if (isOpen && selectedBug && currentIndex >= 0) {
       const updated = bugList[currentIndex]
       if (updated !== selectedBug) {
+        // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setSelectedBug(updated)
       }
     }

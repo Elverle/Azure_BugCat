@@ -40,6 +40,8 @@ export function FilterBar({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocalSearch(searchText)
   }, [searchText])
 

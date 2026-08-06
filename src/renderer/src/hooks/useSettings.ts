@@ -86,6 +86,8 @@ export function useSettings(): UseSettingsReturn {
 
   // Re-validate whenever settings change
   useEffect(() => {
+    // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setErrors(validateSettings(settings))
   }, [settings])
 

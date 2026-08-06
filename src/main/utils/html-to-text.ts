@@ -38,6 +38,9 @@ export function htmlToText(html: string | null | undefined): string {
   text = text.replace(/\n{3,}/g, '\n\n')
 
   // Re-insert preserved <pre>/<code> content after whitespace normalization.
+  // NUL byte (\x00) is used intentionally as a sentinel: it cannot appear in
+  // real HTML/text content, so it cannot collide with preserved block markers.
+  // eslint-disable-next-line no-control-regex
   text = text.replace(/\x00PRESERVE_(\d+)\x00/g, (_, index) => preserved[Number(index)])
 
   return text.trim()

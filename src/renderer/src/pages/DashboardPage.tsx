@@ -124,6 +124,8 @@ export function DashboardPage(): JSX.Element {
       const validSubs = filterOptions.subCategories
       const reconciled = filterState.subCategories.filter((s) => validSubs.includes(s))
       if (reconciled.length !== filterState.subCategories.length) {
+        // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setFilterState((prev) => ({ ...prev, subCategories: reconciled }))
       }
     }
@@ -132,6 +134,8 @@ export function DashboardPage(): JSX.Element {
   // Expand all groups by default when groupBy changes
   useEffect(() => {
     if (groupedBugs) {
+      // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExpandedGroups(new Set(groupedBugs.keys()))
     }
   }, [groupBy]) // eslint-disable-line react-hooks/exhaustive-deps
