@@ -31,7 +31,7 @@ function sleep(ms: number): Promise<void> {
 function buildCancellationError(): AppError {
   return {
     code: 'OPERATION_CANCELLED',
-    message: 'Categorizzazione annullata'
+    message: 'Operation cancelled'
   }
 }
 
@@ -151,7 +151,7 @@ export async function chatWithRetry(
         if (options?.signal?.aborted) {
           throw buildCancellationError()
         }
-        throwAppError('LLM_TIMEOUT', `Timeout nella richiesta al provider ${provider.name}`, {
+        throwAppError('LLM_TIMEOUT', `Request to ${provider.name} timed out`, {
           provider: provider.name,
           attempt: attempt + 1,
           originalError: buildErrorDiagnostics(error)
@@ -213,7 +213,7 @@ export async function categorizeBugs(
           ? buildCancellationError()
           : ({
               code: 'LLM_TIMEOUT',
-              message: `Timeout nella richiesta al provider ${provider.name}`,
+              message: `Request to ${provider.name} timed out`,
               details: {
                 provider: provider.name,
                 originalError: buildErrorDiagnostics(error)

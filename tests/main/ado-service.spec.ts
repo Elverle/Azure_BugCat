@@ -101,7 +101,7 @@ describe('ado-service', () => {
 
     await expect(fetchBugsFromQuery(baseSettings)).rejects.toMatchObject({
       code: 'ADO_EMPTY',
-      message: 'Nessun bug trovato nella query'
+      message: 'The query returned no bugs'
     })
   })
 
@@ -217,17 +217,17 @@ describe('ado-service', () => {
 
     await expect(testAdoConnection(baseSettings)).resolves.toEqual({
       success: true,
-      message: 'Connessione riuscita — 2 bug trovati'
+      message: 'Connection successful — 2 bugs found'
     })
 
     fetchWiqlQuery.mockRejectedValueOnce({
       code: 'ADO_TIMEOUT',
-      message: 'Errore di rete: socket hang up'
+      message: 'Network error: socket hang up'
     })
 
     await expect(testAdoConnection(baseSettings)).resolves.toEqual({
       success: false,
-      message: 'Errore di rete: socket hang up'
+      message: 'Network error: socket hang up'
     })
   })
 
@@ -236,7 +236,7 @@ describe('ado-service', () => {
 
     expect(result).toEqual({
       success: false,
-      message: 'Query ID mancante'
+      message: 'Query ID is missing'
     })
   })
 })

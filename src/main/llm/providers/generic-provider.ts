@@ -26,22 +26,22 @@ export class GenericProvider implements LLMProvider {
   readonly name = 'generic'
 
   constructor(private config: LLMProviderConfig) {
-    assertApiKey(config.apiKey, 'il provider generico')
+    assertApiKey(config.apiKey, 'the generic provider')
     if (!config.baseUrl?.trim()) {
-      throwAppError('UNKNOWN_ERROR', 'Base URL mancante per il provider generico')
+      throwAppError('UNKNOWN_ERROR', 'Base URL is missing for the generic provider')
     }
     // Enforce URL scheme at main-process boundary
     let parsed: URL
     try {
       parsed = new URL(config.baseUrl)
     } catch {
-      throwAppError('UNKNOWN_ERROR', 'Base URL non valida per il provider generico')
+      throwAppError('UNKNOWN_ERROR', 'Invalid base URL for the generic provider')
     }
     const isLocalhost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1'
     if (parsed.protocol !== 'https:' && !isLocalhost) {
       throwAppError(
         'UNKNOWN_ERROR',
-        'Base URL deve usare HTTPS (http consentito solo per localhost)'
+        'Base URL must use HTTPS (http is allowed only for localhost)'
       )
     }
   }
@@ -87,14 +87,14 @@ export class GenericProvider implements LLMProvider {
       if (!response.ok) {
         const status = response.status
         if (status === 401 || status === 403) {
-          throwAppError('LLM_AUTH_ERROR', 'Autenticazione non valida per il provider generico')
+          throwAppError('LLM_AUTH_ERROR', 'Invalid authentication for the generic provider')
         }
         if (status === 429) {
-          throwAppError('LLM_RATE_LIMIT', 'Rate limit raggiunto per il provider generico')
+          throwAppError('LLM_RATE_LIMIT', 'Rate limit reached for the generic provider')
         }
         throwAppError(
           'UNKNOWN_ERROR',
-          `Errore provider generico: HTTP ${status} ${response.statusText}`
+          `Generic provider error: HTTP ${status} ${response.statusText}`
         )
       }
 
@@ -105,25 +105,25 @@ export class GenericProvider implements LLMProvider {
         if (isLikelyHtmlResponse(response, bodyText)) {
           throwAppError(
             'LLM_PARSE_ERROR',
-            `Base URL del provider generico probabilmente errato: ${url} ha restituito HTML invece di JSON. Verifica che il baseUrl punti alla root API compatibile OpenAI e non a una pagina web.`
+            `The generic provider base URL is likely wrong: ${url} returned HTML instead of JSON. Make sure baseUrl points to an OpenAI-compatible API root, not a web page.`
           )
         }
 
-        throwAppError('LLM_PARSE_ERROR', 'Risposta non-JSON dal provider generico')
+        throwAppError('LLM_PARSE_ERROR', 'Non-JSON response from the generic provider')
       }
       const content = json.choices?.[0]?.message?.content
 
       if (!content) {
-        throwAppError('LLM_PARSE_ERROR', 'Risposta vuota dal provider generico')
+        throwAppError('LLM_PARSE_ERROR', 'Empty response from the generic provider')
       }
 
       return content
     } catch (error: unknown) {
       if (isAppError(error)) throw error
-      throwIfRequestAborted(requestTimeout, 'il provider generico')
+      throwIfRequestAborted(requestTimeout, 'the generic provider')
       throwAppError(
         'UNKNOWN_ERROR',
-        `Errore provider generico: ${error instanceof Error ? error.message : 'sconosciuto'}`
+        `Generic provider error: ${error instanceof Error ? error.message : 'unknown'}`
       )
     } finally {
       requestTimeout.dispose()

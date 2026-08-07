@@ -228,7 +228,7 @@ describe('IPC error contract', () => {
         preloadApi.fetchBugs()
       )
 
-      expect(received).toEqual({ code: 'STORE_ERROR', message: 'Settings non configurate' })
+      expect(received).toEqual({ code: 'STORE_ERROR', message: 'Settings not configured' })
     })
 
     it('delivers the error code of the attachment channel to the renderer', async () => {
@@ -238,7 +238,7 @@ describe('IPC error contract', () => {
         ''
       )
 
-      expect(received).toEqual({ code: 'ADO_NOT_FOUND', message: 'URL attachment mancante' })
+      expect(received).toEqual({ code: 'ADO_NOT_FOUND', message: 'Missing attachment URL' })
     })
   })
 })

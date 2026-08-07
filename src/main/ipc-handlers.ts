@@ -95,7 +95,7 @@ export function registerIPCHandlers(): void {
   // Azure DevOps
   handle(IPC_CHANNELS.ADO_FETCH_BUGS, async () => {
     const settings = store.get('settings') as AppSettings | null
-    if (!settings) throwAppError('STORE_ERROR', 'Settings non configurate')
+    if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
     const { bugs: fetchedBugs, allQueryIds } = await fetchBugsFromQuery(settings)
     const now = new Date().toISOString()
@@ -128,16 +128,16 @@ export function registerIPCHandlers(): void {
   })
   handle(IPC_CHANNELS.ADO_TEST_CONNECTION, async (_event, settingsOverride?: AppSettings) => {
     const settings = settingsOverride ?? (store.get('settings') as AppSettings | null) ?? null
-    if (!settings) return { success: false, message: 'Settings non configurate' }
+    if (!settings) return { success: false, message: 'Settings not configured' }
     return testAdoConnection(settings)
   })
   handle(IPC_CHANNELS.ADO_FETCH_ATTACHMENT_DATA_URL, async (_event, url: unknown) => {
     if (typeof url !== 'string' || !url.trim()) {
-      throwAppError('ADO_NOT_FOUND', 'URL attachment mancante')
+      throwAppError('ADO_NOT_FOUND', 'Missing attachment URL')
     }
 
     const settings = store.get('settings') as AppSettings | null
-    if (!settings) throwAppError('STORE_ERROR', 'Settings non configurate')
+    if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
     return fetchAdoAttachmentDataUrl(settings, url)
   })
@@ -149,13 +149,13 @@ export function registerIPCHandlers(): void {
 
     try {
       const settings = store.get('settings') as AppSettings | null
-      if (!settings) throwAppError('STORE_ERROR', 'Settings non configurate')
+      if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
       const session = store.get('session') as SessionData | null
-      if (!session?.bugs?.length) throwAppError('STORE_ERROR', 'Nessun bug in sessione')
+      if (!session?.bugs?.length) throwAppError('STORE_ERROR', 'No bugs in the current session')
 
       if (categorizeControllers.has(webContentsId)) {
-        throwAppError('UNKNOWN_ERROR', 'Categorizzazione gia in corso')
+        throwAppError('UNKNOWN_ERROR', 'Categorization already in progress')
       }
 
       const bugsToSend: BugItem[] = session.bugs.filter((b) => !b.categorizedAt)
@@ -235,30 +235,31 @@ export function registerIPCHandlers(): void {
   handle(IPC_CHANNELS.LLM_TEST_CONNECTION, async (_event, settingsOverride?: AppSettings) => {
     const settings = settingsOverride ?? (store.get('settings') as AppSettings | null) ?? null
     if (!settings)
-      return { success: false, message: 'Settings non configurate' } as TestConnectionResult
+      return { success: false, message: 'Settings not configured' } as TestConnectionResult
 
     if (!settings.apiKey?.trim()) {
-      return { success: false, message: 'API Key mancante' } as TestConnectionResult
+      return { success: false, message: 'API key is missing' } as TestConnectionResult
     }
 
     try {
       await testLLMConnection(settings)
-      return { success: true, message: 'Connessione LLM riuscita' } as TestConnectionResult
+      return { success: true, message: 'LLM connection successful' } as TestConnectionResult
     } catch (error: unknown) {
       const message =
         error !== null && typeof error === 'object' && 'message' in error
           ? (error as { message: string }).message
-          : 'Errore sconosciuto'
+          : 'Unknown error'
       return { success: false, message } as TestConnectionResult
     }
   })
 
   handle(IPC_CHANNELS.LLM_FIND_SIMILAR, async (event: IpcMainInvokeEvent) => {
     const settings = store.get('settings') as AppSettings | null
-    if (!settings) throwAppError('STORE_ERROR', 'Settings non configurate')
+    if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
     const session = store.get('session') as SessionData | null
-    if (!session?.categorizedAt) throwAppError('STORE_ERROR', 'Categorizzazione non eseguita')
+    if (!session?.categorizedAt)
+      throwAppError('STORE_ERROR', 'Categorization has not been run yet')
 
     const result = await findSimilarBugs(settings, session.bugs, (progress) => {
       event.sender.send(IPC_CHANNELS.LLM_FIND_SIMILAR_PROGRESS, progress)

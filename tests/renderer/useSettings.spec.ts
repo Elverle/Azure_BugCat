@@ -213,7 +213,7 @@ describe('useSettings', () => {
 
   it('passes the current unsaved form state to the LLM connection test', async () => {
     const electronAPI = installElectronApiMock({
-      testLlmConnection: vi.fn().mockResolvedValue({ success: false, message: 'API Key mancante' })
+      testLlmConnection: vi.fn().mockResolvedValue({ success: false, message: 'API key is missing' })
     })
     const { result } = renderHook(() => useSettings())
 
@@ -230,7 +230,7 @@ describe('useSettings', () => {
     expect(electronAPI.testLlmConnection).toHaveBeenCalledWith(
       expect.objectContaining({ apiKey: '' })
     )
-    expect(result.current.testLlmResult).toEqual({ type: 'error', message: 'API Key mancante' })
+    expect(result.current.testLlmResult).toEqual({ type: 'error', message: 'API key is missing' })
   })
 
   it('normalizes categories text helpers and resetCategories', async () => {

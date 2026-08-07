@@ -151,14 +151,14 @@ describe('registerIPCHandlers', () => {
       }
     )
 
-    expect(resultWithoutKey).toEqual({ success: false, message: 'API Key mancante' })
+    expect(resultWithoutKey).toEqual({ success: false, message: 'API key is missing' })
   })
 
   it('reads persisted settings for bug fetching and throws if they are missing', async () => {
     storeGet.mockReturnValueOnce(null)
 
     await expect(handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()).rejects.toThrow(
-      'STORE_ERROR::Settings non configurate'
+      'STORE_ERROR::Settings not configured'
     )
 
     storeGet.mockImplementation((key: string) => {
@@ -253,7 +253,7 @@ describe('registerIPCHandlers', () => {
           signal?.addEventListener(
             'abort',
             () => {
-              reject({ code: 'OPERATION_CANCELLED', message: 'Categorizzazione annullata' })
+              reject({ code: 'OPERATION_CANCELLED', message: 'Operation cancelled' })
             },
             { once: true }
           )
@@ -267,9 +267,7 @@ describe('registerIPCHandlers', () => {
     const categorizePromise = categorizeHandler?.(event)
 
     await expect(cancelHandler?.({ sender: { id: 99 } })).resolves.toEqual({ cancelled: true })
-    await expect(categorizePromise).rejects.toThrow(
-      'OPERATION_CANCELLED::Categorizzazione annullata'
-    )
+    await expect(categorizePromise).rejects.toThrow('OPERATION_CANCELLED::Operation cancelled')
     expect(storeSet).not.toHaveBeenCalledWith('session', expect.objectContaining({ bugs: [] }))
     expect(storeSet).not.toHaveBeenCalled()
   })
@@ -303,7 +301,7 @@ describe('registerIPCHandlers', () => {
     void categorizeHandler?.(event)
 
     await expect(categorizeHandler?.(event)).rejects.toThrow(
-      'UNKNOWN_ERROR::Categorizzazione gia in corso'
+      'UNKNOWN_ERROR::Categorization already in progress'
     )
   })
 

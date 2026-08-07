@@ -58,7 +58,7 @@ export class AnthropicProvider implements LLMProvider {
 
       const textBlock = response.content.find((block) => block.type === 'text')
       if (!textBlock || textBlock.type !== 'text') {
-        throwAppError('LLM_PARSE_ERROR', 'Risposta vuota da Anthropic')
+        throwAppError('LLM_PARSE_ERROR', 'Empty response from Anthropic')
       }
       return textBlock.text
     } catch (error: unknown) {
@@ -66,15 +66,15 @@ export class AnthropicProvider implements LLMProvider {
       throwIfRequestAborted(requestTimeout, 'Anthropic')
       if (error instanceof Anthropic.APIError) {
         if (error.status === 429) {
-          throwAppError('LLM_RATE_LIMIT', 'Rate limit raggiunto per Anthropic')
+          throwAppError('LLM_RATE_LIMIT', 'Rate limit reached for Anthropic')
         }
         if (error.status === 401 || error.status === 403) {
-          throwAppError('LLM_AUTH_ERROR', 'Autenticazione non valida per anthropic')
+          throwAppError('LLM_AUTH_ERROR', 'Invalid authentication for Anthropic')
         }
       }
       throwAppError(
         'UNKNOWN_ERROR',
-        `Errore Anthropic: ${error instanceof Error ? error.message : 'sconosciuto'}`
+        `Anthropic error: ${error instanceof Error ? error.message : 'unknown'}`
       )
     } finally {
       requestTimeout.dispose()

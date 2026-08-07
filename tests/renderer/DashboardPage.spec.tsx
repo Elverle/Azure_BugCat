@@ -187,7 +187,7 @@ describe('DashboardPage', () => {
           resolveCancel = () => {
             rejectCategorize?.({
               code: 'OPERATION_CANCELLED',
-              message: 'Categorizzazione annullata'
+              message: 'Operation cancelled'
             })
             resolve({ cancelled: true })
           }

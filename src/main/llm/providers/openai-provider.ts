@@ -51,7 +51,7 @@ export class OpenAIProvider implements LLMProvider {
 
       const content = response.choices[0]?.message?.content
       if (!content) {
-        throwAppError('LLM_PARSE_ERROR', 'Risposta vuota da OpenAI')
+        throwAppError('LLM_PARSE_ERROR', 'Empty response from OpenAI')
       }
       return content
     } catch (error: unknown) {
@@ -59,15 +59,15 @@ export class OpenAIProvider implements LLMProvider {
       throwIfRequestAborted(requestTimeout, 'OpenAI')
       if (error instanceof OpenAI.APIError) {
         if (error.status === 429) {
-          throwAppError('LLM_RATE_LIMIT', 'Rate limit raggiunto per OpenAI')
+          throwAppError('LLM_RATE_LIMIT', 'Rate limit reached for OpenAI')
         }
         if (error.status === 401 || error.status === 403) {
-          throwAppError('LLM_AUTH_ERROR', 'Autenticazione non valida per openai')
+          throwAppError('LLM_AUTH_ERROR', 'Invalid authentication for OpenAI')
         }
       }
       throwAppError(
         'UNKNOWN_ERROR',
-        `Errore OpenAI: ${error instanceof Error ? error.message : 'sconosciuto'}`
+        `OpenAI error: ${error instanceof Error ? error.message : 'unknown'}`
       )
     } finally {
       requestTimeout.dispose()

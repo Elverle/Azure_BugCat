@@ -148,7 +148,7 @@ describe('useDashboard', () => {
 
   it('stores categorize error when IPC categorization fails', async () => {
     installElectronApiMock({
-      categorizeBugs: vi.fn().mockRejectedValue(new Error('Errore OpenRouter'))
+      categorizeBugs: vi.fn().mockRejectedValue(new Error('OpenRouter error'))
     })
 
     const { result } = renderHook(() => useDashboard())
@@ -159,7 +159,7 @@ describe('useDashboard', () => {
       await result.current.categorizeBugs()
     })
 
-    expect(result.current.categorizeError).toBe('Errore OpenRouter')
+    expect(result.current.categorizeError).toBe('OpenRouter error')
     expect(result.current.progress).toBeNull()
 
     act(() => {
@@ -173,7 +173,7 @@ describe('useDashboard', () => {
     installElectronApiMock({
       categorizeBugs: vi
         .fn()
-        .mockRejectedValue({ code: 'OPERATION_CANCELLED', message: 'Categorizzazione annullata' })
+        .mockRejectedValue({ code: 'OPERATION_CANCELLED', message: 'Operation cancelled' })
     })
 
     const { result } = renderHook(() => useDashboard())

@@ -100,7 +100,7 @@ describe('openrouter-provider', () => {
         provider.chat('system', 'user', { responseSchema: 'categorization' })
       ).rejects.toMatchObject({
         code: 'LLM_PARSE_ERROR',
-        message: 'Risposta OpenRouter non valida secondo SDK',
+        message: 'The OpenRouter response failed SDK validation',
         details: expect.objectContaining({
           provider: 'openrouter',
           responseSchema: 'categorization',
@@ -149,7 +149,7 @@ describe('openrouter-provider', () => {
       ).rejects.toMatchObject({
         code: 'LLM_PARSE_ERROR',
         message:
-          'OpenRouter ha instradato la richiesta verso un provider o modello che non supporta correttamente structured outputs con json_schema. Seleziona un modello compatibile oppure cambia routing/provider.',
+          'OpenRouter routed the request to a provider or model that does not properly support structured outputs with json_schema. Select a compatible model, or change the routing/provider.',
         details: expect.objectContaining({
           provider: 'openrouter',
           responseSchema: 'categorization',
@@ -290,7 +290,7 @@ describe('openrouter-provider', () => {
       const provider = new OpenRouterProvider({ apiKey: 'sk-or-test' })
       await expect(provider.chat('system', 'user')).rejects.toMatchObject({
         code: 'LLM_PARSE_ERROR',
-        message: 'Risposta vuota da OpenRouter'
+        message: 'Empty response from OpenRouter'
       })
     })
 
@@ -368,7 +368,7 @@ describe('openrouter-provider', () => {
       const provider = new OpenRouterProvider({ apiKey: 'sk-or-test' })
       await expect(provider.chat('system', 'user')).rejects.toMatchObject({
         code: 'UNKNOWN_ERROR',
-        message: 'Errore OpenRouter: Something went wrong'
+        message: 'OpenRouter error: Something went wrong'
       })
     })
   })

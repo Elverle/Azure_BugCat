@@ -55,7 +55,7 @@ export function extractErrorMessage(error: unknown): string {
     return String((error as { message: unknown }).message)
   }
   if (typeof error === 'string' && error.trim()) return error
-  return 'Errore sconosciuto'
+  return 'Unknown error'
 }
 
 /**

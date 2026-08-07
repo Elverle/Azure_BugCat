@@ -5,10 +5,10 @@ import { htmlToText } from '../utils/html-to-text'
 import { throwAppError } from '@shared/app-error'
 
 function buildConfig(settings: AppSettings): AdoConnectionConfig {
-  if (!settings.orgUrl?.trim()) throwAppError('ADO_AUTH_ERROR', 'URL organizzazione mancante')
-  if (!settings.projectName?.trim()) throwAppError('ADO_AUTH_ERROR', 'Nome progetto mancante')
-  if (!settings.queryId?.trim()) throwAppError('ADO_NOT_FOUND', 'Query ID mancante')
-  if (!settings.pat?.trim()) throwAppError('ADO_AUTH_ERROR', 'Personal Access Token mancante')
+  if (!settings.orgUrl?.trim()) throwAppError('ADO_AUTH_ERROR', 'Organization URL is missing')
+  if (!settings.projectName?.trim()) throwAppError('ADO_AUTH_ERROR', 'Project name is missing')
+  if (!settings.queryId?.trim()) throwAppError('ADO_NOT_FOUND', 'Query ID is missing')
+  if (!settings.pat?.trim()) throwAppError('ADO_AUTH_ERROR', 'Personal Access Token is missing')
 
   return {
     orgUrl: settings.orgUrl.trim(),
@@ -63,7 +63,7 @@ export async function fetchBugsFromQuery(settings: AppSettings): Promise<FetchBu
   const wiqlResponse = await fetchWiqlQuery(config)
 
   if (wiqlResponse.workItems.length === 0) {
-    throwAppError('ADO_EMPTY', 'Nessun bug trovato nella query')
+    throwAppError('ADO_EMPTY', 'The query returned no bugs')
   }
 
   const allQueryIds = wiqlResponse.workItems.map((wi) => wi.id)
@@ -93,13 +93,13 @@ export async function testAdoConnection(settings: AppSettings): Promise<TestConn
     const wiqlResponse = await fetchWiqlQuery(config)
     return {
       success: true,
-      message: `Connessione riuscita — ${wiqlResponse.workItems.length} bug trovati`
+      message: `Connection successful — ${wiqlResponse.workItems.length} bugs found`
     }
   } catch (error: unknown) {
     const message =
       error && typeof error === 'object' && 'message' in error
         ? (error as { message: string }).message
-        : 'Errore di connessione'
+        : 'Connection error'
     return { success: false, message }
   }
 }

@@ -12,7 +12,7 @@ export const TEST_CONNECTION_USER_MESSAGE = 'Test connection'
 
 export function assertApiKey(apiKey: string | undefined, providerName: string): string {
   if (!apiKey?.trim()) {
-    throwAppError('LLM_AUTH_ERROR', `API Key mancante per ${providerName}`)
+    throwAppError('LLM_AUTH_ERROR', `API key is missing for ${providerName}`)
   }
 
   return apiKey
@@ -78,9 +78,9 @@ export function throwIfRequestAborted(
 ): void {
   if (!requestTimeout.signal.aborted) return
   if (requestTimeout.didTimeout()) {
-    throwAppError('LLM_TIMEOUT', `Timeout nella richiesta a ${providerLabel}`)
+    throwAppError('LLM_TIMEOUT', `Request to ${providerLabel} timed out`)
   }
-  throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
+  throwAppError('OPERATION_CANCELLED', 'Operation cancelled')
 }
 
 export function getStructuredOutputMetadata(responseSchema: ChatOptions['responseSchema']): {

@@ -164,7 +164,7 @@ describe('useAiCluster', () => {
 
   it('sets error state when analysis fails', async () => {
     installElectronApiMock({
-      findSimilarBugs: vi.fn().mockRejectedValue({ message: 'Settings non configurate' })
+      findSimilarBugs: vi.fn().mockRejectedValue({ message: 'Settings not configured' })
     })
 
     const { result } = renderHook(() => useAiCluster())
@@ -175,7 +175,7 @@ describe('useAiCluster', () => {
       await result.current.analyze()
     })
 
-    expect(result.current.error).toBe('Settings non configurate')
+    expect(result.current.error).toBe('Settings not configured')
     expect(result.current.analyzing).toBe(false)
   })
 

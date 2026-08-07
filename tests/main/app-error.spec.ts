@@ -9,11 +9,11 @@ describe('app-error IPC contract', () => {
 
   it('decodes the Electron remote-method prefix', () => {
     const wireError = new Error(
-      "Error invoking remote method 'ado:fetch-bugs': Error: ADO_TIMEOUT::Timeout nella connessione"
+      "Error invoking remote method 'ado:fetch-bugs': Error: ADO_TIMEOUT::Azure DevOps connection timed out"
     )
     expect(decodeIpcError(wireError)).toEqual({
       code: 'ADO_TIMEOUT',
-      message: 'Timeout nella connessione'
+      message: 'Azure DevOps connection timed out'
     })
   })
 

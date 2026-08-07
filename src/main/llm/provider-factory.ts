@@ -20,6 +20,6 @@ export function createLLMProvider(type: LLMProviderType, config: LLMProviderConf
     case 'openrouter':
       return new OpenRouterProvider(config)
     default:
-      throwAppError('UNKNOWN_ERROR', `Provider LLM non supportato: ${type as string}`)
+      throwAppError('UNKNOWN_ERROR', `Unsupported LLM provider: ${type as string}`)
   }
 }
