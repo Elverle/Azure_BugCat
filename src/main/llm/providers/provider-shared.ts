@@ -1,9 +1,9 @@
-import { throwAppError } from '../../../shared/app-error'
+import { throwAppError } from '@shared/app-error'
 import { ChatOptions, LLMProviderConfig } from '../types'
 
 // Re-exported so the providers keep a single import site for the whole
 // AppError toolkit; the implementation lives in src/shared/app-error.ts.
-export { isAppError, throwAppError } from '../../../shared/app-error'
+export { isAppError, throwAppError } from '@shared/app-error'
 
 export const DEFAULT_PROVIDER_TIMEOUT_MS = 60000
 export const TEST_CONNECTION_SYSTEM_PROMPT =

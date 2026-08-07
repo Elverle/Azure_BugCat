@@ -19,7 +19,7 @@ import { buildSystemPrompt, buildUserMessage } from './prompts'
 import { splitIntoChunks } from './chunking'
 import { validateLLMResponse } from './response-validator'
 import { isBlockingLLMError } from './error-policy'
-import { isAppError, throwAppError } from '../../shared/app-error'
+import { isAppError, throwAppError } from '@shared/app-error'
 
 const RETRY_DELAYS = [2000, 4000, 8000]
 const MAX_TITLE_LOG_LENGTH = 120

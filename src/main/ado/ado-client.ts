@@ -1,5 +1,5 @@
 import { AdoConnectionConfig, WiqlResponse, WorkItemRaw, ADO_FIELDS } from './types'
-import { isAppError, throwAppError } from '../../shared/app-error'
+import { isAppError, throwAppError } from '@shared/app-error'
 
 function buildAuthHeader(pat: string): string {
   return `Basic ${Buffer.from(':' + pat).toString('base64')}`

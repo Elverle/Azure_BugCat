@@ -10,7 +10,7 @@ import {
   SessionData,
   TestConnectionResult
 } from '../shared/types'
-import { encodeIpcError, throwAppError } from '../shared/app-error'
+import { encodeIpcError, throwAppError } from '@shared/app-error'
 import { fetchBugsFromQuery, testAdoConnection } from './ado/ado-service'
 import { fetchAdoAttachmentDataUrl } from './ado/ado-client'
 import { categorizeBugs, testLLMConnection, findSimilarBugs } from './llm'

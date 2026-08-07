@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS, IPCChannel } from '../shared/ipc-channels'
-import { decodeIpcError } from '../shared/app-error'
+import { decodeIpcError } from '@shared/app-error'
 import type { AppSettings } from '../shared/types'
 
 /**

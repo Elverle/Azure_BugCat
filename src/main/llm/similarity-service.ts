@@ -12,7 +12,7 @@ import { buildSimilarBugsSystemPrompt, buildSimilarBugsUserMessage } from './pro
 import { chatWithRetry } from './llm-service'
 import { isBlockingLLMError } from './error-policy'
 import { parseLlmJson } from './llm-json'
-import { extractErrorMessage, isAppError } from '../../shared/app-error'
+import { extractErrorMessage, isAppError } from '@shared/app-error'
 
 export interface SimilarityProgressCallback {
   (progress: SimilarityProgress): void

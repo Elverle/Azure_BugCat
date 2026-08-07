@@ -1,5 +1,5 @@
 import { LLMProviderType } from '../../shared/types'
-import { throwAppError } from '../../shared/app-error'
+import { throwAppError } from '@shared/app-error'
 import { LLMProvider, LLMProviderConfig } from './types'
 import { OpenAIProvider } from './providers/openai-provider'
 import { AnthropicProvider } from './providers/anthropic-provider'
