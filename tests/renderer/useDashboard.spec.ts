@@ -127,6 +127,56 @@ describe('useDashboard', () => {
     expect(result.current.loading).toBe(false)
   })
 
+  it('exposes fetchError when fetchBugs rejects instead of swallowing it', async () => {
+    installElectronApiMock({
+      fetchBugs: vi.fn().mockRejectedValue({
+        code: 'ADO_AUTH_ERROR',
+        message: 'Authentication failed: 401'
+      })
+    })
+
+    const { result } = renderHook(() => useDashboard())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.fetchBugs()
+    })
+
+    expect(result.current.fetchError).toBe('Authentication failed: 401')
+    expect(result.current.loading).toBe(false)
+
+    act(() => {
+      result.current.clearFetchError()
+    })
+
+    expect(result.current.fetchError).toBeNull()
+  })
+
+  it('clears a previous fetchError when a new fetch succeeds', async () => {
+    const fetchBugs = vi
+      .fn()
+      .mockRejectedValueOnce({ code: 'ADO_TIMEOUT', message: 'Azure DevOps connection timed out' })
+      .mockResolvedValue(undefined)
+    installElectronApiMock({ fetchBugs })
+
+    const { result } = renderHook(() => useDashboard())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.fetchBugs()
+    })
+
+    expect(result.current.fetchError).toBe('Azure DevOps connection timed out')
+
+    await act(async () => {
+      await result.current.fetchBugs()
+    })
+
+    expect(result.current.fetchError).toBeNull()
+  })
+
   it('categorizeBugs calls IPC and reloads session on success', async () => {
     const api = installElectronApiMock()
     const { result } = renderHook(() => useDashboard())

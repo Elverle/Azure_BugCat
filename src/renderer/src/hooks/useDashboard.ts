@@ -8,6 +8,7 @@ import {
   type MutableRefObject
 } from 'react'
 import type { CategorizedBug, ChunkProgress } from '@shared/types'
+import { extractErrorMessage } from '@shared/app-error'
 import {
   getSessionSnapshot,
   loadSession,
@@ -75,6 +76,7 @@ export interface UseDashboardReturn {
   isCancelling: boolean
   progress: ChunkProgress | null
   categorizeError: string | null
+  fetchError: string | null
   sessionInfo: {
     fetchedAt: string | null
     categorizedAt: string | null
@@ -84,6 +86,7 @@ export interface UseDashboardReturn {
   categorizeBugs: () => Promise<void>
   cancelCategorization: () => Promise<void>
   clearCategorizeError: () => void
+  clearFetchError: () => void
 }
 
 function isCancellationError(error: unknown): boolean {
@@ -93,22 +96,6 @@ function isCancellationError(error: unknown): boolean {
     'code' in error &&
     (error as { code?: unknown }).code === 'OPERATION_CANCELLED'
   )
-}
-
-function getCategorizationErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message
-  }
-
-  if (error !== null && typeof error === 'object' && 'message' in error) {
-    return String((error as { message: unknown }).message)
-  }
-
-  if (typeof error === 'string' && error.trim()) {
-    return error
-  }
-
-  return 'Errore durante la categorizzazione'
 }
 
 function createProgressSubscription(cleanupRef: MutableRefObject<(() => void) | null>): void {
@@ -123,6 +110,7 @@ function createProgressSubscription(cleanupRef: MutableRefObject<(() => void) | 
 
 export function useDashboard(): UseDashboardReturn {
   const [isFetching, setIsFetching] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
 
   const cleanupRef = useRef<(() => void) | null>(null)
   const sessionState = useSyncExternalStore(
@@ -200,13 +188,18 @@ export function useDashboard(): UseDashboardReturn {
 
   const fetchBugs = useCallback(async () => {
     setIsFetching(true)
+    setFetchError(null)
     try {
       await window.electronAPI.fetchBugs()
       await refreshSession()
+    } catch (error: unknown) {
+      setFetchError(extractErrorMessage(error))
     } finally {
       setIsFetching(false)
     }
   }, [])
+
+  const clearFetchError = useCallback(() => setFetchError(null), [])
 
   const categorizeBugs = useCallback(async () => {
     if (loading || currentCategorizationUiState.isCategorizing) {
@@ -229,7 +222,7 @@ export function useDashboard(): UseDashboardReturn {
         return
       }
 
-      updateCategorizationUiState({ categorizeError: getCategorizationErrorMessage(error) })
+      updateCategorizationUiState({ categorizeError: extractErrorMessage(error) })
     } finally {
       updateCategorizationUiState({
         isCategorizing: false,
@@ -254,7 +247,7 @@ export function useDashboard(): UseDashboardReturn {
     } catch (error: unknown) {
       updateCategorizationUiState({
         isCancelling: false,
-        categorizeError: getCategorizationErrorMessage(error)
+        categorizeError: extractErrorMessage(error)
       })
     }
   }, [currentCategorizationUiState.isCancelling, currentCategorizationUiState.isCategorizing])
@@ -266,10 +259,12 @@ export function useDashboard(): UseDashboardReturn {
     isCancelling: currentCategorizationUiState.isCancelling,
     progress: currentCategorizationUiState.progress,
     categorizeError: currentCategorizationUiState.categorizeError,
+    fetchError,
     sessionInfo,
     fetchBugs,
     categorizeBugs,
     cancelCategorization,
-    clearCategorizeError: () => updateCategorizationUiState({ categorizeError: null })
+    clearCategorizeError: () => updateCategorizationUiState({ categorizeError: null }),
+    clearFetchError
   }
 }

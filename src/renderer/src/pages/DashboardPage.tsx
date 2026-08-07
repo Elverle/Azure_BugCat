@@ -47,11 +47,13 @@ export function DashboardPage(): JSX.Element {
     isCancelling,
     progress,
     categorizeError,
+    fetchError,
     sessionInfo,
     fetchBugs,
     categorizeBugs,
     cancelCategorization,
-    clearCategorizeError
+    clearCategorizeError,
+    clearFetchError
   } = useDashboard()
 
   const [selectedFilters, setSelectedFilters] = useState<FilterState>(EMPTY_FILTER_STATE)
@@ -403,6 +405,15 @@ export function DashboardPage(): JSX.Element {
         confirmLabel="Chiudi"
         onConfirm={clearCategorizeError}
         onCancel={clearCategorizeError}
+      />
+
+      <ConfirmDialog
+        open={fetchError !== null}
+        title="Errore durante il fetch"
+        description={fetchError ?? ''}
+        confirmLabel="Chiudi"
+        onConfirm={clearFetchError}
+        onCancel={clearFetchError}
       />
     </>
   )

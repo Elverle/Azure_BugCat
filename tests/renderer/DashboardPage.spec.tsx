@@ -147,7 +147,7 @@ describe('DashboardPage', () => {
   it('shows a popup when categorization fails with a blocking error', async () => {
     mockElectronAPI.categorizeBugs.mockRejectedValue(
       new Error(
-        'OpenRouter ha instradato la richiesta verso un provider o modello che non supporta correttamente structured outputs con json_schema. Seleziona un modello compatibile oppure cambia routing/provider.'
+        'OpenRouter routed the request to a provider or model that does not properly support structured outputs with json_schema. Select a compatible model, or change the routing/provider.'
       )
     )
 
@@ -161,9 +161,31 @@ describe('DashboardPage', () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        'OpenRouter ha instradato la richiesta verso un provider o modello che non supporta correttamente structured outputs con json_schema. Seleziona un modello compatibile oppure cambia routing/provider.'
+        'OpenRouter routed the request to a provider or model that does not properly support structured outputs with json_schema. Select a compatible model, or change the routing/provider.'
       )
     ).toBeInTheDocument()
+  })
+
+  it('shows a popup when the bug fetch fails', async () => {
+    mockElectronAPI.fetchBugs.mockRejectedValue({
+      code: 'ADO_AUTH_ERROR',
+      message: 'Authentication failed: 401 Unauthorized'
+    })
+
+    render(<DashboardPage />)
+
+    fireEvent.click(await screen.findByRole('button', { name: /Fetch Bugs/i }))
+
+    expect(await screen.findByRole('dialog', { name: 'Errore durante il fetch' })).toBeInTheDocument()
+    expect(screen.getByText('Authentication failed: 401 Unauthorized')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chiudi' }))
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Errore durante il fetch' })
+      ).not.toBeInTheDocument()
+    )
   })
 
   it('shows the cancel button only while categorization is running and dismisses cancellation silently', async () => {
