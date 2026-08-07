@@ -169,6 +169,45 @@ describe('useDashboard', () => {
     expect(result.current.categorizeError).toBeNull()
   })
 
+  it('swallows a cancellation identified by its error code', async () => {
+    installElectronApiMock({
+      categorizeBugs: vi
+        .fn()
+        .mockRejectedValue({ code: 'OPERATION_CANCELLED', message: 'Categorizzazione annullata' })
+    })
+
+    const { result } = renderHook(() => useDashboard())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.categorizeBugs()
+    })
+
+    expect(result.current.categorizeError).toBeNull()
+    expect(result.current.isCategorizing).toBe(false)
+  })
+
+  it('surfaces a non-cancellation error even when its wording resembles a cancellation', async () => {
+    // The code is the only signal: matching on message text used to swallow
+    // genuine failures whose wording happened to mention a cancellation.
+    installElectronApiMock({
+      categorizeBugs: vi
+        .fn()
+        .mockRejectedValue({ code: 'LLM_TIMEOUT', message: 'Richiesta annullata dal provider' })
+    })
+
+    const { result } = renderHook(() => useDashboard())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.categorizeBugs()
+    })
+
+    expect(result.current.categorizeError).toBe('Richiesta annullata dal provider')
+  })
+
   it('tracks progress during categorization', async () => {
     let progressCallback: ((data: unknown) => void) | null = null
     let resolveCategorizeBugs: () => void

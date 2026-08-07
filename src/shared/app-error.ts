@@ -1,0 +1,74 @@
+import type { AppError, ErrorCode } from './types'
+
+const ERROR_CODES: ReadonlySet<string> = new Set([
+  'ADO_AUTH_ERROR',
+  'ADO_NOT_FOUND',
+  'ADO_EMPTY',
+  'ADO_TIMEOUT',
+  'LLM_AUTH_ERROR',
+  'LLM_RATE_LIMIT',
+  'OPERATION_CANCELLED',
+  'LLM_TIMEOUT',
+  'LLM_PARSE_ERROR',
+  'STORE_ERROR',
+  'UNKNOWN_ERROR'
+] satisfies ErrorCode[])
+
+const SEPARATOR = '::'
+
+/**
+ * Narrows to the application's own error shape: a plain `{ code, message }`
+ * object whose `code` belongs to the `ErrorCode` taxonomy. `Error` instances
+ * are deliberately excluded — a provider SDK error carrying its own `code`
+ * (`'invalid_api_key'`, `'rate_limit_exceeded'`, ...) must be mapped, not
+ * re-thrown as if it were already one of ours.
+ */
+export function isAppError(error: unknown): error is AppError {
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    !(error instanceof Error) &&
+    'code' in error &&
+    'message' in error &&
+    typeof (error as AppError).message === 'string' &&
+    ERROR_CODES.has(String((error as AppError).code))
+  )
+}
+
+export function throwAppError(code: ErrorCode, message: string, details?: unknown): never {
+  const err: AppError = { code, message, ...(details !== undefined && { details }) }
+  throw err
+}
+
+export function extractErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) return error.message
+  if (error !== null && typeof error === 'object' && 'message' in error) {
+    return String((error as { message: unknown }).message)
+  }
+  if (typeof error === 'string' && error.trim()) return error
+  return 'Errore sconosciuto'
+}
+
+/**
+ * Main-process side: turn any thrown value into an `Error` whose message
+ * survives Electron IPC serialization. Electron keeps only a real `Error`'s
+ * `message` when it rejects an `ipcMain.handle` call — custom properties are
+ * dropped even when assigned onto an `Error` — so the code travels inside the
+ * message and is recovered by `decodeIpcError` on the other side.
+ */
+export function encodeIpcError(error: unknown): Error {
+  const appError: AppError = isAppError(error)
+    ? error
+    : { code: 'UNKNOWN_ERROR', message: extractErrorMessage(error) }
+  return new Error(`${appError.code}${SEPARATOR}${appError.message}`)
+}
+
+/** Preload side: recover the AppError from the wire format (tolerating Electron's remote-method prefix). */
+export function decodeIpcError(error: unknown): AppError {
+  const raw = error instanceof Error ? error.message : String(error)
+  const match = raw.match(/([A-Z_]+)::([\s\S]*)$/)
+  if (match && ERROR_CODES.has(match[1])) {
+    return { code: match[1] as ErrorCode, message: match[2] }
+  }
+  return { code: 'UNKNOWN_ERROR', message: raw }
+}

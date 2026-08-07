@@ -1,28 +1,40 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import { IPC_CHANNELS } from '../shared/ipc-channels'
+import { IPC_CHANNELS, IPCChannel } from '../shared/ipc-channels'
+import { decodeIpcError } from '../shared/app-error'
 import type { AppSettings } from '../shared/types'
+
+/**
+ * The single place where the IPC wire format is turned back into an AppError:
+ * every channel goes through here, so the renderer only ever sees typed
+ * `{ code, message }` rejections and never has to parse a message itself.
+ */
+async function invoke<T = unknown>(channel: IPCChannel, ...args: unknown[]): Promise<T> {
+  try {
+    return (await ipcRenderer.invoke(channel, ...args)) as T
+  } catch (error: unknown) {
+    throw decodeIpcError(error)
+  }
+}
 
 const electronAPI = {
   // Ping (test IPC)
-  ping: () => ipcRenderer.invoke(IPC_CHANNELS.PING),
+  ping: () => invoke(IPC_CHANNELS.PING),
 
   // Settings
-  getSettings: () => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_GET),
-  setSettings: (settings: unknown) => ipcRenderer.invoke(IPC_CHANNELS.SETTINGS_SET, settings),
+  getSettings: () => invoke(IPC_CHANNELS.SETTINGS_GET),
+  setSettings: (settings: unknown) => invoke(IPC_CHANNELS.SETTINGS_SET, settings),
 
   // Azure DevOps
-  fetchBugs: () => ipcRenderer.invoke(IPC_CHANNELS.ADO_FETCH_BUGS),
-  testAdoConnection: (settings: AppSettings) =>
-    ipcRenderer.invoke(IPC_CHANNELS.ADO_TEST_CONNECTION, settings),
+  fetchBugs: () => invoke(IPC_CHANNELS.ADO_FETCH_BUGS),
+  testAdoConnection: (settings: AppSettings) => invoke(IPC_CHANNELS.ADO_TEST_CONNECTION, settings),
   fetchAdoAttachmentDataUrl: (url: string) =>
-    ipcRenderer.invoke(IPC_CHANNELS.ADO_FETCH_ATTACHMENT_DATA_URL, url),
+    invoke(IPC_CHANNELS.ADO_FETCH_ATTACHMENT_DATA_URL, url),
 
   // LLM
-  categorizeBugs: () => ipcRenderer.invoke(IPC_CHANNELS.LLM_CATEGORIZE),
-  cancelCategorization: () => ipcRenderer.invoke(IPC_CHANNELS.LLM_CATEGORIZE_CANCEL),
-  getCategorizationStatus: () => ipcRenderer.invoke(IPC_CHANNELS.LLM_CATEGORIZE_STATUS),
-  testLlmConnection: (settings: AppSettings) =>
-    ipcRenderer.invoke(IPC_CHANNELS.LLM_TEST_CONNECTION, settings),
+  categorizeBugs: () => invoke(IPC_CHANNELS.LLM_CATEGORIZE),
+  cancelCategorization: () => invoke(IPC_CHANNELS.LLM_CATEGORIZE_CANCEL),
+  getCategorizationStatus: () => invoke(IPC_CHANNELS.LLM_CATEGORIZE_STATUS),
+  testLlmConnection: (settings: AppSettings) => invoke(IPC_CHANNELS.LLM_TEST_CONNECTION, settings),
   onCategorizeProgress: (callback: (data: unknown) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
     ipcRenderer.on(IPC_CHANNELS.LLM_CATEGORIZE_PROGRESS, handler)
@@ -30,7 +42,7 @@ const electronAPI = {
   },
 
   // LLM - Similarity
-  findSimilarBugs: () => ipcRenderer.invoke(IPC_CHANNELS.LLM_FIND_SIMILAR),
+  findSimilarBugs: () => invoke(IPC_CHANNELS.LLM_FIND_SIMILAR),
   onFindSimilarProgress: (callback: (data: unknown) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
     ipcRenderer.on(IPC_CHANNELS.LLM_FIND_SIMILAR_PROGRESS, handler)
@@ -38,15 +50,15 @@ const electronAPI = {
   },
 
   // Session
-  getSession: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_GET),
-  clearSession: () => ipcRenderer.invoke(IPC_CHANNELS.SESSION_CLEAR),
+  getSession: () => invoke(IPC_CHANNELS.SESSION_GET),
+  clearSession: () => invoke(IPC_CHANNELS.SESSION_CLEAR),
 
   // Catalog
-  clearCatalog: () => ipcRenderer.invoke(IPC_CHANNELS.CATALOG_CLEAR),
-  getCatalogClosed: () => ipcRenderer.invoke(IPC_CHANNELS.CATALOG_GET_CLOSED),
+  clearCatalog: () => invoke(IPC_CHANNELS.CATALOG_CLEAR),
+  getCatalogClosed: () => invoke(IPC_CHANNELS.CATALOG_GET_CLOSED),
 
   // Shell
-  openExternal: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_EXTERNAL, url)
+  openExternal: (url: string) => invoke(IPC_CHANNELS.OPEN_EXTERNAL, url)
 }
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI)

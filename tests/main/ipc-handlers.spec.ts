@@ -157,10 +157,9 @@ describe('registerIPCHandlers', () => {
   it('reads persisted settings for bug fetching and throws if they are missing', async () => {
     storeGet.mockReturnValueOnce(null)
 
-    await expect(handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()).rejects.toMatchObject({
-      code: 'STORE_ERROR',
-      message: 'Settings non configurate'
-    })
+    await expect(handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()).rejects.toThrow(
+      'STORE_ERROR::Settings non configurate'
+    )
 
     storeGet.mockImplementation((key: string) => {
       if (key === 'settings') return baseSettings
@@ -268,7 +267,9 @@ describe('registerIPCHandlers', () => {
     const categorizePromise = categorizeHandler?.(event)
 
     await expect(cancelHandler?.({ sender: { id: 99 } })).resolves.toEqual({ cancelled: true })
-    await expect(categorizePromise).rejects.toMatchObject({ code: 'OPERATION_CANCELLED' })
+    await expect(categorizePromise).rejects.toThrow(
+      'OPERATION_CANCELLED::Categorizzazione annullata'
+    )
     expect(storeSet).not.toHaveBeenCalledWith('session', expect.objectContaining({ bugs: [] }))
     expect(storeSet).not.toHaveBeenCalled()
   })
@@ -301,10 +302,9 @@ describe('registerIPCHandlers', () => {
 
     void categorizeHandler?.(event)
 
-    await expect(categorizeHandler?.(event)).rejects.toMatchObject({
-      code: 'UNKNOWN_ERROR',
-      message: 'Categorizzazione gia in corso'
-    })
+    await expect(categorizeHandler?.(event)).rejects.toThrow(
+      'UNKNOWN_ERROR::Categorizzazione gia in corso'
+    )
   })
 
   describe('ADO_FETCH_BUGS — incremental merge', () => {

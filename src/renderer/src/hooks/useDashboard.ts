@@ -87,18 +87,12 @@ export interface UseDashboardReturn {
 }
 
 function isCancellationError(error: unknown): boolean {
-  if (error !== null && typeof error === 'object') {
-    if ('code' in error && (error as { code?: unknown }).code === 'OPERATION_CANCELLED') {
-      return true
-    }
-
-    if ('message' in error) {
-      const message = String((error as { message?: unknown }).message ?? '').toLowerCase()
-      return message.includes('annullata') || message.includes('cancelled')
-    }
-  }
-
-  return false
+  return (
+    error !== null &&
+    typeof error === 'object' &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'OPERATION_CANCELLED'
+  )
 }
 
 function getCategorizationErrorMessage(error: unknown): string {

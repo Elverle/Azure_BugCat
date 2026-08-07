@@ -19,24 +19,10 @@ import { buildSystemPrompt, buildUserMessage } from './prompts'
 import { splitIntoChunks } from './chunking'
 import { validateLLMResponse } from './response-validator'
 import { isBlockingLLMError } from './error-policy'
+import { isAppError, throwAppError } from '../../shared/app-error'
 
 const RETRY_DELAYS = [2000, 4000, 8000]
 const MAX_TITLE_LOG_LENGTH = 120
-
-function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))

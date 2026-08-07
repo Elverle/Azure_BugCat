@@ -1,25 +1,14 @@
-import { AppError } from '../../../shared/types'
+import { throwAppError } from '../../../shared/app-error'
 import { ChatOptions, LLMProviderConfig } from '../types'
+
+// Re-exported so the providers keep a single import site for the whole
+// AppError toolkit; the implementation lives in src/shared/app-error.ts.
+export { isAppError, throwAppError } from '../../../shared/app-error'
 
 export const DEFAULT_PROVIDER_TIMEOUT_MS = 60000
 export const TEST_CONNECTION_SYSTEM_PROMPT =
   'You are a test assistant. Respond with: {"status":"ok"}'
 export const TEST_CONNECTION_USER_MESSAGE = 'Test connection'
-
-export function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
-
-export function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
-}
 
 export function assertApiKey(apiKey: string | undefined, providerName: string): string {
   if (!apiKey?.trim()) {

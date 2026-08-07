@@ -1,5 +1,4 @@
 import {
-  AppError,
   AppSettings,
   CategorizedBug,
   CategorySimilarityResult,
@@ -13,16 +12,7 @@ import { buildSimilarBugsSystemPrompt, buildSimilarBugsUserMessage } from './pro
 import { chatWithRetry } from './llm-service'
 import { isBlockingLLMError } from './error-policy'
 import { parseLlmJson } from './llm-json'
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
-}
+import { extractErrorMessage, isAppError } from '../../shared/app-error'
 
 export interface SimilarityProgressCallback {
   (progress: SimilarityProgress): void
@@ -81,11 +71,7 @@ export async function findSimilarBugs(
         throw error
       }
 
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : ((error as AppError)?.message ?? 'Errore sconosciuto')
-      categories.push({ macroCategory, groups: [], error: errorMessage })
+      categories.push({ macroCategory, groups: [], error: extractErrorMessage(error) })
     }
 
     completed++

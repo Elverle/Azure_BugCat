@@ -1,12 +1,8 @@
-import { AppSettings, BugItem, AppError, TestConnectionResult } from '../../shared/types'
+import { AppSettings, BugItem, TestConnectionResult } from '../../shared/types'
 import { AdoConnectionConfig, WorkItemRaw, ADO_BATCH_SIZE } from './types'
 import { fetchWiqlQuery, fetchWorkItemsBatch } from './ado-client'
 import { htmlToText } from '../utils/html-to-text'
-
-function throwAppError(code: AppError['code'], message: string): never {
-  const err: AppError = { code, message }
-  throw err
-}
+import { throwAppError } from '../../shared/app-error'
 
 function buildConfig(settings: AppSettings): AdoConnectionConfig {
   if (!settings.orgUrl?.trim()) throwAppError('ADO_AUTH_ERROR', 'URL organizzazione mancante')

@@ -1,5 +1,5 @@
 import { AdoConnectionConfig, WiqlResponse, WorkItemRaw, ADO_FIELDS } from './types'
-import { AppError } from '../../shared/types'
+import { isAppError, throwAppError } from '../../shared/app-error'
 
 function buildAuthHeader(pat: string): string {
   return `Basic ${Buffer.from(':' + pat).toString('base64')}`
@@ -36,11 +36,6 @@ function isAllowedAttachmentUrl(orgUrl: string, attachmentUrl: string): boolean 
   }
 }
 
-function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
-
 function mapResponseError(status: number, statusText: string): never {
   if (status === 401 || status === 403) {
     throwAppError('ADO_AUTH_ERROR', `Autenticazione fallita: ${status} ${statusText}`)
@@ -49,16 +44,6 @@ function mapResponseError(status: number, statusText: string): never {
     throwAppError('ADO_NOT_FOUND', `Risorsa non trovata: ${status} ${statusText}`)
   }
   throwAppError('UNKNOWN_ERROR', `Errore HTTP: ${status} ${statusText}`)
-}
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
 }
 
 export async function fetchWiqlQuery(config: AdoConnectionConfig): Promise<WiqlResponse> {
