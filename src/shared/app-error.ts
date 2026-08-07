@@ -1,18 +1,27 @@
 import type { AppError, ErrorCode } from './types'
 
-const ERROR_CODES: ReadonlySet<string> = new Set([
-  'ADO_AUTH_ERROR',
-  'ADO_NOT_FOUND',
-  'ADO_EMPTY',
-  'ADO_TIMEOUT',
-  'LLM_AUTH_ERROR',
-  'LLM_RATE_LIMIT',
-  'OPERATION_CANCELLED',
-  'LLM_TIMEOUT',
-  'LLM_PARSE_ERROR',
-  'STORE_ERROR',
-  'UNKNOWN_ERROR'
-] satisfies ErrorCode[])
+/**
+ * Exhaustive by construction: `Record<ErrorCode, true>` makes `tsc` fail if a
+ * member is ever added to `ErrorCode` without being listed here. That matters
+ * because an unlisted code would be rejected by `isAppError`, re-encoded as
+ * `UNKNOWN_ERROR`, and lost to the renderer — the exact defect this module exists
+ * to prevent, silently re-armed.
+ */
+const ERROR_CODE_TABLE: Record<ErrorCode, true> = {
+  ADO_AUTH_ERROR: true,
+  ADO_NOT_FOUND: true,
+  ADO_EMPTY: true,
+  ADO_TIMEOUT: true,
+  LLM_AUTH_ERROR: true,
+  LLM_RATE_LIMIT: true,
+  OPERATION_CANCELLED: true,
+  LLM_TIMEOUT: true,
+  LLM_PARSE_ERROR: true,
+  STORE_ERROR: true,
+  UNKNOWN_ERROR: true
+}
+
+const ERROR_CODES: ReadonlySet<string> = new Set(Object.keys(ERROR_CODE_TABLE))
 
 const SEPARATOR = '::'
 

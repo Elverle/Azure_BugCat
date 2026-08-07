@@ -107,6 +107,33 @@ describe('useSettings', () => {
     expect(result.current.canSave).toBe(false)
   })
 
+  it('surfaces the message of a typed AppError when saving fails', async () => {
+    // What the preload actually delivers since the IPC error contract landed:
+    // a plain { code, message }, not an Error instance.
+    const electronAPI = installElectronApiMock({
+      setSettings: vi
+        .fn()
+        .mockRejectedValue({ code: 'STORE_ERROR', message: 'Impossibile scrivere le settings' })
+    })
+    const { result } = renderHook(() => useSettings())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    act(() => {
+      result.current.updateField('projectName', 'BugCat Next')
+    })
+
+    await act(async () => {
+      await result.current.save()
+    })
+
+    expect(electronAPI.setSettings).toHaveBeenCalled()
+    expect(result.current.saveResult).toEqual({
+      type: 'error',
+      message: 'Impossibile scrivere le settings'
+    })
+  })
+
   it('falls back to defaults when initial settings load fails', async () => {
     installElectronApiMock({
       getSettings: vi.fn().mockRejectedValue(new Error('boom'))

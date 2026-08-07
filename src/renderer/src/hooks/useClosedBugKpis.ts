@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { ClosedCatalogSnapshot } from '@shared/types'
+import { extractErrorMessage } from '@shared/app-error'
 import { computeClosedBugKpis, type ClosedBugKpiData } from '@renderer/lib/closed-bug-kpis'
 
 export interface UseClosedBugKpisReturn {
@@ -24,7 +25,7 @@ export function useClosedBugKpis(): UseClosedBugKpisReturn {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Errore nel caricamento dello storico')
+          setError(extractErrorMessage(err))
         }
       } finally {
         if (!cancelled) setLoading(false)

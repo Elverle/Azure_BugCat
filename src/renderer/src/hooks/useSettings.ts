@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { AppSettings } from '@shared/types'
+import { extractErrorMessage } from '@shared/app-error'
 import { validateSettings, isSettingsValid } from '@renderer/lib/validation'
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -121,8 +122,7 @@ export function useSettings(): UseSettingsReturn {
       setOriginalSettings(settings)
       setSaveResult({ type: 'success', message: 'Settings saved successfully.' })
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Failed to save settings.'
-      setSaveResult({ type: 'error', message })
+      setSaveResult({ type: 'error', message: extractErrorMessage(err) })
     } finally {
       setSaving(false)
     }
