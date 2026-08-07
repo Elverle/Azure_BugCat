@@ -9,3 +9,4 @@ start.bat
 .vscode/
 .idea/
 content/
+*.tsbuildinfo
