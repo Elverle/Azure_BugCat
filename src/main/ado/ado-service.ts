@@ -56,7 +56,12 @@ function mapWorkItemToBug(item: WorkItemRaw): BugItem {
   }
 }
 
-export async function fetchBugsFromQuery(settings: AppSettings): Promise<BugItem[]> {
+export interface FetchBugsResult {
+  bugs: BugItem[]
+  allQueryIds: number[]
+}
+
+export async function fetchBugsFromQuery(settings: AppSettings): Promise<FetchBugsResult> {
   const config = buildConfig(settings)
 
   const wiqlResponse = await fetchWiqlQuery(config)
@@ -65,7 +70,8 @@ export async function fetchBugsFromQuery(settings: AppSettings): Promise<BugItem
     throwAppError('ADO_EMPTY', 'Nessun bug trovato nella query')
   }
 
-  let ids = wiqlResponse.workItems.map((wi) => wi.id)
+  const allQueryIds = wiqlResponse.workItems.map((wi) => wi.id)
+  let ids = allQueryIds
 
   if (config.topN > 0) {
     ids = ids.slice(0, config.topN)
@@ -82,7 +88,7 @@ export async function fetchBugsFromQuery(settings: AppSettings): Promise<BugItem
     results.push(...items)
   }
 
-  return results.map(mapWorkItemToBug)
+  return { bugs: results.map(mapWorkItemToBug), allQueryIds }
 }
 
 export async function testAdoConnection(settings: AppSettings): Promise<TestConnectionResult> {

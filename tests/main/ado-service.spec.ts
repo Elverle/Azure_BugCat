@@ -57,7 +57,7 @@ describe('ado-service', () => {
       .mockResolvedValueOnce(Array.from({ length: 200 }, (_, index) => makeWorkItem(index + 1)))
       .mockResolvedValueOnce(Array.from({ length: 5 }, (_, index) => makeWorkItem(index + 201)))
 
-    const bugs = await fetchBugsFromQuery(baseSettings)
+    const { bugs, allQueryIds } = await fetchBugsFromQuery(baseSettings)
 
     expect(fetchWorkItemsBatch).toHaveBeenCalledTimes(2)
     expect(fetchWorkItemsBatch).toHaveBeenNthCalledWith(
@@ -79,6 +79,21 @@ describe('ado-service', () => {
       descriptionHtml: '<p>Hello <strong>world</strong></p>',
       tags: ['ui', 'regression']
     })
+    expect(allQueryIds).toEqual(Array.from({ length: 205 }, (_, index) => index + 1))
+  })
+
+  it('returns the complete WIQL id set even when topN truncates the fetched bugs', async () => {
+    const ids = Array.from({ length: 500 }, (_, index) => ({ id: index + 1, url: `u${index + 1}` }))
+    fetchWiqlQuery.mockResolvedValue({ workItems: ids })
+    fetchWorkItemsBatch.mockResolvedValue(
+      Array.from({ length: 20 }, (_, index) => makeWorkItem(index + 1))
+    )
+
+    const { bugs, allQueryIds } = await fetchBugsFromQuery({ ...baseSettings, topN: 20 })
+
+    expect(bugs).toHaveLength(20)
+    expect(allQueryIds).toHaveLength(500)
+    expect(allQueryIds).toEqual(Array.from({ length: 500 }, (_, index) => index + 1))
   })
 
   it('returns a typed empty-result error when the query has no bugs', async () => {
@@ -97,7 +112,7 @@ describe('ado-service', () => {
       Array.from({ length: 20 }, (_, index) => makeWorkItem(index + 1))
     )
 
-    const bugs = await fetchBugsFromQuery({ ...baseSettings, topN: 20 })
+    const { bugs } = await fetchBugsFromQuery({ ...baseSettings, topN: 20 })
 
     expect(fetchWorkItemsBatch).toHaveBeenCalledTimes(1)
     expect(fetchWorkItemsBatch).toHaveBeenCalledWith(
@@ -115,7 +130,7 @@ describe('ado-service', () => {
       .mockResolvedValueOnce(Array.from({ length: 200 }, (_, index) => makeWorkItem(index + 201)))
       .mockResolvedValueOnce(Array.from({ length: 50 }, (_, index) => makeWorkItem(index + 401)))
 
-    const bugs = await fetchBugsFromQuery({ ...baseSettings, topN: 450 })
+    const { bugs } = await fetchBugsFromQuery({ ...baseSettings, topN: 450 })
 
     expect(fetchWorkItemsBatch).toHaveBeenCalledTimes(3)
     expect(fetchWorkItemsBatch).toHaveBeenNthCalledWith(
@@ -176,7 +191,7 @@ describe('ado-service', () => {
       }
     ])
 
-    const bugs = await fetchBugsFromQuery({ ...baseSettings, topN: 2 })
+    const { bugs } = await fetchBugsFromQuery({ ...baseSettings, topN: 2 })
 
     expect(bugs[0]).toMatchObject({
       assignee: 'Mario Rossi',

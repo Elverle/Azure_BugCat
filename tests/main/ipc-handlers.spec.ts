@@ -167,20 +167,23 @@ describe('registerIPCHandlers', () => {
       if (key === 'bugCatalog') return null
       return null
     })
-    fetchBugsFromQuery.mockResolvedValue([
-      {
-        id: 1,
-        title: 'Bug 1',
-        state: 'Active',
-        assignee: null,
-        areaPath: 'Project\\Area',
-        description: 'Description',
-        priority: 2,
-        createdDate: '2024-01-01T00:00:00Z',
-        updatedDate: '2024-01-01T00:00:00Z',
-        tags: []
-      }
-    ])
+    fetchBugsFromQuery.mockResolvedValue({
+      bugs: [
+        {
+          id: 1,
+          title: 'Bug 1',
+          state: 'Active',
+          assignee: null,
+          areaPath: 'Project\\Area',
+          description: 'Description',
+          priority: 2,
+          createdDate: '2024-01-01T00:00:00Z',
+          updatedDate: '2024-01-01T00:00:00Z',
+          tags: []
+        }
+      ],
+      allQueryIds: [1]
+    })
 
     const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
     expect(fetchBugsFromQuery).toHaveBeenCalledWith(baseSettings)
@@ -324,7 +327,7 @@ describe('registerIPCHandlers', () => {
         if (key === 'bugCatalog') return null
         return null
       })
-      fetchBugsFromQuery.mockResolvedValue([makeBug(1), makeBug(2)])
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [makeBug(1), makeBug(2)], allQueryIds: [1, 2] })
 
       await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
 
@@ -372,9 +375,11 @@ describe('registerIPCHandlers', () => {
       storeGet.mockImplementation((key: string) => {
         if (key === 'settings') return baseSettings
         if (key === 'bugCatalog') return existingCatalog
+        if (key === 'catalogMetadata')
+          return { lastClearedAt: null, queryId: baseSettings.queryId }
         return null
       })
-      fetchBugsFromQuery.mockResolvedValue([bug1])
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [bug1], allQueryIds: [1] })
 
       const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
 
@@ -417,15 +422,105 @@ describe('registerIPCHandlers', () => {
       storeGet.mockImplementation((key: string) => {
         if (key === 'settings') return baseSettings
         if (key === 'bugCatalog') return existingCatalog
+        if (key === 'catalogMetadata')
+          return { lastClearedAt: null, queryId: baseSettings.queryId }
         return null
       })
-      fetchBugsFromQuery.mockResolvedValue([]) // Bug 1 not in this fetch
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [] }) // Bug 1 not in this fetch, and not beyond topN either
 
       const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
 
       expect(result).toEqual([]) // No session bugs
       const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
       expect(catalogCall![1][1].closedAt).toEqual(expect.any(String))
+    })
+
+    it('does not close a pre-existing catalog on the first fetch after upgrade, when catalogMetadata has no stored queryId', async () => {
+      // Simulates a catalog persisted before this feature shipped: bugCatalog has
+      // data, but catalogMetadata carries no queryId at all (undefined, not merely
+      // a different value). A missing queryId must be treated as a mismatch — the
+      // same safe default as an actual query change — rather than as an implicit
+      // match that would silently close the whole existing catalog.
+      const { computeInputSignature } = await import('@main/utils/catalog-merge')
+      const bug1 = makeBug(1)
+      const sig = computeInputSignature(bug1)
+
+      const existingCatalog = {
+        1: {
+          ...bug1,
+          macroCategory: 'UI',
+          subCategory: 'Layout',
+          categoryReason: 'reason',
+          categorizedAt: '2024-06-01T00:00:00Z',
+          firstSeenAt: '2024-05-01T00:00:00Z',
+          lastSeenAt: '2024-05-15T00:00:00Z',
+          closedAt: null,
+          inputSignature: sig,
+          everInSimilarityGroup: false,
+          lastSimilarityGroupAt: null
+        }
+      }
+
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'bugCatalog') return existingCatalog
+        if (key === 'catalogMetadata') return { lastClearedAt: null } // no queryId field
+        return null
+      })
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [] }) // Bug 1 absent from this fetch too
+
+      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+
+      const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
+      expect(catalogCall![1][1].closedAt).toBeNull()
+
+      const metadataCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'catalogMetadata')
+      expect(metadataCall![1]).toEqual(
+        expect.objectContaining({ queryId: baseSettings.queryId })
+      )
+    })
+
+    it('does not close anything when catalogMetadata.queryId differs from settings.queryId, but updates the stored queryId', async () => {
+      const { computeInputSignature } = await import('@main/utils/catalog-merge')
+      const bug1 = makeBug(1)
+      const sig = computeInputSignature(bug1)
+
+      const existingCatalog = {
+        1: {
+          ...bug1,
+          macroCategory: 'UI',
+          subCategory: 'Layout',
+          categoryReason: 'reason',
+          categorizedAt: '2024-06-01T00:00:00Z',
+          firstSeenAt: '2024-05-01T00:00:00Z',
+          lastSeenAt: '2024-05-15T00:00:00Z',
+          closedAt: null,
+          inputSignature: sig,
+          everInSimilarityGroup: false,
+          lastSimilarityGroupAt: null
+        }
+      }
+
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'bugCatalog') return existingCatalog
+        if (key === 'catalogMetadata') return { lastClearedAt: null, queryId: 'a-different-query' }
+        return null
+      })
+      // The full WIQL result set for the new query does not include bug 1 at all —
+      // under a naive implementation this would close it, but the query changed,
+      // so this fetch must not derive any closures from it.
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [999] })
+
+      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+
+      const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
+      expect(catalogCall![1][1].closedAt).toBeNull()
+
+      const metadataCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'catalogMetadata')
+      expect(metadataCall![1]).toEqual(
+        expect.objectContaining({ queryId: baseSettings.queryId })
+      )
     })
   })
 

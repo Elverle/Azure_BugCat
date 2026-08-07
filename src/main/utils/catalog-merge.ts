@@ -29,7 +29,8 @@ export function computeInputSignature(bug: BugItem): string {
 export function mergeFetchIntoCatalog(
   fetchedBugs: BugItem[],
   existingCatalog: BugCatalog | null,
-  now: string
+  now: string,
+  closureScopeIds: Set<number> | null
 ): MergeResult {
   const catalog: BugCatalog = existingCatalog ? { ...existingCatalog } : {}
   const sessionBugs: CategorizedBug[] = []
@@ -110,11 +111,17 @@ export function mergeFetchIntoCatalog(
     }
   }
 
-  // Mark unfetched catalog entries as closed
-  for (const idStr of Object.keys(catalog)) {
-    const id = Number(idStr)
-    if (!fetchedIds.has(id) && catalog[id].closedAt === null) {
-      catalog[id] = { ...catalog[id], closedAt: now }
+  // Mark catalog entries outside the full query result as closed.
+  // closureScopeIds is the complete WIQL id set (not the topN-truncated fetch),
+  // so entries beyond topN are never mistaken for closed bugs. A null scope
+  // means the query changed since the last fetch — skip closure detection
+  // entirely rather than closing the whole previous catalog.
+  if (closureScopeIds) {
+    for (const idStr of Object.keys(catalog)) {
+      const id = Number(idStr)
+      if (!fetchedIds.has(id) && !closureScopeIds.has(id) && catalog[id].closedAt === null) {
+        catalog[id] = { ...catalog[id], closedAt: now }
+      }
     }
   }
 

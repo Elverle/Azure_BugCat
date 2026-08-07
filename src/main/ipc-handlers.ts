@@ -84,7 +84,11 @@ export function registerIPCHandlers(): void {
   // Catalog
   ipcMain.handle(IPC_CHANNELS.CATALOG_CLEAR, () => {
     store.set('bugCatalog', null)
-    store.set('catalogMetadata', { lastClearedAt: new Date().toISOString() })
+    const catalogMetadata = store.get('catalogMetadata') as CatalogMetadata | null
+    store.set('catalogMetadata', {
+      lastClearedAt: new Date().toISOString(),
+      queryId: catalogMetadata?.queryId ?? null
+    })
   })
 
   ipcMain.handle(IPC_CHANNELS.CATALOG_GET_CLOSED, () => {
@@ -112,16 +116,25 @@ export function registerIPCHandlers(): void {
     const settings = store.get('settings') as AppSettings | null
     if (!settings) throw { code: 'STORE_ERROR', message: 'Settings non configurate' }
 
-    const fetchedBugs = await fetchBugsFromQuery(settings)
+    const { bugs: fetchedBugs, allQueryIds } = await fetchBugsFromQuery(settings)
     const now = new Date().toISOString()
     const catalog = store.get('bugCatalog') as BugCatalog | null
+    const catalogMetadata =
+      (store.get('catalogMetadata') as CatalogMetadata | null) ?? { lastClearedAt: null }
+    // A missing stored queryId (first-ever fetch, or a catalog persisted before this
+    // field existed) is treated as a mismatch: the safe default is to skip closure
+    // detection for this one fetch rather than risk closing a catalog whose scope
+    // was never actually verified against the current query.
+    const sameQuery = catalogMetadata.queryId === settings.queryId
     const { updatedCatalog, sessionBugs, newBugCount } = mergeFetchIntoCatalog(
       fetchedBugs,
       catalog,
-      now
+      now,
+      sameQuery ? new Set(allQueryIds) : null
     )
 
     store.set('bugCatalog', updatedCatalog)
+    store.set('catalogMetadata', { ...catalogMetadata, queryId: settings.queryId })
 
     const updatedSession: SessionData = {
       bugs: sessionBugs,

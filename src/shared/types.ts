@@ -122,6 +122,7 @@ export interface CatalogBug extends CategorizedBug {
 
 export interface CatalogMetadata {
   lastClearedAt: string | null
+  queryId?: string | null
 }
 
 export interface ClosedCatalogSnapshot {
