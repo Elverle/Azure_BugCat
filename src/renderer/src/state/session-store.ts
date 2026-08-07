@@ -11,6 +11,9 @@ const INITIAL_SESSION_STATE: SessionState = { session: null, loading: true }
 
 let sessionState: SessionState = INITIAL_SESSION_STATE
 let inFlightRead: Promise<void> | null = null
+// Bumped by every new read and by the test reset: a read whose generation is no
+// longer current has been superseded and must not touch the state nor notify.
+let readGeneration = 0
 const listeners = new Set<() => void>()
 
 function emitSessionChange(): void {
@@ -35,20 +38,26 @@ export function getSessionSnapshot(): SessionState {
   return sessionState
 }
 
-async function readSession(): Promise<void> {
+async function readSession(generation: number): Promise<void> {
   try {
     const session = (await window.electronAPI.getSession()) as SessionData | null
+    if (generation !== readGeneration) return
     sessionState = { session, loading: false }
   } catch (error: unknown) {
-    sessionState = { session: sessionState.session, loading: false }
+    if (generation === readGeneration) {
+      sessionState = { session: sessionState.session, loading: false }
+    }
     throw error
   } finally {
-    emitSessionChange()
+    if (generation === readGeneration) {
+      emitSessionChange()
+    }
   }
 }
 
 function startRead(): Promise<void> {
-  const pending = readSession()
+  readGeneration += 1
+  const pending = readSession(readGeneration)
   inFlightRead = pending
 
   const clearInFlight = (): void => {
@@ -77,6 +86,7 @@ export async function refreshSession(): Promise<void> {
 }
 
 export function resetSessionStoreForTests(): void {
+  readGeneration += 1
   sessionState = INITIAL_SESSION_STATE
   inFlightRead = null
   emitSessionChange()

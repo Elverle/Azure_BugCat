@@ -132,6 +132,63 @@ describe('session store', () => {
     expect(listener).toHaveBeenCalledTimes(1)
   })
 
+  it('ignores a stale read that settles after a newer one', async () => {
+    let resolveStaleRead!: (session: SessionData | null) => void
+    const getSession = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveStaleRead = resolve
+          })
+      )
+      .mockResolvedValueOnce(categorizedSession)
+    Object.defineProperty(window, 'electronAPI', {
+      configurable: true,
+      value: { getSession }
+    })
+
+    const staleRead = loadSession()
+    const freshRead = refreshSession()
+    await freshRead
+    expect(getSessionSnapshot().session).toEqual(categorizedSession)
+
+    const listener = vi.fn()
+    subscribeToSession(listener)
+
+    resolveStaleRead(fetchedSession)
+    await staleRead
+
+    expect(getSessionSnapshot().session).toEqual(categorizedSession)
+    expect(listener).not.toHaveBeenCalled()
+  })
+
+  it('drops a read still in flight when the store is reset', async () => {
+    let resolveRead!: (session: SessionData | null) => void
+    const getSession = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRead = resolve
+        })
+    )
+    Object.defineProperty(window, 'electronAPI', {
+      configurable: true,
+      value: { getSession }
+    })
+
+    const pendingRead = loadSession()
+    resetSessionStoreForTests()
+
+    const listener = vi.fn()
+    subscribeToSession(listener)
+
+    resolveRead(fetchedSession)
+    await pendingRead
+
+    expect(getSessionSnapshot()).toEqual({ session: null, loading: true })
+    expect(listener).not.toHaveBeenCalled()
+  })
+
   it('clears loading when the session read fails', async () => {
     const getSession = vi.fn().mockRejectedValue(new Error('store unreachable'))
     Object.defineProperty(window, 'electronAPI', {

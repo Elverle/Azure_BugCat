@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
-import { render, screen, fireEvent, within } from '@testing-library/react'
-import { vi, describe, it, expect } from 'vitest'
+import { render, screen, fireEvent, within, act } from '@testing-library/react'
+import { vi, describe, it, expect, afterEach } from 'vitest'
 import type { CategorizedBug } from '../../src/shared/types'
 import type { KpiData, FilterState, SortState } from '../../src/renderer/src/lib/dashboard-utils'
 import { KpiCards } from '../../src/renderer/src/components/dashboard/KpiCards'
@@ -302,5 +302,79 @@ describe('FilterBar', () => {
     renderFilterBar({ onCollapseAll })
     fireEvent.click(screen.getByText('Chiudi tutti'))
     expect(onCollapseAll).toHaveBeenCalledOnce()
+  })
+
+  describe('search debounce', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    function renderSearch(
+      searchText: string,
+      onSearchChange: (text: string) => void
+    ): { rerender: (nextSearchText: string) => void; input: HTMLInputElement } {
+      const props = {
+        filterState: defaultFilterState,
+        onFilterChange: vi.fn(),
+        filterOptions,
+        groupBy: 'none' as const,
+        onGroupByChange: vi.fn(),
+        onReset: vi.fn(),
+        onCollapseAll: vi.fn(),
+        allCollapsed: false,
+        onSearchChange
+      }
+      const view = render(<FilterBar {...props} searchText={searchText} />)
+      return {
+        rerender: (nextSearchText: string) =>
+          view.rerender(<FilterBar {...props} searchText={nextSearchText} />),
+        input: screen.getByPlaceholderText(
+          'Search titles, descriptions...'
+        ) as HTMLInputElement
+      }
+    }
+
+    it('clears the box and stays quiet when the search text is reset from outside', () => {
+      vi.useFakeTimers()
+      const onSearchChange = vi.fn()
+      const { rerender, input } = renderSearch('', onSearchChange)
+
+      fireEvent.change(input, { target: { value: 'ab' } })
+      act(() => {
+        vi.advanceTimersByTime(300)
+      })
+      expect(onSearchChange).toHaveBeenCalledExactlyOnceWith('ab')
+
+      // The parent commits the debounced value...
+      rerender('ab')
+      expect(input.value).toBe('ab')
+
+      // ...and then "Reset Filtri" clears it.
+      onSearchChange.mockClear()
+      rerender('')
+
+      expect(input.value).toBe('')
+      act(() => {
+        vi.advanceTimersByTime(300)
+      })
+      expect(onSearchChange).not.toHaveBeenCalled()
+    })
+
+    it('debounces typing into a single committed value', () => {
+      vi.useFakeTimers()
+      const onSearchChange = vi.fn()
+      const { input } = renderSearch('', onSearchChange)
+
+      fireEvent.change(input, { target: { value: 'a' } })
+      fireEvent.change(input, { target: { value: 'ab' } })
+      expect(input.value).toBe('ab')
+      expect(onSearchChange).not.toHaveBeenCalled()
+
+      act(() => {
+        vi.advanceTimersByTime(300)
+      })
+
+      expect(onSearchChange).toHaveBeenCalledExactlyOnceWith('ab')
+    })
   })
 })
