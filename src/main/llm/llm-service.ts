@@ -6,6 +6,13 @@ import {
   ChunkProgress,
   LLMCategorizeResult
 } from '../../shared/types'
+import {
+  UNCATEGORIZED,
+  PROCESSING_ERROR,
+  NO_LLM_RESPONSE,
+  NOT_AVAILABLE,
+  isFailedCategorization
+} from '../../shared/categorization'
 import { LLMProvider, ChatOptions } from './types'
 import { createLLMProvider } from './provider-factory'
 import { buildSystemPrompt, buildUserMessage } from './prompts'
@@ -247,9 +254,9 @@ export async function categorizeBugs(
 
       chunkResults = chunk.map((bug) => ({
         bugId: bug.id,
-        macroCategory: 'Non categorizzato',
-        subCategory: 'Errore elaborazione',
-        categoryReason: 'N/D'
+        macroCategory: UNCATEGORIZED,
+        subCategory: PROCESSING_ERROR,
+        categoryReason: NOT_AVAILABLE
       }))
     }
 
@@ -280,12 +287,13 @@ function applyCategorization(bugs: BugItem[], results: LLMCategorizeResult[]): C
 
   return bugs.map((bug) => {
     const result = resultMap.get(bug.id)
+    const macroCategory = result?.macroCategory ?? UNCATEGORIZED
     return {
       ...bug,
-      macroCategory: result?.macroCategory ?? 'Non categorizzato',
-      subCategory: result?.subCategory ?? 'Nessuna risposta LLM',
-      categoryReason: result?.categoryReason ?? 'N/D',
-      categorizedAt: now
+      macroCategory,
+      subCategory: result?.subCategory ?? NO_LLM_RESPONSE,
+      categoryReason: result?.categoryReason ?? NOT_AVAILABLE,
+      categorizedAt: isFailedCategorization(macroCategory) ? '' : now
     }
   })
 }

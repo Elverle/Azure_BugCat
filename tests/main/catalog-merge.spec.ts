@@ -12,6 +12,7 @@ import type {
   BugCatalog,
   SimilarityResult
 } from '@shared/types'
+import { UNCATEGORIZED } from '@shared/categorization'
 
 function makeBugItem(overrides: Partial<BugItem> = {}): BugItem {
   return {
@@ -42,6 +43,17 @@ function makeCatalogBug(overrides: Partial<CatalogBug> = {}): CatalogBug {
     inputSignature: '',
     everInSimilarityGroup: false,
     lastSimilarityGroupAt: null,
+    ...overrides
+  }
+}
+
+function makeCategorizedBug(overrides: Partial<CategorizedBug> = {}): CategorizedBug {
+  return {
+    ...makeBugItem(),
+    macroCategory: '',
+    subCategory: '',
+    categoryReason: '',
+    categorizedAt: '',
     ...overrides
   }
 }
@@ -386,6 +398,63 @@ describe('mergeCategorization', () => {
     const { updatedCatalog } = mergeCategorization(sessionBugs, llmResults, catalog, now)
 
     expect(updatedCatalog[7].inputSignature).toBe(expectedSig)
+  })
+})
+
+describe('mergeCategorization with failed results', () => {
+  it('does not set categorizedAt for fallback "Non categorizzato" results', () => {
+    const bug = makeCategorizedBug({ id: 1, macroCategory: '', categorizedAt: '' })
+    const catalog = { 1: makeCatalogBug({ id: 1, categorizedAt: '' }) }
+    const failed = {
+      ...bug,
+      macroCategory: UNCATEGORIZED,
+      subCategory: 'Errore elaborazione',
+      categoryReason: 'N/D',
+      categorizedAt: '2026-01-01T00:00:00Z'
+    }
+
+    const { updatedCatalog, updatedSessionBugs } = mergeCategorization(
+      [bug],
+      [failed],
+      catalog,
+      '2026-01-01T00:00:00Z'
+    )
+
+    expect(updatedCatalog[1].categorizedAt).toBe('')
+    expect(updatedSessionBugs[0].categorizedAt).toBe('')
+    expect(updatedCatalog[1].macroCategory).toBe(UNCATEGORIZED)
+  })
+
+  it('keeps failed bugs eligible for re-categorization on next fetch (reset branch)', () => {
+    // Catalog entry left behind by a fallback categorization: macroCategory is the
+    // UNCATEGORIZED sentinel but categorizedAt is empty, and the bug's input has not
+    // changed since (same inputSignature). mergeFetchIntoCatalog must still take the
+    // reset branch (categorizedAt falsy) rather than the carry-over branch, so the bug
+    // is sent back to the LLM on the next categorization run instead of being treated
+    // as "already categorized as Non categorizzato".
+    const bug = makeBugItem({ id: 60 })
+    const signature = computeInputSignature(bug)
+    const catalog: BugCatalog = {
+      60: makeCatalogBug({
+        id: 60,
+        macroCategory: UNCATEGORIZED,
+        subCategory: 'Errore elaborazione',
+        categoryReason: 'N/D',
+        categorizedAt: '',
+        inputSignature: signature
+      })
+    }
+
+    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog(
+      [bug],
+      catalog,
+      '2026-01-01T00:00:00Z'
+    )
+
+    expect(sessionBugs[0].macroCategory).toBe('')
+    expect(sessionBugs[0].categorizedAt).toBe('')
+    expect(updatedCatalog[60].macroCategory).toBe('')
+    expect(updatedCatalog[60].categorizedAt).toBe('')
   })
 })
 

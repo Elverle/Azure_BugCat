@@ -113,6 +113,12 @@ describe('llm-service', () => {
       expect(result[0].macroCategory).toBe('Non categorizzato')
       expect(result[1].macroCategory).toBe('Non categorizzato')
       expect(result[2].macroCategory).toBe('OK')
+
+      // Fallback results must stay eligible for retry — no categorizedAt — while a
+      // genuinely successful chunk is stamped as categorized.
+      expect(result[0].categorizedAt).toBe('')
+      expect(result[1].categorizedAt).toBe('')
+      expect(result[2].categorizedAt).not.toBe('')
     })
 
     it('throws immediately on auth error', async () => {

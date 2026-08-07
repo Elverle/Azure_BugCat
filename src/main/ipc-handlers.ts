@@ -19,6 +19,7 @@ import {
   mergeCategorization,
   updateCatalogSimilarityMetadata
 } from './utils/catalog-merge'
+import { isFailedCategorization } from '../shared/categorization'
 
 function isAppError(error: unknown): error is AppError {
   return (
@@ -203,7 +204,7 @@ export function registerIPCHandlers(): void {
             macroCategory: llmResult.macroCategory,
             subCategory: llmResult.subCategory,
             categoryReason: llmResult.categoryReason,
-            categorizedAt: now
+            categorizedAt: isFailedCategorization(llmResult.macroCategory) ? '' : now
           }
         }
         return bug

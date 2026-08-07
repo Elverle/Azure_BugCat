@@ -6,6 +6,7 @@ import type {
   BugCatalog,
   SimilarityResult
 } from '@shared/types'
+import { isFailedCategorization } from '@shared/categorization'
 
 export interface MergeResult {
   updatedCatalog: BugCatalog
@@ -139,7 +140,7 @@ export function mergeCategorization(
         macroCategory: llmResult.macroCategory,
         subCategory: llmResult.subCategory,
         categoryReason: llmResult.categoryReason,
-        categorizedAt: now
+        categorizedAt: isFailedCategorization(llmResult.macroCategory) ? '' : now
       }
     }
     return { ...bug }
@@ -154,7 +155,7 @@ export function mergeCategorization(
         macroCategory: llmResult.macroCategory,
         subCategory: llmResult.subCategory,
         categoryReason: llmResult.categoryReason,
-        categorizedAt: now,
+        categorizedAt: isFailedCategorization(llmResult.macroCategory) ? '' : now,
         inputSignature: computeInputSignature(entry)
       }
       updatedCatalog[id] = updatedEntry
