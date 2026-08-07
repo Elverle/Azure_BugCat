@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug, SessionData, SimilarityResult } from '@shared/types'
 import { useAiCluster } from '@renderer/hooks/useAiCluster'
+import { resetSessionStoreForTests } from '@renderer/state/session-store'
 
 const mockBug: CategorizedBug = {
   id: 1,
@@ -66,6 +67,11 @@ function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): Elect
 describe('useAiCluster', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetSessionStoreForTests()
+  })
+
+  afterEach(() => {
+    resetSessionStoreForTests()
   })
 
   it('loads session on mount and sets canAnalyze when categorized', async () => {
@@ -131,6 +137,15 @@ describe('useAiCluster', () => {
 
   it('runs analysis and updates results', async () => {
     const api = installElectronApiMock()
+    // The main process persists the analysis into the session, so a later
+    // getSession returns it — the hook reads the results back from the store.
+    api.findSimilarBugs.mockImplementation(async () => {
+      api.getSession.mockResolvedValue({
+        ...mockSession,
+        similarityResults: mockSimilarityResult
+      })
+      return mockSimilarityResult
+    })
 
     const { result } = renderHook(() => useAiCluster())
 

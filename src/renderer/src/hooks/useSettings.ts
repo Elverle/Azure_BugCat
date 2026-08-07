@@ -46,7 +46,6 @@ const CONNECTION_TIMEOUT = 5000
 export function useSettings(): UseSettingsReturn {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
   const [originalSettings, setOriginalSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
-  const [errors, setErrors] = useState<Record<string, string | null>>({})
   const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -66,12 +65,10 @@ export function useSettings(): UseSettingsReturn {
         if (cancelled) return
         setSettings(loaded)
         setOriginalSettings(loaded)
-        setErrors(validateSettings(loaded))
       } catch {
         if (cancelled) return
         setSettings(DEFAULT_SETTINGS)
         setOriginalSettings(DEFAULT_SETTINGS)
-        setErrors(validateSettings(DEFAULT_SETTINGS))
         setSaveResult({ type: 'error', message: 'Failed to load settings. Using defaults.' })
       } finally {
         if (!cancelled) setLoading(false)
@@ -84,12 +81,8 @@ export function useSettings(): UseSettingsReturn {
     }
   }, [])
 
-  // Re-validate whenever settings change
-  useEffect(() => {
-    // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setErrors(validateSettings(settings))
-  }, [settings])
+  // Validation is a pure function of the current form state
+  const errors = useMemo(() => validateSettings(settings), [settings])
 
   const isDirty = useMemo(
     () => JSON.stringify(settings) !== JSON.stringify(originalSettings),
@@ -117,11 +110,7 @@ export function useSettings(): UseSettingsReturn {
     }
     setTouched(allTouched)
 
-    // Run full validation
-    const currentErrors = validateSettings(settings)
-    setErrors(currentErrors)
-
-    if (!isSettingsValid(currentErrors)) {
+    if (!isSettingsValid(errors)) {
       setSaveResult({ type: 'error', message: 'Please fix validation errors before saving.' })
       return
     }
@@ -137,7 +126,7 @@ export function useSettings(): UseSettingsReturn {
     } finally {
       setSaving(false)
     }
-  }, [settings])
+  }, [errors, settings])
 
   const clearSaveResult = useCallback(() => {
     setSaveResult(null)

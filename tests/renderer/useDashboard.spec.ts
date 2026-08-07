@@ -7,6 +7,7 @@ import {
   resetDashboardCategorizationUiStateForTests,
   useDashboard
 } from '@renderer/hooks/useDashboard'
+import { resetSessionStoreForTests } from '@renderer/state/session-store'
 
 const mockBug: CategorizedBug = {
   id: 1,
@@ -64,11 +65,13 @@ function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): Elect
 describe('useDashboard', () => {
   beforeEach(() => {
     resetDashboardCategorizationUiStateForTests()
+    resetSessionStoreForTests()
     installElectronApiMock()
   })
 
   afterEach(() => {
     resetDashboardCategorizationUiStateForTests()
+    resetSessionStoreForTests()
     vi.restoreAllMocks()
   })
 

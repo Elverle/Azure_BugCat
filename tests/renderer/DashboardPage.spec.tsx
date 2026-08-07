@@ -4,6 +4,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DashboardPage } from '@renderer/pages/DashboardPage'
 import { resetDashboardCategorizationUiStateForTests } from '@renderer/hooks/useDashboard'
+import { resetSessionStoreForTests } from '@renderer/state/session-store'
 import type { SessionData } from '@shared/types'
 
 const mockSession: SessionData = {
@@ -77,6 +78,7 @@ const mockElectronAPI = {
 describe('DashboardPage', () => {
   beforeEach(() => {
     resetDashboardCategorizationUiStateForTests()
+    resetSessionStoreForTests()
     vi.restoreAllMocks()
     vi.clearAllMocks()
 
@@ -115,6 +117,31 @@ describe('DashboardPage', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('#101')).toBeInTheDocument()
     expect(screen.getByText('#102')).toBeInTheDocument()
+  })
+
+  it('resyncs the Similarita section from the shared session store after a categorization', async () => {
+    const recategorizedSession: SessionData = {
+      bugs: mockSession.bugs,
+      fetchedAt: mockSession.fetchedAt,
+      categorizedAt: '2026-01-02T10:00:00Z'
+    }
+    // Mirrors the main process: categorizing rewrites the session and drops the
+    // similarity results computed against the previous categorization.
+    mockElectronAPI.categorizeBugs.mockImplementation(async () => {
+      mockElectronAPI.getSession.mockResolvedValue(recategorizedSession)
+    })
+
+    render(<DashboardPage />)
+
+    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    fireEvent.click(similarityTab)
+    expect(await screen.findByText('Motivazione')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /categorize/i }))
+
+    // No remount key on the section: it re-reads the refreshed session by itself.
+    expect(await screen.findByText('Nessuna analisi eseguita')).toBeInTheDocument()
+    expect(screen.queryByText('Motivazione')).not.toBeInTheDocument()
   })
 
   it('shows a popup when categorization fails with a blocking error', async () => {

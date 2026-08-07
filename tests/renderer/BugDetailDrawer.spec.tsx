@@ -176,6 +176,17 @@ describe('BugDetailDrawer', () => {
     expect(description?.className).not.toContain('max-h-64')
   })
 
+  it('collapses the description again when the drawer switches to another bug', () => {
+    const { rerender } = render(<BugDetailDrawer {...defaultProps} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Espandi descrizione' }))
+    expect(screen.getByRole('button', { name: 'Riduci descrizione' })).toBeInTheDocument()
+
+    rerender(<BugDetailDrawer {...defaultProps} bug={makeBug({ id: 2048 })} />)
+
+    expect(screen.getByRole('button', { name: 'Espandi descrizione' })).toBeInTheDocument()
+  })
+
   it('renders images from the HTML description', async () => {
     render(
       <BugDetailDrawer

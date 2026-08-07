@@ -2,11 +2,20 @@ import {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   useRef,
   useSyncExternalStore,
   type MutableRefObject
 } from 'react'
-import type { CategorizedBug, SessionData, ChunkProgress } from '@shared/types'
+import type { CategorizedBug, ChunkProgress } from '@shared/types'
+import {
+  getSessionSnapshot,
+  loadSession,
+  refreshSession,
+  subscribeToSession
+} from '@renderer/state/session-store'
+
+const NO_BUGS: CategorizedBug[] = []
 
 interface CategorizationUiState {
   isCategorizing: boolean
@@ -119,76 +128,49 @@ function createProgressSubscription(cleanupRef: MutableRefObject<(() => void) | 
 }
 
 export function useDashboard(): UseDashboardReturn {
-  const [bugs, setBugs] = useState<CategorizedBug[]>([])
-  const [loading, setLoading] = useState(true)
-  const [sessionInfo, setSessionInfo] = useState<{
-    fetchedAt: string | null
-    categorizedAt: string | null
-    lastFetchNewCount: number | null
-  }>({
-    fetchedAt: null,
-    categorizedAt: null,
-    lastFetchNewCount: null
-  })
+  const [isFetching, setIsFetching] = useState(false)
 
   const cleanupRef = useRef<(() => void) | null>(null)
+  const sessionState = useSyncExternalStore(
+    subscribeToSession,
+    getSessionSnapshot,
+    getSessionSnapshot
+  )
   const currentCategorizationUiState = useSyncExternalStore(
     subscribeToCategorizationUiState,
     getCategorizationUiState,
     getCategorizationUiState
   )
 
-  const loadSession = useCallback(async () => {
-    const session = (await window.electronAPI.getSession()) as SessionData | null
-    if (session) {
-      setBugs(session.bugs)
-      setSessionInfo({
-        fetchedAt: session.fetchedAt,
-        categorizedAt: session.categorizedAt ?? null,
-        lastFetchNewCount: session.lastFetchNewCount ?? null
-      })
-    } else {
-      setBugs([])
-      setSessionInfo({ fetchedAt: null, categorizedAt: null, lastFetchNewCount: null })
-    }
-  }, [])
+  const session = sessionState.session
+  const bugs = session?.bugs ?? NO_BUGS
+  const loading = sessionState.loading || isFetching
+
+  const sessionInfo = useMemo(
+    () => ({
+      fetchedAt: session?.fetchedAt ?? null,
+      categorizedAt: session?.categorizedAt ?? null,
+      lastFetchNewCount: session?.lastFetchNewCount ?? null
+    }),
+    [session]
+  )
 
   // Load session on mount
   useEffect(() => {
     let cancelled = false
 
     async function init(): Promise<void> {
-      try {
-        const [session, categorizationStatus] = await Promise.all([
-          window.electronAPI.getSession(),
-          window.electronAPI.getCategorizationStatus()
-        ])
+      const [, categorizationStatus] = await Promise.all([
+        loadSession(),
+        window.electronAPI.getCategorizationStatus()
+      ])
 
-        if (cancelled) {
-          return
-        }
+      if (cancelled) {
+        return
+      }
 
-        const typedSession = session as SessionData | null
-        if (typedSession) {
-          setBugs(typedSession.bugs)
-          setSessionInfo({
-            fetchedAt: typedSession.fetchedAt,
-            categorizedAt: typedSession.categorizedAt ?? null,
-            lastFetchNewCount: typedSession.lastFetchNewCount ?? null
-          })
-        } else {
-          setBugs([])
-          setSessionInfo({ fetchedAt: null, categorizedAt: null, lastFetchNewCount: null })
-        }
-
-        if (categorizationStatus.active) {
-          updateCategorizationUiState((state) => ({
-            ...state,
-            isCategorizing: true
-          }))
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
+      if (categorizationStatus.active) {
+        updateCategorizationUiState({ isCategorizing: true })
       }
     }
 
@@ -196,7 +178,7 @@ export function useDashboard(): UseDashboardReturn {
     return () => {
       cancelled = true
     }
-  }, [loadSession])
+  }, [])
 
   // Cleanup progress listener on unmount
   useEffect(() => {
@@ -223,14 +205,14 @@ export function useDashboard(): UseDashboardReturn {
   }, [currentCategorizationUiState.isCategorizing])
 
   const fetchBugs = useCallback(async () => {
-    setLoading(true)
+    setIsFetching(true)
     try {
       await window.electronAPI.fetchBugs()
-      await loadSession()
+      await refreshSession()
     } finally {
-      setLoading(false)
+      setIsFetching(false)
     }
-  }, [loadSession])
+  }, [])
 
   const categorizeBugs = useCallback(async () => {
     if (loading || currentCategorizationUiState.isCategorizing) {
@@ -247,7 +229,7 @@ export function useDashboard(): UseDashboardReturn {
 
     try {
       await window.electronAPI.categorizeBugs()
-      await loadSession()
+      await refreshSession()
     } catch (error: unknown) {
       if (isCancellationError(error)) {
         return
@@ -261,7 +243,7 @@ export function useDashboard(): UseDashboardReturn {
         progress: null
       })
     }
-  }, [currentCategorizationUiState.isCategorizing, loadSession, loading])
+  }, [currentCategorizationUiState.isCategorizing, loading])
 
   const cancelCategorization = useCallback(async () => {
     if (!currentCategorizationUiState.isCategorizing || currentCategorizationUiState.isCancelling) {

@@ -36,14 +36,11 @@ export function FilterBar({
   searchText,
   onSearchChange
 }: FilterBarProps): JSX.Element {
-  const [localSearch, setLocalSearch] = useState(searchText)
+  // The draft is tagged with the committed text it was typed over, so a search
+  // text changed elsewhere (reset button) wins without an effect syncing it back.
+  const [draft, setDraft] = useState<{ committed: string; text: string } | null>(null)
+  const localSearch = draft?.committed === searchText ? draft.text : searchText
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLocalSearch(searchText)
-  }, [searchText])
 
   useEffect(() => {
     if (localSearch === searchText) return
@@ -67,7 +64,7 @@ export function FilterBar({
           type="text"
           placeholder="Search titles, descriptions..."
           value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
+          onChange={(e) => setDraft({ committed: searchText, text: e.target.value })}
           className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none"
         />
       </div>

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import type { CategorizedBug } from '@shared/types'
 
 export interface UseBugDrawerReturn {
@@ -13,58 +13,37 @@ export interface UseBugDrawerReturn {
 }
 
 export function useBugDrawer(bugList: CategorizedBug[]): UseBugDrawerReturn {
-  const [selectedBug, setSelectedBug] = useState<CategorizedBug | null>(null)
-  const [isOpen, setIsOpen] = useState(false)
+  // Only the id is kept: the bug itself is always read back from the current list,
+  // so the drawer follows fresh data and closes on its own when the bug drops out.
+  const [selectedBugId, setSelectedBugId] = useState<number | null>(null)
 
   const currentIndex = useMemo(() => {
-    if (!selectedBug) return -1
-    return bugList.findIndex((b) => b.id === selectedBug.id)
-  }, [selectedBug, bugList])
+    if (selectedBugId === null) return -1
+    return bugList.findIndex((b) => b.id === selectedBugId)
+  }, [selectedBugId, bugList])
 
-  // Auto-close if selected bug is no longer in the filtered list
-  useEffect(() => {
-    if (isOpen && selectedBug && currentIndex === -1) {
-      // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setIsOpen(false)
-      setSelectedBug(null)
-    }
-  }, [isOpen, selectedBug, currentIndex])
-
-  // Keep selectedBug in sync with latest data from bugList
-  useEffect(() => {
-    if (isOpen && selectedBug && currentIndex >= 0) {
-      const updated = bugList[currentIndex]
-      if (updated !== selectedBug) {
-        // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setSelectedBug(updated)
-      }
-    }
-  }, [bugList, currentIndex, isOpen, selectedBug])
-
+  const selectedBug = currentIndex >= 0 ? bugList[currentIndex] : null
+  const isOpen = selectedBug !== null
   const hasPrev = currentIndex > 0
   const hasNext = currentIndex >= 0 && currentIndex < bugList.length - 1
 
   const openDrawer = useCallback((bug: CategorizedBug) => {
-    setSelectedBug(bug)
-    setIsOpen(true)
+    setSelectedBugId(bug.id)
   }, [])
 
   const closeDrawer = useCallback(() => {
-    setIsOpen(false)
-    setSelectedBug(null)
+    setSelectedBugId(null)
   }, [])
 
   const goToPrev = useCallback(() => {
     if (currentIndex > 0) {
-      setSelectedBug(bugList[currentIndex - 1])
+      setSelectedBugId(bugList[currentIndex - 1].id)
     }
   }, [currentIndex, bugList])
 
   const goToNext = useCallback(() => {
     if (currentIndex >= 0 && currentIndex < bugList.length - 1) {
-      setSelectedBug(bugList[currentIndex + 1])
+      setSelectedBugId(bugList[currentIndex + 1].id)
     }
   }, [currentIndex, bugList])
 

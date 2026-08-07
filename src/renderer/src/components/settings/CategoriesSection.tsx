@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Tags, Info } from 'lucide-react'
 import { Textarea } from '@renderer/components/ui/textarea'
 import { Button } from '@renderer/components/ui/button'
@@ -19,13 +19,10 @@ export function CategoriesSection({
   categoriesToText,
   textToCategories
 }: CategoriesSectionProps): React.JSX.Element {
-  const [textValue, setTextValue] = useState(() => categoriesToText(categories))
-
-  useEffect(() => {
-    // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTextValue(categoriesToText(categories))
-  }, [categories, categoriesToText])
+  // The draft is tagged with the categories it was typed over, so a normalization
+  // (or a reset) coming back from the parent wins without an effect syncing it back.
+  const [draft, setDraft] = useState<{ source: string[]; text: string } | null>(null)
+  const textValue = draft?.source === categories ? draft.text : categoriesToText(categories)
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -41,7 +38,7 @@ export function CategoriesSection({
             id="categories"
             placeholder="Enter one category per line..."
             value={textValue}
-            onChange={(e) => setTextValue(e.target.value)}
+            onChange={(e) => setDraft({ source: categories, text: e.target.value })}
             onBlur={() => onCategoriesChange(textToCategories(textValue))}
             className="min-h-[160px]"
           />

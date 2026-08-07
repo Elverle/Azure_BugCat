@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import type {
-  SimilarityResult,
-  SimilarityProgress,
-  SessionData,
-  CategorizedBug
-} from '@shared/types'
+import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react'
+import type { SimilarityResult, SimilarityProgress, CategorizedBug } from '@shared/types'
+import {
+  getSessionSnapshot,
+  loadSession,
+  refreshSession,
+  subscribeToSession
+} from '@renderer/state/session-store'
 
 export interface UseAiClusterReturn {
   results: SimilarityResult | null
@@ -18,38 +19,23 @@ export interface UseAiClusterReturn {
   analyze: () => Promise<void>
 }
 
+const NO_BUGS: CategorizedBug[] = []
+
 export function useAiCluster(): UseAiClusterReturn {
-  const [results, setResults] = useState<SimilarityResult | null>(null)
-  const [bugs, setBugs] = useState<CategorizedBug[]>([])
-  const [loading, setLoading] = useState(true)
   const [analyzing, setAnalyzing] = useState(false)
   const [progress, setProgress] = useState<SimilarityProgress | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [categorizedAt, setCategorizedAt] = useState<string | null>(null)
 
   const cleanupRef = useRef<(() => void) | null>(null)
+  const sessionState = useSyncExternalStore(
+    subscribeToSession,
+    getSessionSnapshot,
+    getSessionSnapshot
+  )
 
   // Load session on mount
   useEffect(() => {
-    let cancelled = false
-
-    async function init(): Promise<void> {
-      try {
-        const session = (await window.electronAPI.getSession()) as SessionData | null
-        if (!cancelled && session) {
-          setCategorizedAt(session.categorizedAt ?? null)
-          setResults(session.similarityResults ?? null)
-          setBugs(session.bugs)
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    init()
-    return () => {
-      cancelled = true
-    }
+    loadSession()
   }, [])
 
   // Cleanup progress listener on unmount
@@ -61,6 +47,14 @@ export function useAiCluster(): UseAiClusterReturn {
       }
     }
   }, [])
+
+  const session = sessionState.session
+  const bugs = session?.bugs ?? NO_BUGS
+  const categorizedAt = session?.categorizedAt ?? null
+  // The main process persists the analysis into the session, so the store stays
+  // the single source of truth: a fetch or a categorization drops the results
+  // there and this hook reflects it without needing to be remounted.
+  const results = session?.similarityResults ?? null
 
   const canAnalyze = Boolean(
     categorizedAt && bugs.some((b) => b.macroCategory && b.macroCategory !== 'Non categorizzato')
@@ -80,8 +74,8 @@ export function useAiCluster(): UseAiClusterReturn {
     cleanupRef.current = cleanup
 
     try {
-      const result = (await window.electronAPI.findSimilarBugs()) as SimilarityResult
-      setResults(result)
+      await window.electronAPI.findSimilarBugs()
+      await refreshSession()
     } catch (err: unknown) {
       const message =
         err !== null && typeof err === 'object' && 'message' in err
@@ -98,5 +92,15 @@ export function useAiCluster(): UseAiClusterReturn {
     }
   }, [])
 
-  return { results, bugs, loading, analyzing, progress, canAnalyze, isStale, error, analyze }
+  return {
+    results,
+    bugs,
+    loading: sessionState.loading,
+    analyzing,
+    progress,
+    canAnalyze,
+    isStale,
+    error,
+    analyze
+  }
 }

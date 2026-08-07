@@ -54,7 +54,7 @@ export function DashboardPage(): JSX.Element {
     clearCategorizeError
   } = useDashboard()
 
-  const [filterState, setFilterState] = useState<FilterState>(EMPTY_FILTER_STATE)
+  const [selectedFilters, setSelectedFilters] = useState<FilterState>(EMPTY_FILTER_STATE)
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORT_STATE)
   const [groupBy, setGroupBy] = useState<GroupBy>('none')
   const [viewMode, setViewMode] = useState<ViewMode>('table')
@@ -65,6 +65,39 @@ export function DashboardPage(): JSX.Element {
     orgUrl: '',
     projectName: ''
   })
+
+  // Filter options derived from ALL bugs so user can always see all options
+  const filterOptions = useMemo(() => {
+    const assignees = getUniqueValues(bugs, 'assignee')
+    const hasUnassigned = bugs.some((b) => b.assignee == null)
+    if (hasUnassigned && !assignees.includes('Unassigned')) {
+      assignees.push('Unassigned')
+      assignees.sort((a, b) => a.localeCompare(b))
+    }
+
+    return {
+      statuses: getUniqueValues(bugs, 'state'),
+      assignees,
+      macroCategories: getUniqueValues(bugs, 'macroCategory'),
+      subCategories: getSubCategoriesForMacros(bugs, selectedFilters.macroCategories)
+    }
+  }, [bugs, selectedFilters.macroCategories])
+
+  // Sub-category selections that the current macro-category choice (or the current
+  // bug set) no longer offers are dropped here rather than reconciled in an effect.
+  const filterState = useMemo<FilterState>(() => {
+    if (selectedFilters.subCategories.length === 0) {
+      return selectedFilters
+    }
+
+    const reconciled = selectedFilters.subCategories.filter((sub) =>
+      filterOptions.subCategories.includes(sub)
+    )
+
+    return reconciled.length === selectedFilters.subCategories.length
+      ? selectedFilters
+      : { ...selectedFilters, subCategories: reconciled }
+  }, [selectedFilters, filterOptions.subCategories])
 
   // Computed values
   const filteredBugs = useMemo(
@@ -101,45 +134,6 @@ export function DashboardPage(): JSX.Element {
     [sortedBugs, groupBy]
   )
 
-  // Filter options derived from ALL bugs so user can always see all options
-  const filterOptions = useMemo(() => {
-    const assignees = getUniqueValues(bugs, 'assignee')
-    const hasUnassigned = bugs.some((b) => b.assignee == null)
-    if (hasUnassigned && !assignees.includes('Unassigned')) {
-      assignees.push('Unassigned')
-      assignees.sort((a, b) => a.localeCompare(b))
-    }
-
-    return {
-      statuses: getUniqueValues(bugs, 'state'),
-      assignees,
-      macroCategories: getUniqueValues(bugs, 'macroCategory'),
-      subCategories: getSubCategoriesForMacros(bugs, filterState.macroCategories)
-    }
-  }, [bugs, filterState.macroCategories])
-
-  // Reconcile sub-category selections when macro-categories change
-  useEffect(() => {
-    if (filterState.subCategories.length > 0) {
-      const validSubs = filterOptions.subCategories
-      const reconciled = filterState.subCategories.filter((s) => validSubs.includes(s))
-      if (reconciled.length !== filterState.subCategories.length) {
-        // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setFilterState((prev) => ({ ...prev, subCategories: reconciled }))
-      }
-    }
-  }, [filterOptions.subCategories]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Expand all groups by default when groupBy changes
-  useEffect(() => {
-    if (groupedBugs) {
-      // Sintomo dell'issue 2.3 (stato di sessione duplicato); rimosso dal Task 22.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setExpandedGroups(new Set(groupedBugs.keys()))
-    }
-  }, [groupBy]) // eslint-disable-line react-hooks/exhaustive-deps
-
   // Fetch ADO settings for "View in Azure DevOps" link
   useEffect(() => {
     window.electronAPI.getSettings().then((s: unknown) => {
@@ -161,11 +155,25 @@ export function DashboardPage(): JSX.Element {
     })
   }, [])
 
+  // Grouping changes start with every group expanded
+  const changeGroupBy = useCallback(
+    (next: GroupBy) => {
+      setGroupBy(next)
+      if (next !== 'none') {
+        setExpandedGroups(new Set(groupBugs(sortedBugs, next).keys()))
+      }
+    },
+    [sortedBugs]
+  )
+
   // Tab switching
-  const setTab = useCallback((mode: ViewMode) => {
-    setViewMode(mode)
-    setGroupBy(mode === 'card' ? 'macroCategory' : 'none')
-  }, [])
+  const setTab = useCallback(
+    (mode: ViewMode) => {
+      setViewMode(mode)
+      changeGroupBy(mode === 'card' ? 'macroCategory' : 'none')
+    },
+    [changeGroupBy]
+  )
 
   // Expand/Collapse
   const toggleGroup = useCallback((groupName: string) => {
@@ -192,11 +200,11 @@ export function DashboardPage(): JSX.Element {
 
   // Reset all filters
   const handleReset = useCallback(() => {
-    setFilterState(EMPTY_FILTER_STATE)
+    setSelectedFilters(EMPTY_FILTER_STATE)
     setSearchText('')
     setSortState(DEFAULT_SORT_STATE)
-    setGroupBy('none')
-  }, [])
+    changeGroupBy('none')
+  }, [changeGroupBy])
 
   // View in Azure DevOps
   const adoLinkEnabled = Boolean(adoSettings.orgUrl && adoSettings.projectName)
@@ -307,10 +315,10 @@ export function DashboardPage(): JSX.Element {
         {viewMode !== 'similarity' && (
           <FilterBar
             filterState={filterState}
-            onFilterChange={setFilterState}
+            onFilterChange={setSelectedFilters}
             filterOptions={filterOptions}
             groupBy={groupBy}
-            onGroupByChange={setGroupBy}
+            onGroupByChange={changeGroupBy}
             onReset={handleReset}
             onCollapseAll={handleCollapseAll}
             allCollapsed={allCollapsed}
@@ -321,11 +329,7 @@ export function DashboardPage(): JSX.Element {
 
         {/* Bug list */}
         {viewMode === 'similarity' ? (
-          <DashboardSimilaritySection
-            key={`${sessionInfo.fetchedAt ?? 'none'}-${sessionInfo.categorizedAt ?? 'none'}`}
-            bugs={bugs}
-            onBugClick={handleSimilarityBugClick}
-          />
+          <DashboardSimilaritySection bugs={bugs} onBugClick={handleSimilarityBugClick} />
         ) : filteredBugs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center">
             <p className="text-sm text-gray-500">Nessun bug corrisponde ai filtri</p>
