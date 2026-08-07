@@ -8,7 +8,8 @@ import {
   isAppError,
   TEST_CONNECTION_SYSTEM_PROMPT,
   TEST_CONNECTION_USER_MESSAGE,
-  throwAppError
+  throwAppError,
+  throwIfRequestAborted
 } from './provider-shared'
 
 export class GeminiProvider implements LLMProvider {
@@ -44,6 +45,7 @@ export class GeminiProvider implements LLMProvider {
       return content
     } catch (error: unknown) {
       if (isAppError(error)) throw error
+      throwIfRequestAborted(requestTimeout, 'Gemini')
       const message = error instanceof Error ? error.message : String(error)
       if (message.includes('429') || message.includes('RESOURCE_EXHAUSTED')) {
         throwAppError('LLM_RATE_LIMIT', 'Rate limit raggiunto per Gemini')
@@ -54,12 +56,6 @@ export class GeminiProvider implements LLMProvider {
         message.includes('API_KEY_INVALID')
       ) {
         throwAppError('LLM_AUTH_ERROR', 'Autenticazione non valida per gemini')
-      }
-      if (error instanceof Error && error.name === 'AbortError') {
-        if (!requestTimeout.didTimeout()) {
-          throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
-        }
-        throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta a Gemini')
       }
       throwAppError('UNKNOWN_ERROR', `Errore Gemini: ${message}`)
     } finally {

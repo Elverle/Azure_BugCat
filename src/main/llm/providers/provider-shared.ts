@@ -72,6 +72,28 @@ export function createRequestTimeout(
   }
 }
 
+/**
+ * Classifies an aborted request as a timeout or a user cancellation using the
+ * abort signal's own state, never the thrown error's `.name`. The OpenAI and
+ * Anthropic SDKs raise `APIUserAbortError` on abort, whose `.name` is
+ * `'Error'` — matching on `error.name === 'AbortError'` is dead code for
+ * those providers. `signal.aborted` is provider-agnostic and always true
+ * when the abort actually happened, regardless of which library threw.
+ *
+ * No-op if the signal was never aborted, so callers can call this
+ * unconditionally before falling through to their own error mapping.
+ */
+export function throwIfRequestAborted(
+  requestTimeout: { didTimeout: () => boolean; signal: AbortSignal },
+  providerLabel: string
+): void {
+  if (!requestTimeout.signal.aborted) return
+  if (requestTimeout.didTimeout()) {
+    throwAppError('LLM_TIMEOUT', `Timeout nella richiesta a ${providerLabel}`)
+  }
+  throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
+}
+
 export function getStructuredOutputMetadata(responseSchema: ChatOptions['responseSchema']): {
   schemaName: string
   anthropicToolName: string

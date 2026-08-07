@@ -8,7 +8,8 @@ import {
   isAppError,
   TEST_CONNECTION_SYSTEM_PROMPT,
   TEST_CONNECTION_USER_MESSAGE,
-  throwAppError
+  throwAppError,
+  throwIfRequestAborted
 } from './provider-shared'
 
 function isLikelyHtmlResponse(response: Response, bodyText: string): boolean {
@@ -119,12 +120,7 @@ export class GenericProvider implements LLMProvider {
       return content
     } catch (error: unknown) {
       if (isAppError(error)) throw error
-      if (error instanceof Error && error.name === 'AbortError') {
-        if (!requestTimeout.didTimeout()) {
-          throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
-        }
-        throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta al provider generico')
-      }
+      throwIfRequestAborted(requestTimeout, 'il provider generico')
       throwAppError(
         'UNKNOWN_ERROR',
         `Errore provider generico: ${error instanceof Error ? error.message : 'sconosciuto'}`
