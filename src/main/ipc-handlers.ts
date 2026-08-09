@@ -223,6 +223,14 @@ export function registerIPCHandlers(): void {
       if (abortController && categorizeControllers.get(webContentsId) === abortController) {
         categorizeControllers.delete(webContentsId)
       }
+      try {
+        event.sender.send(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
+      } catch {
+        // The renderer window may have closed mid-run. A throw from this
+        // finally block would replace whatever the handler is really
+        // returning or rejecting with, so the notification failure is
+        // deliberately swallowed here.
+      }
     }
   })
   handle(IPC_CHANNELS.LLM_CATEGORIZE_CANCEL, async (event: IpcMainInvokeEvent) => {

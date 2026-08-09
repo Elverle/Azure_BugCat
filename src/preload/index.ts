@@ -40,6 +40,11 @@ const electronAPI = {
     ipcRenderer.on(IPC_CHANNELS.LLM_CATEGORIZE_PROGRESS, handler)
     return () => ipcRenderer.removeListener(IPC_CHANNELS.LLM_CATEGORIZE_PROGRESS, handler)
   },
+  onCategorizeDone: (callback: () => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on(IPC_CHANNELS.LLM_CATEGORIZE_DONE, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.LLM_CATEGORIZE_DONE, handler)
+  },
 
   // LLM - Similarity
   findSimilarBugs: () => invoke(IPC_CHANNELS.LLM_FIND_SIMILAR),

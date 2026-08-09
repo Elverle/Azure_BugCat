@@ -784,6 +784,77 @@ describe('registerIPCHandlers', () => {
     })
   })
 
+  describe('LLM_CATEGORIZE — done event, post-reload resync (review M5)', () => {
+    const NOW = '2026-06-01T00:00:00.000Z'
+
+    const uncategorizedBug = (id: number): unknown => ({
+      id,
+      title: `Bug ${id}`,
+      state: 'Active',
+      assignee: null,
+      areaPath: 'Project\\Area',
+      description: `Description ${id}`,
+      priority: 2,
+      createdDate: '2024-01-01T00:00:00Z',
+      updatedDate: '2024-01-01T00:00:00Z',
+      tags: [],
+      macroCategory: '',
+      subCategory: '',
+      categoryReason: '',
+      categorizedAt: ''
+    })
+
+    it('sends LLM_CATEGORIZE_DONE once the run settles, so a reloaded renderer can resync', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'session') return { bugs: [uncategorizedBug(1)], fetchedAt: NOW }
+        return null
+      })
+      categorizeBugs.mockResolvedValue([
+        {
+          ...(uncategorizedBug(1) as Record<string, unknown>),
+          macroCategory: 'UI',
+          subCategory: 'Layout',
+          categoryReason: 'reason',
+          categorizedAt: NOW
+        }
+      ])
+
+      const send = vi.fn()
+      const event = { sender: { id: 10, send } }
+
+      await handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)?.(event)
+
+      expect(send).toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
+    })
+
+    it('does not let a send failure on a destroyed webContents replace the real outcome (review addendum §2)', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'session') return { bugs: [uncategorizedBug(1)], fetchedAt: NOW }
+        return null
+      })
+      categorizeBugs.mockRejectedValue({
+        code: 'LLM_TIMEOUT',
+        message: 'Request to OpenAI timed out'
+      })
+
+      // Simulates the window having closed mid-run: send() throws synchronously,
+      // as Electron does for a destroyed webContents.
+      const send = vi.fn(() => {
+        throw new Error('Object has been destroyed')
+      })
+      const event = { sender: { id: 11, send } }
+
+      // Without the guard, the throw from send() inside the finally block would
+      // replace this rejection with an unrelated UNKNOWN_ERROR.
+      await expect(handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)?.(event)).rejects.toThrow(
+        'LLM_TIMEOUT::Request to OpenAI timed out'
+      )
+      expect(send).toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
+    })
+  })
+
   describe('LLM_FIND_SIMILAR — catalog metadata update', () => {
     it('updates catalog similarity metadata after finding similar bugs', async () => {
       const session = {

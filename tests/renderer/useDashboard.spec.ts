@@ -40,6 +40,7 @@ type ElectronApiMock = {
   categorizeBugs: ReturnType<typeof vi.fn>
   cancelCategorization: ReturnType<typeof vi.fn>
   onCategorizeProgress: ReturnType<typeof vi.fn>
+  onCategorizeDone: ReturnType<typeof vi.fn>
 }
 
 function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): ElectronApiMock {
@@ -51,6 +52,7 @@ function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): Elect
     categorizeBugs: vi.fn().mockResolvedValue(undefined),
     cancelCategorization: vi.fn().mockResolvedValue({ cancelled: true }),
     onCategorizeProgress: vi.fn().mockReturnValue(cleanup),
+    onCategorizeDone: vi.fn().mockReturnValue(cleanup),
     ...overrides
   }
 
@@ -369,9 +371,14 @@ describe('useDashboard', () => {
     const cleanup = vi.fn()
     installElectronApiMock({
       onCategorizeProgress: vi.fn().mockReturnValue(cleanup),
-      categorizeBugs: vi
-        .fn()
-        .mockImplementation(() => new Promise<void>((resolve) => setTimeout(resolve, 100)))
+      categorizeBugs: vi.fn().mockImplementation(
+        () =>
+          new Promise<void>(() => {
+            // Stays pending for the life of the test — unmount happens before
+            // it would ever resolve, and a real timer here would leak a
+            // pending callback into whichever test runs next.
+          })
+      )
     })
 
     const { result, unmount } = renderHook(() => useDashboard())
@@ -387,5 +394,75 @@ describe('useDashboard', () => {
     unmount()
 
     expect(cleanup).toHaveBeenCalled()
+  })
+
+  it('resyncs when attaching to an active run and the main process signals completion', async () => {
+    let doneCallback: (() => void) | null = null
+    const api = installElectronApiMock({
+      getCategorizationStatus: vi.fn().mockResolvedValue({ active: true }),
+      onCategorizeDone: vi.fn((cb: () => void) => {
+        doneCallback = cb
+        return () => {}
+      })
+    })
+
+    const { result } = renderHook(() => useDashboard())
+    await waitFor(() => expect(result.current.isCategorizing).toBe(true))
+
+    act(() => {
+      doneCallback?.()
+    })
+
+    await waitFor(() => expect(result.current.isCategorizing).toBe(false))
+    // getSession called twice: initial mount load + resync triggered by the done event
+    expect(api.getSession).toHaveBeenCalledTimes(2)
+  })
+
+  it('stays idempotent when the done event and the local run promise both settle for the same run', async () => {
+    let doneCallback: (() => void) | null = null
+    let resolveCategorizeBugs: (() => void) | undefined
+    const api = installElectronApiMock({
+      onCategorizeDone: vi.fn((cb: () => void) => {
+        doneCallback = cb
+        return () => {}
+      }),
+      categorizeBugs: vi.fn().mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveCategorizeBugs = resolve
+          })
+      )
+    })
+
+    const { result } = renderHook(() => useDashboard())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    act(() => {
+      void result.current.categorizeBugs()
+    })
+    await waitFor(() => expect(doneCallback).not.toBeNull())
+
+    // In production the main process sends LLM_CATEGORIZE_DONE from the handler's
+    // `finally`, synchronously before the invoke() promise itself settles, so the
+    // renderer sees this event before categorizeBugs()'s own promise resolves.
+    act(() => {
+      doneCallback?.()
+    })
+    await waitFor(() => expect(result.current.isCategorizing).toBe(false))
+
+    // The local run's own promise then resolves too, running its own success
+    // path (refreshSession + the same UI reset) on top of what the done event
+    // already did. Both paths must converge on the same correct state.
+    await act(async () => {
+      resolveCategorizeBugs?.()
+    })
+
+    expect(result.current.isCategorizing).toBe(false)
+    expect(result.current.categorizeError).toBeNull()
+    // mount + done-triggered resync + the local success path's own refresh:
+    // the second refresh is redundant work, not a correctness issue, because
+    // refreshSession's generation counter discards the outcome of whichever
+    // read is no longer the latest one.
+    expect(api.getSession).toHaveBeenCalledTimes(3)
   })
 })

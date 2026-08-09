@@ -183,6 +183,24 @@ export function useDashboard(): UseDashboardReturn {
     }
   }, [currentCategorizationUiState.isCategorizing])
 
+  // Resync when the main process reports a categorization run is done — the run
+  // keeps going there even if this renderer reloaded mid-run and never started
+  // it, so its own promise resolving is not something we can rely on. Also
+  // fires for a locally started run alongside categorizeBugs()'s own success
+  // path; both converge on the same state, so running twice is harmless.
+  useEffect(() => {
+    if (!currentCategorizationUiState.isCategorizing) {
+      return
+    }
+
+    return window.electronAPI.onCategorizeDone(() => {
+      // refreshSession(), not loadSession(): a read already in flight could
+      // resolve with data captured before the run finished.
+      refreshSession().catch(() => undefined)
+      updateCategorizationUiState({ isCategorizing: false, isCancelling: false, progress: null })
+    })
+  }, [currentCategorizationUiState.isCategorizing])
+
   const fetchBugs = useCallback(async () => {
     setIsFetching(true)
     setFetchError(null)

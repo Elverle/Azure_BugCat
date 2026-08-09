@@ -70,6 +70,7 @@ const mockElectronAPI = {
   categorizeBugs: vi.fn(),
   cancelCategorization: vi.fn(),
   onCategorizeProgress: vi.fn(() => vi.fn()),
+  onCategorizeDone: vi.fn(() => vi.fn()),
   openExternal: vi.fn().mockResolvedValue(undefined),
   findSimilarBugs: vi.fn(),
   cancelFindSimilar: vi.fn(),
