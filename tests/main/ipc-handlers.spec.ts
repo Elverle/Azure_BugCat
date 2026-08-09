@@ -71,6 +71,10 @@ const baseSettings: AppSettings = {
   categories: []
 }
 
+const fetchEvent = (): { sender: { id: number; send: ReturnType<typeof vi.fn> } } => ({
+  sender: { id: 1, send: vi.fn() }
+})
+
 describe('registerIPCHandlers', () => {
   beforeEach(() => {
     handlers.clear()
@@ -158,7 +162,7 @@ describe('registerIPCHandlers', () => {
   it('reads persisted settings for bug fetching and throws if they are missing', async () => {
     storeGet.mockReturnValueOnce(null)
 
-    await expect(handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()).rejects.toThrow(
+    await expect(handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())).rejects.toThrow(
       'STORE_ERROR::Settings not configured'
     )
 
@@ -185,7 +189,7 @@ describe('registerIPCHandlers', () => {
       allQueryIds: [1]
     })
 
-    const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+    const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
     expect(fetchBugsFromQuery).toHaveBeenCalledWith(baseSettings)
     expect(storeSet).toHaveBeenCalledWith('bugCatalog', expect.any(Object))
     expect(storeSet).toHaveBeenCalledWith(
@@ -334,7 +338,7 @@ describe('registerIPCHandlers', () => {
       })
       fetchBugsFromQuery.mockResolvedValue({ bugs: [makeBug(1), makeBug(2)], allQueryIds: [1, 2] })
 
-      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
 
       expect(storeSet).toHaveBeenCalledWith(
         'bugCatalog',
@@ -386,7 +390,7 @@ describe('registerIPCHandlers', () => {
       })
       fetchBugsFromQuery.mockResolvedValue({ bugs: [bug1], allQueryIds: [1] })
 
-      const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+      const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
 
       expect(result).toEqual([
         expect.objectContaining({
@@ -433,7 +437,7 @@ describe('registerIPCHandlers', () => {
       })
       fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [] }) // Bug 1 not in this fetch, and not beyond topN either
 
-      const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+      const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
 
       expect(result).toEqual([]) // No session bugs
       const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
@@ -474,7 +478,7 @@ describe('registerIPCHandlers', () => {
       })
       fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [] }) // Bug 1 absent from this fetch too
 
-      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
 
       const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
       expect(catalogCall![1][1].closedAt).toBeNull()
@@ -517,7 +521,7 @@ describe('registerIPCHandlers', () => {
       // so this fetch must not derive any closures from it.
       fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [999] })
 
-      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
 
       const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
       expect(catalogCall![1][1].closedAt).toBeNull()
@@ -526,6 +530,30 @@ describe('registerIPCHandlers', () => {
       expect(metadataCall![1]).toEqual(
         expect.objectContaining({ queryId: baseSettings.queryId })
       )
+    })
+  })
+
+  describe('ADO_FETCH_BUGS — concurrency guard', () => {
+    it('rejects a second concurrent bug fetch on the same webContents', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'bugCatalog') return null
+        return null
+      })
+
+      fetchBugsFromQuery.mockImplementation(
+        () =>
+          new Promise(() => {
+            // Stays pending so the second invocation hits the in-flight guard.
+          })
+      )
+
+      const fetchHandler = handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)
+      const event = { sender: { id: 55, send: vi.fn() } }
+
+      void fetchHandler?.(event)
+
+      await expect(fetchHandler?.(event)).rejects.toThrow(/already in progress/i)
     })
   })
 

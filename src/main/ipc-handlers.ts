@@ -43,6 +43,9 @@ function handle<Args extends unknown[]>(
 export function registerIPCHandlers(): void {
   const categorizeControllers = new Map<number, AbortController>()
   const similarityControllers = new Map<number, AbortController>()
+  // ADO_FETCH_BUGS needs no cancellation, only in-flight bookkeeping, so this
+  // tracks a per-run token rather than an AbortController.
+  const pendingFetches = new Map<number, symbol>()
 
   // Ping
   handle(IPC_CHANNELS.PING, () => 'pong')
@@ -94,38 +97,54 @@ export function registerIPCHandlers(): void {
   })
 
   // Azure DevOps
-  handle(IPC_CHANNELS.ADO_FETCH_BUGS, async () => {
+  handle(IPC_CHANNELS.ADO_FETCH_BUGS, async (event: IpcMainInvokeEvent) => {
+    const webContentsId = event.sender.id
+    if (pendingFetches.has(webContentsId)) {
+      throwAppError('UNKNOWN_ERROR', 'Fetch already in progress')
+    }
+
     const settings = store.get('settings') as AppSettings | null
     if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
-    const { bugs: fetchedBugs, allQueryIds } = await fetchBugsFromQuery(settings)
-    const now = new Date().toISOString()
-    const catalog = store.get('bugCatalog') as BugCatalog | null
-    const catalogMetadata =
-      (store.get('catalogMetadata') as CatalogMetadata | null) ?? { lastClearedAt: null }
-    // A missing stored queryId (first-ever fetch, or a catalog persisted before this
-    // field existed) is treated as a mismatch: the safe default is to skip closure
-    // detection for this one fetch rather than risk closing a catalog whose scope
-    // was never actually verified against the current query.
-    const sameQuery = catalogMetadata.queryId === settings.queryId
-    const { updatedCatalog, sessionBugs, newBugCount } = mergeFetchIntoCatalog(
-      fetchedBugs,
-      catalog,
-      now,
-      sameQuery ? new Set(allQueryIds) : null
-    )
+    const token = Symbol('ado-fetch')
+    pendingFetches.set(webContentsId, token)
 
-    store.set('bugCatalog', updatedCatalog)
-    store.set('catalogMetadata', { ...catalogMetadata, queryId: settings.queryId })
+    try {
+      const { bugs: fetchedBugs, allQueryIds } = await fetchBugsFromQuery(settings)
+      const now = new Date().toISOString()
+      const catalog = store.get('bugCatalog') as BugCatalog | null
+      const catalogMetadata =
+        (store.get('catalogMetadata') as CatalogMetadata | null) ?? { lastClearedAt: null }
+      // A missing stored queryId (first-ever fetch, or a catalog persisted before this
+      // field existed) is treated as a mismatch: the safe default is to skip closure
+      // detection for this one fetch rather than risk closing a catalog whose scope
+      // was never actually verified against the current query.
+      const sameQuery = catalogMetadata.queryId === settings.queryId
+      const { updatedCatalog, sessionBugs, newBugCount } = mergeFetchIntoCatalog(
+        fetchedBugs,
+        catalog,
+        now,
+        sameQuery ? new Set(allQueryIds) : null
+      )
 
-    const updatedSession: SessionData = {
-      bugs: sessionBugs,
-      fetchedAt: now,
-      lastFetchNewCount: newBugCount
+      store.set('bugCatalog', updatedCatalog)
+      store.set('catalogMetadata', { ...catalogMetadata, queryId: settings.queryId })
+
+      const updatedSession: SessionData = {
+        bugs: sessionBugs,
+        fetchedAt: now,
+        lastFetchNewCount: newBugCount
+      }
+      store.set('session', updatedSession)
+
+      return updatedSession.bugs
+    } finally {
+      // Only remove the entry if it is still the one this run registered — a
+      // late finisher must not delete a newer run's entry.
+      if (pendingFetches.get(webContentsId) === token) {
+        pendingFetches.delete(webContentsId)
+      }
     }
-    store.set('session', updatedSession)
-
-    return updatedSession.bugs
   })
   handle(IPC_CHANNELS.ADO_TEST_CONNECTION, async (_event, settingsOverride?: AppSettings) => {
     const settings = settingsOverride ?? (store.get('settings') as AppSettings | null) ?? null

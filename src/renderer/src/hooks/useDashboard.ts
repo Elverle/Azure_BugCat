@@ -1,5 +1,4 @@
 import {
-  useState,
   useEffect,
   useCallback,
   useMemo,
@@ -70,6 +69,53 @@ export function resetDashboardCategorizationUiStateForTests(): void {
   emitCategorizationUiStateChange()
 }
 
+// Fetch state is kept out of categorizationUiState on purpose: fetch and
+// categorization are independent runs (see LLM_CATEGORIZE and ADO_FETCH_BUGS
+// in ipc-handlers.ts, each guarded and tracked separately in the main
+// process), so a stray write from one must not touch the other's UI state.
+interface FetchUiState {
+  isFetching: boolean
+  fetchError: string | null
+}
+
+const INITIAL_FETCH_UI_STATE: FetchUiState = {
+  isFetching: false,
+  fetchError: null
+}
+
+let fetchUiState: FetchUiState = INITIAL_FETCH_UI_STATE
+const fetchUiStateListeners = new Set<() => void>()
+
+function emitFetchUiStateChange(): void {
+  for (const listener of fetchUiStateListeners) {
+    listener()
+  }
+}
+
+function getFetchUiState(): FetchUiState {
+  return fetchUiState
+}
+
+function subscribeToFetchUiState(listener: () => void): () => void {
+  fetchUiStateListeners.add(listener)
+  return () => {
+    fetchUiStateListeners.delete(listener)
+  }
+}
+
+function updateFetchUiState(
+  updater: Partial<FetchUiState> | ((state: FetchUiState) => FetchUiState)
+): void {
+  fetchUiState =
+    typeof updater === 'function' ? updater(fetchUiState) : { ...fetchUiState, ...updater }
+  emitFetchUiStateChange()
+}
+
+export function resetDashboardFetchUiStateForTests(): void {
+  fetchUiState = INITIAL_FETCH_UI_STATE
+  emitFetchUiStateChange()
+}
+
 export interface UseDashboardReturn {
   bugs: CategorizedBug[]
   loading: boolean
@@ -101,9 +147,6 @@ function createProgressSubscription(cleanupRef: MutableRefObject<(() => void) | 
 }
 
 export function useDashboard(): UseDashboardReturn {
-  const [isFetching, setIsFetching] = useState(false)
-  const [fetchError, setFetchError] = useState<string | null>(null)
-
   const cleanupRef = useRef<(() => void) | null>(null)
   const sessionState = useSyncExternalStore(
     subscribeToSession,
@@ -115,10 +158,15 @@ export function useDashboard(): UseDashboardReturn {
     getCategorizationUiState,
     getCategorizationUiState
   )
+  const currentFetchUiState = useSyncExternalStore(
+    subscribeToFetchUiState,
+    getFetchUiState,
+    getFetchUiState
+  )
 
   const session = sessionState.session
   const bugs = session?.bugs ?? NO_BUGS
-  const loading = sessionState.loading || isFetching
+  const loading = sessionState.loading || currentFetchUiState.isFetching
 
   const sessionInfo = useMemo(
     () => ({
@@ -202,19 +250,18 @@ export function useDashboard(): UseDashboardReturn {
   }, [currentCategorizationUiState.isCategorizing])
 
   const fetchBugs = useCallback(async () => {
-    setIsFetching(true)
-    setFetchError(null)
+    updateFetchUiState({ isFetching: true, fetchError: null })
     try {
       await window.electronAPI.fetchBugs()
       await refreshSession()
     } catch (error: unknown) {
-      setFetchError(extractErrorMessage(error))
+      updateFetchUiState({ fetchError: extractErrorMessage(error) })
     } finally {
-      setIsFetching(false)
+      updateFetchUiState({ isFetching: false })
     }
   }, [])
 
-  const clearFetchError = useCallback(() => setFetchError(null), [])
+  const clearFetchError = useCallback(() => updateFetchUiState({ fetchError: null }), [])
 
   const categorizeBugs = useCallback(async () => {
     if (loading || currentCategorizationUiState.isCategorizing) {
@@ -277,7 +324,7 @@ export function useDashboard(): UseDashboardReturn {
     isCancelling: currentCategorizationUiState.isCancelling,
     progress: currentCategorizationUiState.progress,
     categorizeError: currentCategorizationUiState.categorizeError,
-    fetchError,
+    fetchError: currentFetchUiState.fetchError,
     sessionInfo,
     fetchBugs,
     categorizeBugs,

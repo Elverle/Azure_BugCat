@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug, ChunkProgress, SessionData } from '@shared/types'
 import {
   resetDashboardCategorizationUiStateForTests,
+  resetDashboardFetchUiStateForTests,
   useDashboard
 } from '@renderer/hooks/useDashboard'
 import { resetSessionStoreForTests } from '@renderer/state/session-store'
@@ -67,12 +68,14 @@ function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): Elect
 describe('useDashboard', () => {
   beforeEach(() => {
     resetDashboardCategorizationUiStateForTests()
+    resetDashboardFetchUiStateForTests()
     resetSessionStoreForTests()
     installElectronApiMock()
   })
 
   afterEach(() => {
     resetDashboardCategorizationUiStateForTests()
+    resetDashboardFetchUiStateForTests()
     resetSessionStoreForTests()
     vi.restoreAllMocks()
   })
@@ -199,6 +202,43 @@ describe('useDashboard', () => {
     })
 
     expect(result.current.fetchError).toBeNull()
+  })
+
+  it('keeps fetchError visible on a fresh mount after the previous fetch failed while unmounted', async () => {
+    let rejectFetchBugs: (error: unknown) => void = () => {}
+    installElectronApiMock({
+      fetchBugs: vi.fn().mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            rejectFetchBugs = reject
+          })
+      )
+    })
+
+    const { result, unmount } = renderHook(() => useDashboard())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    let fetchPromise: Promise<void> = Promise.resolve()
+    act(() => {
+      fetchPromise = result.current.fetchBugs()
+    })
+
+    // Navigate away before the fetch settles — DashboardPage is a route and
+    // React Router unmounts it.
+    unmount()
+
+    await act(async () => {
+      rejectFetchBugs({ code: 'ADO_AUTH_ERROR', message: 'Authentication failed: 401' })
+      await fetchPromise
+    })
+
+    // Navigating back mounts a fresh hook instance. The error must still be
+    // visible: it lives in the module-level store, not in state local to the
+    // unmounted instance that could never flush it.
+    const { result: remounted } = renderHook(() => useDashboard())
+    await waitFor(() => expect(remounted.current.loading).toBe(false))
+
+    expect(remounted.current.fetchError).toBe('Authentication failed: 401')
   })
 
   it('categorizeBugs calls IPC and reloads session on success', async () => {

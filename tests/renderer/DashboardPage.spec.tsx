@@ -3,7 +3,10 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { DashboardPage } from '@renderer/pages/DashboardPage'
-import { resetDashboardCategorizationUiStateForTests } from '@renderer/hooks/useDashboard'
+import {
+  resetDashboardCategorizationUiStateForTests,
+  resetDashboardFetchUiStateForTests
+} from '@renderer/hooks/useDashboard'
 import { resetSessionStoreForTests } from '@renderer/state/session-store'
 import type { SessionData } from '@shared/types'
 
@@ -82,6 +85,7 @@ const mockElectronAPI = {
 describe('DashboardPage', () => {
   beforeEach(() => {
     resetDashboardCategorizationUiStateForTests()
+    resetDashboardFetchUiStateForTests()
     resetSessionStoreForTests()
     vi.restoreAllMocks()
     vi.clearAllMocks()
