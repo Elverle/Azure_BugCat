@@ -304,6 +304,12 @@ describe('registerIPCHandlers', () => {
     await expect(categorizeHandler?.(event)).rejects.toThrow(
       'UNKNOWN_ERROR::Categorization already in progress'
     )
+    // The rejected invocation never started a run (run 1 is still pending on
+    // the same webContents), so it must not announce completion — a renderer
+    // listening for run 1's DONE event would otherwise unsubscribe on this
+    // false signal and never hear about run 1's real completion (review M5
+    // fix round 1).
+    expect(event.sender.send).not.toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
   })
 
   describe('ADO_FETCH_BUGS — incremental merge', () => {
@@ -566,6 +572,10 @@ describe('registerIPCHandlers', () => {
           categorizedAt: expect.any(String)
         })
       )
+      // No run was ever registered for this invocation, so it must not send
+      // DONE — the caller's own promise resolving is already the complete
+      // signal here (review M5 fix round 1).
+      expect(event.sender.send).not.toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
     })
 
     it('does not update categorizedAt when all bugs already categorized and timestamp exists', async () => {

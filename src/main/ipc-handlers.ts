@@ -223,13 +223,24 @@ export function registerIPCHandlers(): void {
       if (abortController && categorizeControllers.get(webContentsId) === abortController) {
         categorizeControllers.delete(webContentsId)
       }
-      try {
-        event.sender.send(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
-      } catch {
-        // The renderer window may have closed mid-run. A throw from this
-        // finally block would replace whatever the handler is really
-        // returning or rejecting with, so the notification failure is
-        // deliberately swallowed here.
+      // Only announce completion for an invocation that actually started a run.
+      // Unlike LLM_FIND_SIMILAR, whose equivalent guards all sit before its try,
+      // LLM_CATEGORIZE's pre-flight checks (missing settings, empty session, the
+      // in-flight guard) and the "nothing left to categorize" early return all
+      // live inside this try, so abortController is the only reliable signal
+      // that a run was registered. Without this gate, a rejected concurrent
+      // invocation on the same webContents would send DONE while run 1 is still
+      // executing — a listener attached to run 1 would unsubscribe on that false
+      // signal and never hear about run 1's real completion.
+      if (abortController) {
+        try {
+          event.sender.send(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
+        } catch {
+          // The renderer window may have closed mid-run. A throw from this
+          // finally block would replace whatever the handler is really
+          // returning or rejecting with, so the notification failure is
+          // deliberately swallowed here.
+        }
       }
     }
   })
