@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppSettings } from '../../src/shared/types'
 import { IPC_CHANNELS } from '../../src/shared/ipc-channels'
+import { UNCATEGORIZED } from '../../src/shared/categorization'
 
 const {
   handlers,
@@ -727,6 +728,59 @@ describe('registerIPCHandlers', () => {
       expect(session.bugs.find((b) => b.id === 1)?.macroCategory).toBe('UI')
       expect(session.bugs.find((b) => b.id === 1)?.categorizedAt).not.toBe('')
       expect(session.bugs.find((b) => b.id === 2)?.categorizedAt).toBe('')
+    })
+
+    it('persists a chunk containing a failed categorization sentinel and keeps that bug retry-eligible', async () => {
+      // A sentinel-carrying chunk is the normal shape of a non-blocking chunk
+      // failure in production (llm-service.ts marks the chunk UNCATEGORIZED and
+      // still calls onProgress with it), not an exotic edge case — persistChunk
+      // must not treat it like a real categorization.
+      const fakeStore: Record<string, unknown> = {
+        settings: baseSettings,
+        session: { bugs: [uncategorized(1), uncategorized(2)], fetchedAt: NOW },
+        bugCatalog: { 1: catalogEntry(1), 2: catalogEntry(2) }
+      }
+      storeGet.mockImplementation((key: string) => fakeStore[key])
+      storeSet.mockImplementation((key: string, value: unknown) => {
+        fakeStore[key] = value
+      })
+
+      categorizeBugs.mockImplementation(
+        async (
+          _s: unknown,
+          _bugs: unknown,
+          onProgress: (progress: {
+            total: number
+            completed: number
+            currentChunk: unknown[]
+          }) => void
+        ) => {
+          onProgress({
+            total: 2,
+            completed: 1,
+            currentChunk: [categorized(1, UNCATEGORIZED)]
+          })
+          throw { code: 'LLM_TIMEOUT', message: 'Request to OpenAI timed out' }
+        }
+      )
+
+      await expect(handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)?.(fakeEvent())).rejects.toThrow(
+        /LLM_TIMEOUT/
+      )
+
+      const session = fakeStore.session as {
+        bugs: Array<{ id: number; macroCategory: string; categorizedAt: string }>
+      }
+      const bug1 = session.bugs.find((b) => b.id === 1)
+      expect(bug1?.macroCategory).toBe(UNCATEGORIZED)
+      expect(bug1?.categorizedAt).toBe('')
+
+      const catalog = fakeStore.bugCatalog as Record<
+        number,
+        { macroCategory: string; categorizedAt: string }
+      >
+      expect(catalog[1].macroCategory).toBe(UNCATEGORIZED)
+      expect(catalog[1].categorizedAt).toBe('')
     })
   })
 

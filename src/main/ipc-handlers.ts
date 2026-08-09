@@ -20,7 +20,6 @@ import {
   mergeCategorization,
   updateCatalogSimilarityMetadata
 } from './utils/catalog-merge'
-import { isFailedCategorization } from '../shared/categorization'
 
 /**
  * Registers an IPC handler whose rejections always reach the renderer in the
@@ -176,27 +175,23 @@ export function registerIPCHandlers(): void {
 
       // Persists one completed chunk immediately, so a run that later dies (timeout,
       // rate limit, cancel) does not throw away the chunks that already succeeded —
-      // the user would otherwise pay for those tokens again on retry.
+      // the user would otherwise pay for those tokens again on retry. Delegates the
+      // actual merge to mergeCategorization (Task 3) rather than duplicating its
+      // retry-eligibility ternary here — that catalog-merge.ts copy is the one with
+      // test coverage.
       const persistChunk = (chunk: CategorizedBug[]): void => {
         const currentSession = store.get('session') as SessionData | null
         if (!currentSession) return
-        const chunkMap = new Map(chunk.map((b) => [b.id, b]))
-        const mergedBugs = currentSession.bugs.map((bug) => {
-          const r = chunkMap.get(bug.id)
-          if (!r) return bug
-          return {
-            ...bug,
-            macroCategory: r.macroCategory,
-            subCategory: r.subCategory,
-            categoryReason: r.categoryReason,
-            categorizedAt: isFailedCategorization(r.macroCategory) ? '' : now
-          }
-        })
-        store.set('session', { ...currentSession, bugs: mergedBugs })
 
         const currentCatalog = store.get('bugCatalog') as BugCatalog | null
+        const { updatedSessionBugs, updatedCatalog } = mergeCategorization(
+          currentSession.bugs,
+          chunk,
+          currentCatalog ?? {},
+          now
+        )
+        store.set('session', { ...currentSession, bugs: updatedSessionBugs })
         if (currentCatalog) {
-          const { updatedCatalog } = mergeCategorization(mergedBugs, chunk, currentCatalog, now)
           store.set('bugCatalog', updatedCatalog)
         }
       }
