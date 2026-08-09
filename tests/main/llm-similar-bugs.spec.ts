@@ -7,6 +7,7 @@ const mockTestConnection = vi.fn()
 vi.mock('@main/llm/provider-factory', () => ({
   createLLMProvider: vi.fn(() => ({
     name: 'generic',
+    displayName: 'the generic provider',
     chat: mockChat,
     testConnection: mockTestConnection
   }))

@@ -103,6 +103,28 @@ describe('useDashboard', () => {
     })
   })
 
+  it('does not leave an unhandled rejection when the initial mount read fails', async () => {
+    const unhandled = vi.fn()
+    process.on('unhandledRejection', unhandled)
+
+    installElectronApiMock({
+      getSession: vi.fn().mockRejectedValue({ code: 'STORE_ERROR', message: 'Store unavailable' })
+    })
+
+    try {
+      const { result } = renderHook(() => useDashboard())
+
+      await waitFor(() => expect(result.current.loading).toBe(false))
+      // Node emits 'unhandledRejection' once the microtask queue drains.
+      await new Promise((resolve) => setTimeout(resolve, 0))
+
+      expect(unhandled).not.toHaveBeenCalled()
+      expect(result.current.bugs).toEqual([])
+    } finally {
+      process.off('unhandledRejection', unhandled)
+    }
+  })
+
   it('sets loading false after initial load', async () => {
     const { result } = renderHook(() => useDashboard())
 

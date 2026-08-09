@@ -151,7 +151,7 @@ export async function chatWithRetry(
         if (options?.signal?.aborted) {
           throw buildCancellationError()
         }
-        throwAppError('LLM_TIMEOUT', `Request to ${provider.name} timed out`, {
+        throwAppError('LLM_TIMEOUT', `Request to ${provider.displayName} timed out`, {
           provider: provider.name,
           attempt: attempt + 1,
           originalError: buildErrorDiagnostics(error)
@@ -213,7 +213,7 @@ export async function categorizeBugs(
           ? buildCancellationError()
           : ({
               code: 'LLM_TIMEOUT',
-              message: `Request to ${provider.name} timed out`,
+              message: `Request to ${provider.displayName} timed out`,
               details: {
                 provider: provider.name,
                 originalError: buildErrorDiagnostics(error)

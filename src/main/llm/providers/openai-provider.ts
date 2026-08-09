@@ -15,6 +15,7 @@ import {
 
 export class OpenAIProvider implements LLMProvider {
   readonly name = 'openai'
+  readonly displayName = 'OpenAI'
   private client: OpenAI
 
   constructor(private config: LLMProviderConfig) {

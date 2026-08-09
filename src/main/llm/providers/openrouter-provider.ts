@@ -213,6 +213,7 @@ function buildStructuredRequestDetails(
 
 export class OpenRouterProvider implements LLMProvider {
   readonly name = 'openrouter'
+  readonly displayName = 'OpenRouter'
   private client: OpenRouter
 
   constructor(private config: LLMProviderConfig) {

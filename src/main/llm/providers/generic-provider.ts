@@ -24,6 +24,7 @@ function isLikelyHtmlResponse(response: Response, bodyText: string): boolean {
 
 export class GenericProvider implements LLMProvider {
   readonly name = 'generic'
+  readonly displayName = 'the generic provider'
 
   constructor(private config: LLMProviderConfig) {
     assertApiKey(config.apiKey, 'the generic provider')
@@ -39,10 +40,7 @@ export class GenericProvider implements LLMProvider {
     }
     const isLocalhost = parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1'
     if (parsed.protocol !== 'https:' && !isLocalhost) {
-      throwAppError(
-        'UNKNOWN_ERROR',
-        'Base URL must use HTTPS (http is allowed only for localhost)'
-      )
+      throwAppError('UNKNOWN_ERROR', 'Base URL must use HTTPS (http is allowed only for localhost)')
     }
   }
 

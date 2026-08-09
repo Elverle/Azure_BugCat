@@ -156,7 +156,12 @@ export function useDashboard(): UseDashboardReturn {
       }
     }
 
-    init()
+    // The mount read touches only the local store, never Azure DevOps, so a
+    // failure here has no user-actionable message to show: the session store
+    // already degrades to `loading: false` keeping whatever it had. Swallowing
+    // it deliberately, because `loadSession()` rethrows to its callers and an
+    // unhandled rejection would surface as a console error instead.
+    init().catch(() => undefined)
     return () => {
       cancelled = true
     }

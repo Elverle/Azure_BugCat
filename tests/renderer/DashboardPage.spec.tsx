@@ -176,7 +176,9 @@ describe('DashboardPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: /Fetch Bugs/i }))
 
-    expect(await screen.findByRole('dialog', { name: 'Errore durante il fetch' })).toBeInTheDocument()
+    expect(
+      await screen.findByRole('dialog', { name: 'Errore durante il fetch' })
+    ).toBeInTheDocument()
     expect(screen.getByText('Authentication failed: 401 Unauthorized')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Chiudi' }))
@@ -186,6 +188,42 @@ describe('DashboardPage', () => {
         screen.queryByRole('dialog', { name: 'Errore durante il fetch' })
       ).not.toBeInTheDocument()
     )
+  })
+
+  it('shows the fetch error popup when the session is empty (fresh install, bad PAT)', async () => {
+    mockElectronAPI.getSession.mockResolvedValue(null)
+    mockElectronAPI.fetchBugs.mockRejectedValue({
+      code: 'ADO_AUTH_ERROR',
+      message: 'Authentication failed: 401 Unauthorized'
+    })
+
+    render(<DashboardPage />)
+
+    expect(await screen.findByText('Nessun bug caricato')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Fetch Bugs/i }))
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Errore durante il fetch' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('Authentication failed: 401 Unauthorized')).toBeInTheDocument()
+  })
+
+  it('shows the categorization error popup when the session is empty', async () => {
+    mockElectronAPI.getSession.mockResolvedValue(null)
+    mockElectronAPI.categorizeBugs.mockRejectedValue({
+      code: 'STORE_ERROR',
+      message: 'No bugs in the current session'
+    })
+
+    render(<DashboardPage />)
+
+    expect(await screen.findByText('Nessun bug caricato')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Categorize/i }))
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Errore categorizzazione' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('No bugs in the current session')).toBeInTheDocument()
   })
 
   it('shows the cancel button only while categorization is running and dismisses cancellation silently', async () => {

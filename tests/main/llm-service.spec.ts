@@ -7,6 +7,7 @@ const mockTestConnection = vi.fn()
 vi.mock('@main/llm/provider-factory', () => ({
   createLLMProvider: vi.fn(() => ({
     name: 'openai',
+    displayName: 'OpenAI',
     chat: mockChat,
     testConnection: mockTestConnection
   }))
@@ -145,7 +146,7 @@ describe('llm-service', () => {
       const parseError = {
         code: 'LLM_PARSE_ERROR',
         message:
-          'OpenRouter ha instradato la richiesta verso un provider o modello che non supporta correttamente structured outputs con json_schema. Seleziona un modello compatibile oppure cambia routing/provider.',
+          'OpenRouter routed the request to a provider or model that does not properly support structured outputs with json_schema. Select a compatible model, or change the routing/provider.',
         details: {
           reason: 'structured-output-routing-mismatch'
         }
@@ -169,6 +170,21 @@ describe('llm-service', () => {
 
       await expect(categorizeBugs(baseSettings, bugs)).rejects.toMatchObject({
         code: 'LLM_TIMEOUT'
+      })
+    })
+
+    it('names the provider by its display name in the timeout message, not its internal id', async () => {
+      mockChat.mockRejectedValueOnce({
+        name: 'AbortError',
+        message: 'This operation was aborted'
+      })
+
+      const bugs = [makeBug(1)]
+
+      await expect(categorizeBugs(baseSettings, bugs)).rejects.toMatchObject({
+        code: 'LLM_TIMEOUT',
+        message: 'Request to OpenAI timed out',
+        details: { provider: 'openai' }
       })
     })
 

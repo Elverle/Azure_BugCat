@@ -15,6 +15,7 @@ import {
 
 export class AnthropicProvider implements LLMProvider {
   readonly name = 'anthropic'
+  readonly displayName = 'Anthropic'
   private client: Anthropic
 
   constructor(private config: LLMProviderConfig) {

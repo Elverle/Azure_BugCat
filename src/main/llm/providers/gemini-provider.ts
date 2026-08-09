@@ -14,6 +14,7 @@ import {
 
 export class GeminiProvider implements LLMProvider {
   readonly name = 'gemini'
+  readonly displayName = 'Gemini'
   private client: GoogleGenAI
 
   constructor(private config: LLMProviderConfig) {

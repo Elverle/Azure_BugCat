@@ -228,28 +228,56 @@ export function DashboardPage(): JSX.Element {
     [bugs, openDrawer]
   )
 
+  // Rendered on EVERY branch: an operation can fail while no bugs are loaded
+  // (fresh install, bad PAT, empty query), which is exactly when the user has
+  // nothing else on screen to explain the failure.
+  const errorDialogs = (
+    <>
+      <ConfirmDialog
+        open={categorizeError !== null}
+        title="Errore categorizzazione"
+        description={categorizeError ?? ''}
+        confirmLabel="Chiudi"
+        onConfirm={clearCategorizeError}
+        onCancel={clearCategorizeError}
+      />
+
+      <ConfirmDialog
+        open={fetchError !== null}
+        title="Errore durante il fetch"
+        description={fetchError ?? ''}
+        confirmLabel="Chiudi"
+        onConfirm={clearFetchError}
+        onCancel={clearFetchError}
+      />
+    </>
+  )
+
   // No bugs loaded at all
   if (!loading && bugs.length === 0) {
     return (
-      <div className="flex-1 overflow-y-auto p-6">
-        <DashboardHeader
-          onFetch={fetchBugs}
-          onCategorize={categorizeBugs}
-          onCancelCategorize={cancelCategorization}
-          loading={loading}
-          isCategorizing={isCategorizing}
-          isCancelling={isCancelling}
-          sessionInfo={sessionInfo}
-          progress={progress}
-        />
-        <div className="flex flex-col items-center justify-center h-64 text-center">
-          <Bug className="w-12 h-12 text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-600">Nessun bug caricato</h3>
-          <p className="text-sm text-gray-400 mt-1">
-            Usa il pulsante &quot;Fetch Bugs&quot; per caricare i bug da Azure DevOps
-          </p>
+      <>
+        <div className="flex-1 overflow-y-auto p-6">
+          <DashboardHeader
+            onFetch={fetchBugs}
+            onCategorize={categorizeBugs}
+            onCancelCategorize={cancelCategorization}
+            loading={loading}
+            isCategorizing={isCategorizing}
+            isCancelling={isCancelling}
+            sessionInfo={sessionInfo}
+            progress={progress}
+          />
+          <div className="flex flex-col items-center justify-center h-64 text-center">
+            <Bug className="w-12 h-12 text-gray-300 mb-4" />
+            <h3 className="text-lg font-medium text-gray-600">Nessun bug caricato</h3>
+            <p className="text-sm text-gray-400 mt-1">
+              Usa il pulsante &quot;Fetch Bugs&quot; per caricare i bug da Azure DevOps
+            </p>
+          </div>
         </div>
-      </div>
+        {errorDialogs}
+      </>
     )
   }
 
@@ -398,23 +426,7 @@ export function DashboardPage(): JSX.Element {
         adoLinkEnabled={adoLinkEnabled}
       />
 
-      <ConfirmDialog
-        open={categorizeError !== null}
-        title="Errore categorizzazione"
-        description={categorizeError ?? ''}
-        confirmLabel="Chiudi"
-        onConfirm={clearCategorizeError}
-        onCancel={clearCategorizeError}
-      />
-
-      <ConfirmDialog
-        open={fetchError !== null}
-        title="Errore durante il fetch"
-        description={fetchError ?? ''}
-        confirmLabel="Chiudi"
-        onConfirm={clearFetchError}
-        onCancel={clearFetchError}
-      />
+      {errorDialogs}
     </>
   )
 }
