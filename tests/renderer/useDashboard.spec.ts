@@ -260,6 +260,40 @@ describe('useDashboard', () => {
     expect(result.current.isCategorizing).toBe(false)
   })
 
+  it('refreshes the session after a cancellation, so the partials persisted by the main process show up', async () => {
+    const partialBug: CategorizedBug = {
+      ...mockBug,
+      id: 2,
+      macroCategory: 'UI',
+      categorizedAt: '2026-01-02T00:00:00.000Z'
+    }
+    const partialSession: SessionData = { ...mockSession, bugs: [mockBug, partialBug] }
+
+    const getSession = vi
+      .fn()
+      .mockResolvedValueOnce(mockSession)
+      .mockResolvedValueOnce(partialSession)
+
+    installElectronApiMock({
+      getSession,
+      categorizeBugs: vi
+        .fn()
+        .mockRejectedValue({ code: 'OPERATION_CANCELLED', message: 'Operation cancelled' })
+    })
+
+    const { result } = renderHook(() => useDashboard())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.categorizeBugs()
+    })
+
+    // getSession called twice: initial load + refresh after the cancellation
+    expect(getSession).toHaveBeenCalledTimes(2)
+    expect(result.current.bugs).toEqual([mockBug, partialBug])
+  })
+
   it('surfaces a non-cancellation error even when its wording resembles a cancellation', async () => {
     // The code is the only signal: matching on message text used to swallow
     // genuine failures whose wording happened to mention a cancellation.

@@ -649,6 +649,87 @@ describe('registerIPCHandlers', () => {
     })
   })
 
+  describe('LLM_CATEGORIZE — incremental persistence per chunk (review 2.1)', () => {
+    const NOW = '2026-06-01T00:00:00.000Z'
+
+    const uncategorized = (id: number): unknown => ({
+      id,
+      title: `Bug ${id}`,
+      state: 'Active',
+      assignee: null,
+      areaPath: 'Project\\Area',
+      description: `Description ${id}`,
+      priority: 2,
+      createdDate: '2024-01-01T00:00:00Z',
+      updatedDate: '2024-01-01T00:00:00Z',
+      tags: [],
+      macroCategory: '',
+      subCategory: '',
+      categoryReason: '',
+      categorizedAt: ''
+    })
+
+    const categorized = (id: number, macroCategory: string): unknown => ({
+      ...(uncategorized(id) as Record<string, unknown>),
+      macroCategory,
+      subCategory: 'Layout',
+      categoryReason: 'Looks like a UI bug',
+      categorizedAt: '2026-06-01T00:00:01.000Z'
+    })
+
+    const catalogEntry = (id: number): unknown => ({
+      ...(uncategorized(id) as Record<string, unknown>),
+      firstSeenAt: '2024-05-01T00:00:00Z',
+      lastSeenAt: '2024-05-01T00:00:00Z',
+      closedAt: null,
+      inputSignature: `sig-${id}`,
+      everInSimilarityGroup: false,
+      lastSimilarityGroupAt: null
+    })
+
+    const fakeEvent = (): { sender: { id: number; send: ReturnType<typeof vi.fn> } } => ({
+      sender: { id: 1, send: vi.fn() }
+    })
+
+    it('persists completed chunks even when a later chunk fails with a blocking error', async () => {
+      const fakeStore: Record<string, unknown> = {
+        settings: baseSettings,
+        session: { bugs: [uncategorized(1), uncategorized(2)], fetchedAt: NOW },
+        bugCatalog: { 1: catalogEntry(1), 2: catalogEntry(2) }
+      }
+      storeGet.mockImplementation((key: string) => fakeStore[key])
+      storeSet.mockImplementation((key: string, value: unknown) => {
+        fakeStore[key] = value
+      })
+
+      categorizeBugs.mockImplementation(
+        async (
+          _s: unknown,
+          _bugs: unknown,
+          onProgress: (progress: {
+            total: number
+            completed: number
+            currentChunk: unknown[]
+          }) => void
+        ) => {
+          onProgress({ total: 2, completed: 1, currentChunk: [categorized(1, 'UI')] })
+          throw { code: 'LLM_TIMEOUT', message: 'Request to OpenAI timed out' }
+        }
+      )
+
+      await expect(handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)?.(fakeEvent())).rejects.toThrow(
+        /LLM_TIMEOUT/
+      )
+
+      const session = fakeStore.session as {
+        bugs: Array<{ id: number; macroCategory: string; categorizedAt: string }>
+      }
+      expect(session.bugs.find((b) => b.id === 1)?.macroCategory).toBe('UI')
+      expect(session.bugs.find((b) => b.id === 1)?.categorizedAt).not.toBe('')
+      expect(session.bugs.find((b) => b.id === 2)?.categorizedAt).toBe('')
+    })
+  })
+
   describe('LLM_FIND_SIMILAR — catalog metadata update', () => {
     it('updates catalog similarity metadata after finding similar bugs', async () => {
       const session = {

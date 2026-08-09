@@ -224,6 +224,9 @@ export function useDashboard(): UseDashboardReturn {
       await refreshSession()
     } catch (error: unknown) {
       if (isCancellationError(error)) {
+        // Chunks completed before the cancellation were already persisted by the
+        // main process (see LLM_CATEGORIZE's persistChunk) — refresh to show them.
+        await refreshSession()
         return
       }
 

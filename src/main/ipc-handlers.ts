@@ -5,6 +5,7 @@ import {
   AppSettings,
   BugCatalog,
   BugItem,
+  CategorizedBug,
   CatalogMetadata,
   ClosedCatalogSnapshot,
   SessionData,
@@ -173,6 +174,33 @@ export function registerIPCHandlers(): void {
         return session.bugs
       }
 
+      // Persists one completed chunk immediately, so a run that later dies (timeout,
+      // rate limit, cancel) does not throw away the chunks that already succeeded —
+      // the user would otherwise pay for those tokens again on retry.
+      const persistChunk = (chunk: CategorizedBug[]): void => {
+        const currentSession = store.get('session') as SessionData | null
+        if (!currentSession) return
+        const chunkMap = new Map(chunk.map((b) => [b.id, b]))
+        const mergedBugs = currentSession.bugs.map((bug) => {
+          const r = chunkMap.get(bug.id)
+          if (!r) return bug
+          return {
+            ...bug,
+            macroCategory: r.macroCategory,
+            subCategory: r.subCategory,
+            categoryReason: r.categoryReason,
+            categorizedAt: isFailedCategorization(r.macroCategory) ? '' : now
+          }
+        })
+        store.set('session', { ...currentSession, bugs: mergedBugs })
+
+        const currentCatalog = store.get('bugCatalog') as BugCatalog | null
+        if (currentCatalog) {
+          const { updatedCatalog } = mergeCategorization(mergedBugs, chunk, currentCatalog, now)
+          store.set('bugCatalog', updatedCatalog)
+        }
+      }
+
       abortController = new AbortController()
       categorizeControllers.set(webContentsId, abortController)
 
@@ -180,40 +208,21 @@ export function registerIPCHandlers(): void {
         settings,
         bugsToSend,
         (progress) => {
+          persistChunk(progress.currentChunk)
           event.sender.send(IPC_CHANNELS.LLM_CATEGORIZE_PROGRESS, progress)
         },
         abortController.signal
       )
 
-      // Merge LLM results back into full session bug list
-      const llmMap = new Map(categorized.map((b) => [b.id, b]))
-      const updatedSessionBugs = session.bugs.map((bug) => {
-        const llmResult = llmMap.get(bug.id)
-        if (llmResult) {
-          return {
-            ...bug,
-            macroCategory: llmResult.macroCategory,
-            subCategory: llmResult.subCategory,
-            categoryReason: llmResult.categoryReason,
-            categorizedAt: isFailedCategorization(llmResult.macroCategory) ? '' : now
-          }
-        }
-        return bug
-      })
+      // Bugs are already persisted chunk by chunk via persistChunk above. SESSION_CLEAR
+      // can land mid-run, so the session may be gone by the time we get here — in that
+      // case there is nothing to write back, just return what was categorized.
+      const finalSession = store.get('session') as SessionData | null
+      if (!finalSession) return categorized
 
-      const catalog = store.get('bugCatalog') as BugCatalog | null
-      if (catalog) {
-        const { updatedCatalog } = mergeCategorization(session.bugs, categorized, catalog, now)
-        store.set('bugCatalog', updatedCatalog)
-      }
-
-      const updatedSession: SessionData = {
-        bugs: updatedSessionBugs,
-        fetchedAt: session.fetchedAt,
-        categorizedAt: now
-      }
+      const updatedSession: SessionData = { ...finalSession, categorizedAt: now }
       store.set('session', updatedSession)
-      return updatedSessionBugs
+      return updatedSession.bugs
     } finally {
       if (abortController && categorizeControllers.get(webContentsId) === abortController) {
         categorizeControllers.delete(webContentsId)
