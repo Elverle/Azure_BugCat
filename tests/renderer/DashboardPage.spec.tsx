@@ -72,7 +72,10 @@ const mockElectronAPI = {
   onCategorizeProgress: vi.fn(() => vi.fn()),
   openExternal: vi.fn().mockResolvedValue(undefined),
   findSimilarBugs: vi.fn(),
-  onFindSimilarProgress: vi.fn(() => vi.fn())
+  cancelFindSimilar: vi.fn(),
+  getFindSimilarStatus: vi.fn(),
+  onFindSimilarProgress: vi.fn(() => vi.fn()),
+  onFindSimilarDone: vi.fn(() => vi.fn())
 }
 
 describe('DashboardPage', () => {
@@ -92,6 +95,8 @@ describe('DashboardPage', () => {
     mockElectronAPI.categorizeBugs.mockResolvedValue(undefined)
     mockElectronAPI.cancelCategorization.mockResolvedValue({ cancelled: true })
     mockElectronAPI.findSimilarBugs.mockResolvedValue(mockSession.similarityResults)
+    mockElectronAPI.cancelFindSimilar.mockResolvedValue({ cancelled: true })
+    mockElectronAPI.getFindSimilarStatus.mockResolvedValue({ active: false })
 
     Object.defineProperty(window, 'electronAPI', {
       configurable: true,

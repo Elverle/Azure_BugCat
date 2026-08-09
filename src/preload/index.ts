@@ -43,10 +43,17 @@ const electronAPI = {
 
   // LLM - Similarity
   findSimilarBugs: () => invoke(IPC_CHANNELS.LLM_FIND_SIMILAR),
+  cancelFindSimilar: () => invoke(IPC_CHANNELS.LLM_FIND_SIMILAR_CANCEL),
+  getFindSimilarStatus: () => invoke(IPC_CHANNELS.LLM_FIND_SIMILAR_STATUS),
   onFindSimilarProgress: (callback: (data: unknown) => void) => {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => callback(data)
     ipcRenderer.on(IPC_CHANNELS.LLM_FIND_SIMILAR_PROGRESS, handler)
     return () => ipcRenderer.removeListener(IPC_CHANNELS.LLM_FIND_SIMILAR_PROGRESS, handler)
+  },
+  onFindSimilarDone: (callback: () => void) => {
+    const handler = (): void => callback()
+    ipcRenderer.on(IPC_CHANNELS.LLM_FIND_SIMILAR_DONE, handler)
+    return () => ipcRenderer.removeListener(IPC_CHANNELS.LLM_FIND_SIMILAR_DONE, handler)
   },
 
   // Session

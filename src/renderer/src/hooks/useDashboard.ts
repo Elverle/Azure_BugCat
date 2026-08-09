@@ -15,6 +15,7 @@ import {
   refreshSession,
   subscribeToSession
 } from '@renderer/state/session-store'
+import { isCancellationError } from '@renderer/lib/cancellation'
 
 const NO_BUGS: CategorizedBug[] = []
 
@@ -87,15 +88,6 @@ export interface UseDashboardReturn {
   cancelCategorization: () => Promise<void>
   clearCategorizeError: () => void
   clearFetchError: () => void
-}
-
-function isCancellationError(error: unknown): boolean {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    (error as { code?: unknown }).code === 'OPERATION_CANCELLED'
-  )
 }
 
 function createProgressSubscription(cleanupRef: MutableRefObject<(() => void) | null>): void {

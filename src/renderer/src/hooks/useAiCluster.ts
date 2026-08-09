@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react'
 import type { SimilarityResult, SimilarityProgress, CategorizedBug } from '@shared/types'
+import { extractErrorMessage } from '@shared/app-error'
+import { isCancellationError } from '@renderer/lib/cancellation'
 import {
   getSessionSnapshot,
   loadSession,
@@ -17,6 +19,7 @@ export interface UseAiClusterReturn {
   isStale: boolean
   error: string | null
   analyze: () => Promise<void>
+  cancel: () => Promise<void>
 }
 
 const NO_BUGS: CategorizedBug[] = []
@@ -33,12 +36,61 @@ export function useAiCluster(): UseAiClusterReturn {
     getSessionSnapshot
   )
 
-  // Load session on mount
+  // Load session on mount, and reattach to a similarity run already in
+  // progress (e.g. after a renderer reload): the run itself keeps going in
+  // the main process, so without this the user would be stuck looking at an
+  // idle button with no way to see progress or cancel it.
   useEffect(() => {
-    loadSession()
+    let cancelled = false
+
+    async function init(): Promise<void> {
+      const [, status] = await Promise.all([
+        loadSession(),
+        window.electronAPI.getFindSimilarStatus()
+      ])
+
+      if (cancelled) {
+        return
+      }
+
+      // The guard on cleanupRef matters if the user starts `analyze()` themselves
+      // in the narrow window before this status check resolves: analyze() will
+      // already have installed its own progress subscription, and subscribing a
+      // second time here would leak one listener and double-fire the other.
+      if (status.active && !cleanupRef.current) {
+        setAnalyzing(true)
+
+        const cleanupProgress = window.electronAPI.onFindSimilarProgress((data) => {
+          setProgress(data as SimilarityProgress)
+        })
+        const cleanupDone = window.electronAPI.onFindSimilarDone(() => {
+          // refreshSession(), not loadSession(): a read already in flight could
+          // resolve with data captured before the run finished.
+          void refreshSession()
+          setAnalyzing(false)
+          setProgress(null)
+          cleanupProgress()
+          cleanupDone()
+          cleanupRef.current = null
+        })
+        cleanupRef.current = () => {
+          cleanupProgress()
+          cleanupDone()
+        }
+      }
+    }
+
+    // The mount read touches only the local store and the main process's
+    // in-memory run map, so a failure here has no user-actionable message to
+    // show. Swallowing it deliberately, because an unhandled rejection would
+    // otherwise surface as a console error instead (mirrors useDashboard).
+    init().catch(() => undefined)
+    return () => {
+      cancelled = true
+    }
   }, [])
 
-  // Cleanup progress listener on unmount
+  // Cleanup any active listener on unmount.
   useEffect(() => {
     return () => {
       if (cleanupRef.current) {
@@ -63,6 +115,10 @@ export function useAiCluster(): UseAiClusterReturn {
   const isStale = Boolean(results && categorizedAt && results.analyzedAt < categorizedAt)
 
   const analyze = useCallback(async () => {
+    if (analyzing) {
+      return
+    }
+
     setAnalyzing(true)
     setProgress(null)
     setError(null)
@@ -77,11 +133,10 @@ export function useAiCluster(): UseAiClusterReturn {
       await window.electronAPI.findSimilarBugs()
       await refreshSession()
     } catch (err: unknown) {
-      const message =
-        err !== null && typeof err === 'object' && 'message' in err
-          ? (err as { message: string }).message
-          : 'Errore durante l\u2019analisi di similarità'
-      setError(message)
+      // A user-initiated cancellation is not a failure — leave `error` unset.
+      if (!isCancellationError(err)) {
+        setError(extractErrorMessage(err))
+      }
     } finally {
       setAnalyzing(false)
       setProgress(null)
@@ -90,6 +145,10 @@ export function useAiCluster(): UseAiClusterReturn {
         cleanupRef.current = null
       }
     }
+  }, [analyzing])
+
+  const cancel = useCallback(async () => {
+    await window.electronAPI.cancelFindSimilar()
   }, [])
 
   return {
@@ -101,6 +160,7 @@ export function useAiCluster(): UseAiClusterReturn {
     canAnalyze,
     isStale,
     error,
-    analyze
+    analyze,
+    cancel
   }
 }

@@ -42,6 +42,7 @@ function handle<Args extends unknown[]>(
 
 export function registerIPCHandlers(): void {
   const categorizeControllers = new Map<number, AbortController>()
+  const similarityControllers = new Map<number, AbortController>()
 
   // Ping
   handle(IPC_CHANNELS.PING, () => 'pong')
@@ -258,6 +259,11 @@ export function registerIPCHandlers(): void {
   })
 
   handle(IPC_CHANNELS.LLM_FIND_SIMILAR, async (event: IpcMainInvokeEvent) => {
+    const webContentsId = event.sender.id
+    if (similarityControllers.has(webContentsId)) {
+      throwAppError('UNKNOWN_ERROR', 'Similarity analysis already in progress')
+    }
+
     const settings = store.get('settings') as AppSettings | null
     if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
@@ -265,22 +271,62 @@ export function registerIPCHandlers(): void {
     if (!session?.categorizedAt)
       throwAppError('STORE_ERROR', 'Categorization has not been run yet')
 
-    const result = await findSimilarBugs(settings, session.bugs, (progress) => {
-      event.sender.send(IPC_CHANNELS.LLM_FIND_SIMILAR_PROGRESS, progress)
-    })
+    const abortController = new AbortController()
+    similarityControllers.set(webContentsId, abortController)
 
-    // Persist results in session
-    const updatedSession: SessionData = { ...session, similarityResults: result }
-    store.set('session', updatedSession)
+    try {
+      const result = await findSimilarBugs(
+        settings,
+        session.bugs,
+        (progress) => {
+          event.sender.send(IPC_CHANNELS.LLM_FIND_SIMILAR_PROGRESS, progress)
+        },
+        abortController.signal
+      )
 
-    // Update catalog similarity metadata
-    const catalog = store.get('bugCatalog') as BugCatalog | null
-    if (catalog) {
-      const updatedCatalog = updateCatalogSimilarityMetadata(catalog, result)
-      store.set('bugCatalog', updatedCatalog)
+      // Re-read the session now rather than reusing the object captured above:
+      // a bug fetch or categorization can complete while the analysis is
+      // running, and writing back the stale object would silently revert it
+      // (review 2.2, lost update).
+      const latestSession = store.get('session') as SessionData | null
+      if (latestSession) {
+        store.set('session', { ...latestSession, similarityResults: result })
+      }
+
+      // Update catalog similarity metadata against the catalog as it stands now.
+      const catalog = store.get('bugCatalog') as BugCatalog | null
+      if (catalog) {
+        store.set('bugCatalog', updateCatalogSimilarityMetadata(catalog, result))
+      }
+
+      return result
+    } finally {
+      // Only remove the controller if it is still the one this run registered —
+      // a late finisher must not delete a newer run's controller.
+      if (similarityControllers.get(webContentsId) === abortController) {
+        similarityControllers.delete(webContentsId)
+      }
+      try {
+        event.sender.send(IPC_CHANNELS.LLM_FIND_SIMILAR_DONE)
+      } catch {
+        // The renderer window may have closed mid-run. A throw from this
+        // finally block would replace whatever the handler is really
+        // returning or rejecting with, so the notification failure is
+        // deliberately swallowed here.
+      }
+    }
+  })
+  handle(IPC_CHANNELS.LLM_FIND_SIMILAR_CANCEL, async (event: IpcMainInvokeEvent) => {
+    const controller = similarityControllers.get(event.sender.id)
+    if (!controller) {
+      return { cancelled: false }
     }
 
-    return result
+    controller.abort()
+    return { cancelled: true }
+  })
+  handle(IPC_CHANNELS.LLM_FIND_SIMILAR_STATUS, async (event: IpcMainInvokeEvent) => {
+    return { active: similarityControllers.has(event.sender.id) }
   })
 
   // Shell

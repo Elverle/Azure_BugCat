@@ -95,13 +95,15 @@ async function rejectionSeenByRenderer(
 
 /**
  * Channels whose handler has no reachable failure path, so they cannot be
- * driven through the wrapper: PING is a constant, and the two categorization
- * lifecycle channels only read an in-memory map.
+ * driven through the wrapper: PING is a constant, and the categorization and
+ * similarity lifecycle channels only read an in-memory map.
  */
 const CHANNELS_WITHOUT_FAILURE_PATH: readonly string[] = [
   IPC_CHANNELS.PING,
   IPC_CHANNELS.LLM_CATEGORIZE_CANCEL,
-  IPC_CHANNELS.LLM_CATEGORIZE_STATUS
+  IPC_CHANNELS.LLM_CATEGORIZE_STATUS,
+  IPC_CHANNELS.LLM_FIND_SIMILAR_CANCEL,
+  IPC_CHANNELS.LLM_FIND_SIMILAR_STATUS
 ]
 
 /** Every other registered channel, with arguments that make it fail. */

@@ -15,7 +15,10 @@ declare global {
       testLlmConnection: (settings: AppSettings) => Promise<unknown>
       onCategorizeProgress: (callback: (data: unknown) => void) => () => void
       findSimilarBugs: () => Promise<unknown>
+      cancelFindSimilar: () => Promise<{ cancelled: boolean }>
+      getFindSimilarStatus: () => Promise<{ active: boolean }>
       onFindSimilarProgress: (callback: (data: unknown) => void) => () => void
+      onFindSimilarDone: (callback: () => void) => () => void
       getSession: () => Promise<unknown>
       clearSession: () => Promise<unknown>
       clearCatalog: () => Promise<unknown>

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AppSettings } from '../../src/shared/types'
+import type { AppSettings, CategorizedBug, SessionData } from '../../src/shared/types'
 import { IPC_CHANNELS } from '../../src/shared/ipc-channels'
 import { UNCATEGORIZED } from '../../src/shared/categorization'
 
@@ -846,6 +846,117 @@ describe('registerIPCHandlers', () => {
       expect(catalogCall).toBeDefined()
       expect(catalogCall![1][1].everInSimilarityGroup).toBe(true)
       expect(catalogCall![1][1].lastSimilarityGroupAt).toBe('2024-06-15T00:00:00Z')
+    })
+  })
+
+  describe('LLM_FIND_SIMILAR — safe write, guard, cancel/status/done (review 2.2)', () => {
+    const NOW = '2026-06-01T00:00:00.000Z'
+
+    const categorized = (id: number, macroCategory: string): CategorizedBug => ({
+      id,
+      title: `Bug ${id}`,
+      state: 'Active',
+      assignee: null,
+      areaPath: 'Project\\Area',
+      description: `Description ${id}`,
+      priority: 2,
+      createdDate: '2024-01-01T00:00:00Z',
+      updatedDate: '2024-01-01T00:00:00Z',
+      tags: [],
+      macroCategory,
+      subCategory: 'Layout',
+      categoryReason: 'Looks like a UI bug',
+      categorizedAt: '2026-06-01T00:00:01.000Z'
+    })
+
+    const fakeEvent = (): { sender: { id: number; send: ReturnType<typeof vi.fn> } } => ({
+      sender: { id: 1, send: vi.fn() }
+    })
+
+    it('does not clobber a session refreshed during a similarity run (lost update)', async () => {
+      const staleBugs = [categorized(1, 'A')]
+      const freshBugs = [categorized(1, 'A'), categorized(2, 'B')]
+      const fakeStore: Record<string, unknown> = {
+        settings: baseSettings,
+        session: { bugs: staleBugs, fetchedAt: NOW, categorizedAt: NOW }
+      }
+      storeGet.mockImplementation((key: string) => fakeStore[key])
+      storeSet.mockImplementation((key: string, value: unknown) => {
+        fakeStore[key] = value
+      })
+
+      findSimilarBugs.mockImplementation(async () => {
+        // Simulates a bug fetch completing in the background while the analysis runs.
+        fakeStore.session = { bugs: freshBugs, fetchedAt: 'LATER', categorizedAt: NOW }
+        return { categories: [], analyzedAt: 'LATER' }
+      })
+
+      await handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR)?.(fakeEvent())
+
+      const session = fakeStore.session as SessionData
+      expect(session.bugs).toHaveLength(2) // the fetch was NOT reverted
+      expect(session.similarityResults?.analyzedAt).toBe('LATER')
+    })
+
+    it('rejects a second concurrent similarity run', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'session') {
+          return { bugs: [categorized(1, 'A'), categorized(2, 'A')], fetchedAt: NOW, categorizedAt: NOW }
+        }
+        return null
+      })
+
+      findSimilarBugs.mockImplementation(
+        () =>
+          new Promise(() => {
+            // Stays pending so the second invocation hits the in-flight guard.
+          })
+      )
+
+      const event = fakeEvent()
+      void handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR)?.(event)
+
+      await expect(handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR)?.(event)).rejects.toThrow(
+        /already in progress/i
+      )
+    })
+
+    it('exposes similarity status and cancels an active run', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'session') {
+          return { bugs: [categorized(1, 'A'), categorized(2, 'A')], fetchedAt: NOW, categorizedAt: NOW }
+        }
+        return null
+      })
+
+      let capturedSignal: AbortSignal | undefined
+      findSimilarBugs.mockImplementation(
+        (_settings, _bugs, _onProgress, signal?: AbortSignal) =>
+          new Promise((_, reject) => {
+            capturedSignal = signal
+            signal?.addEventListener(
+              'abort',
+              () => reject({ code: 'OPERATION_CANCELLED', message: 'Operation cancelled' }),
+              { once: true }
+            )
+          })
+      )
+
+      const event = fakeEvent()
+      const statusHandler = handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR_STATUS)
+      const cancelHandler = handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR_CANCEL)
+
+      const runPromise = handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR)?.(event)
+
+      await expect(statusHandler?.(event)).resolves.toEqual({ active: true })
+
+      await expect(cancelHandler?.(event)).resolves.toEqual({ cancelled: true })
+      expect(capturedSignal?.aborted).toBe(true)
+
+      await expect(runPromise).rejects.toThrow('OPERATION_CANCELLED')
+      await expect(statusHandler?.(event)).resolves.toEqual({ active: false })
     })
   })
 

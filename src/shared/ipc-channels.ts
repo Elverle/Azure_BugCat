@@ -24,7 +24,10 @@ export const IPC_CHANNELS = {
 
   // LLM - Similarity
   LLM_FIND_SIMILAR: 'llm:find-similar',
+  LLM_FIND_SIMILAR_CANCEL: 'llm:find-similar-cancel',
+  LLM_FIND_SIMILAR_STATUS: 'llm:find-similar-status',
   LLM_FIND_SIMILAR_PROGRESS: 'llm:find-similar-progress',
+  LLM_FIND_SIMILAR_DONE: 'llm:find-similar-done',
 
   // Session
   SESSION_GET: 'session:get',
