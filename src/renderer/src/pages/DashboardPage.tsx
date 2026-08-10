@@ -440,8 +440,18 @@ function DashboardSimilaritySection({
   bugs,
   onBugClick
 }: DashboardSimilaritySectionProps): JSX.Element {
-  const { results, loading, analyzing, progress, canAnalyze, isStale, error, analyze, cancel } =
-    useAiCluster()
+  const {
+    results,
+    loading,
+    analyzing,
+    isCancelling,
+    progress,
+    canAnalyze,
+    isStale,
+    error,
+    analyze,
+    cancel
+  } = useAiCluster()
 
   if (loading) {
     return (
@@ -485,6 +495,7 @@ function DashboardSimilaritySection({
 
             <button
               onClick={analyzing ? cancel : analyze}
+              disabled={analyzing && isCancelling}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-indigo-700 hover:to-purple-700 shadow-sm transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {analyzing ? (
@@ -492,7 +503,11 @@ function DashboardSimilaritySection({
               ) : (
                 <Play className="w-4 h-4" />
               )}
-              {analyzing ? 'Annulla analisi' : 'Analizza Similarità'}
+              {analyzing
+                ? isCancelling
+                  ? 'Annullamento...'
+                  : 'Annulla analisi'
+                : 'Analizza Similarità'}
             </button>
           </div>
         </div>

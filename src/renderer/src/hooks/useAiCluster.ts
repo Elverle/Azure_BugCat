@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react'
+import { useEffect, useCallback, useRef, useSyncExternalStore } from 'react'
 import type { SimilarityResult, SimilarityProgress, CategorizedBug } from '@shared/types'
 import { extractErrorMessage } from '@shared/app-error'
 import { isCancellationError } from '@renderer/lib/cancellation'
@@ -8,12 +8,14 @@ import {
   refreshSession,
   subscribeToSession
 } from '@renderer/state/session-store'
+import { createUiStore } from '@renderer/state/create-ui-store'
 
 export interface UseAiClusterReturn {
   results: SimilarityResult | null
   bugs: CategorizedBug[]
   loading: boolean
   analyzing: boolean
+  isCancelling: boolean
   progress: SimilarityProgress | null
   canAnalyze: boolean
   isStale: boolean
@@ -24,16 +26,45 @@ export interface UseAiClusterReturn {
 
 const NO_BUGS: CategorizedBug[] = []
 
-export function useAiCluster(): UseAiClusterReturn {
-  const [analyzing, setAnalyzing] = useState(false)
-  const [progress, setProgress] = useState<SimilarityProgress | null>(null)
-  const [error, setError] = useState<string | null>(null)
+// Module-level store, not component-local useState: `DashboardSimilaritySection`
+// is conditionally rendered (DashboardPage switches view mode), so it unmounts
+// on a view switch — more frequent than the route navigation useDashboard's
+// equivalent store was built for. Without this, a run that finishes or fails
+// while the user switched away would lose its result or its error.
+interface AiClusterUiState {
+  analyzing: boolean
+  isCancelling: boolean
+  progress: SimilarityProgress | null
+  error: string | null
+}
 
+const INITIAL_AI_CLUSTER_UI_STATE: AiClusterUiState = {
+  analyzing: false,
+  isCancelling: false,
+  progress: null,
+  error: null
+}
+
+const aiClusterUiStore = createUiStore(INITIAL_AI_CLUSTER_UI_STATE)
+const getAiClusterUiState = aiClusterUiStore.getSnapshot
+const subscribeToAiClusterUiState = aiClusterUiStore.subscribe
+const updateAiClusterUiState = aiClusterUiStore.update
+
+export function resetAiClusterUiStateForTests(): void {
+  aiClusterUiStore.reset()
+}
+
+export function useAiCluster(): UseAiClusterReturn {
   const cleanupRef = useRef<(() => void) | null>(null)
   const sessionState = useSyncExternalStore(
     subscribeToSession,
     getSessionSnapshot,
     getSessionSnapshot
+  )
+  const currentAiClusterUiState = useSyncExternalStore(
+    subscribeToAiClusterUiState,
+    getAiClusterUiState,
+    getAiClusterUiState
   )
 
   // Load session on mount, and reattach to a similarity run already in
@@ -58,17 +89,16 @@ export function useAiCluster(): UseAiClusterReturn {
       // already have installed its own progress subscription, and subscribing a
       // second time here would leak one listener and double-fire the other.
       if (status.active && !cleanupRef.current) {
-        setAnalyzing(true)
+        updateAiClusterUiState({ analyzing: true })
 
         const cleanupProgress = window.electronAPI.onFindSimilarProgress((data) => {
-          setProgress(data as SimilarityProgress)
+          updateAiClusterUiState({ progress: data as SimilarityProgress })
         })
         const cleanupDone = window.electronAPI.onFindSimilarDone(() => {
           // refreshSession(), not loadSession(): a read already in flight could
           // resolve with data captured before the run finished.
           void refreshSession()
-          setAnalyzing(false)
-          setProgress(null)
+          updateAiClusterUiState({ analyzing: false, isCancelling: false, progress: null })
           cleanupProgress()
           cleanupDone()
           cleanupRef.current = null
@@ -115,17 +145,22 @@ export function useAiCluster(): UseAiClusterReturn {
   const isStale = Boolean(results && categorizedAt && results.analyzedAt < categorizedAt)
 
   const analyze = useCallback(async () => {
-    if (analyzing) {
+    // Mirrors categorizeBugs's `loading || isCategorizing` guard: a run must not
+    // be startable while the session is still loading.
+    if (sessionState.loading || currentAiClusterUiState.analyzing) {
       return
     }
 
-    setAnalyzing(true)
-    setProgress(null)
-    setError(null)
+    updateAiClusterUiState({
+      analyzing: true,
+      isCancelling: false,
+      progress: null,
+      error: null
+    })
 
     // Subscribe to progress updates
     const cleanup = window.electronAPI.onFindSimilarProgress((data) => {
-      setProgress(data as SimilarityProgress)
+      updateAiClusterUiState({ progress: data as SimilarityProgress })
     })
     cleanupRef.current = cleanup
 
@@ -135,31 +170,50 @@ export function useAiCluster(): UseAiClusterReturn {
     } catch (err: unknown) {
       // A user-initiated cancellation is not a failure — leave `error` unset.
       if (!isCancellationError(err)) {
-        setError(extractErrorMessage(err))
+        updateAiClusterUiState({ error: extractErrorMessage(err) })
       }
     } finally {
-      setAnalyzing(false)
-      setProgress(null)
+      updateAiClusterUiState({ analyzing: false, isCancelling: false, progress: null })
       if (cleanupRef.current) {
         cleanupRef.current()
         cleanupRef.current = null
       }
     }
-  }, [analyzing])
+  }, [sessionState.loading, currentAiClusterUiState.analyzing])
 
   const cancel = useCallback(async () => {
-    await window.electronAPI.cancelFindSimilar()
-  }, [])
+    if (!currentAiClusterUiState.analyzing || currentAiClusterUiState.isCancelling) {
+      return
+    }
+
+    updateAiClusterUiState({ isCancelling: true })
+
+    try {
+      const result = (await window.electronAPI.cancelFindSimilar()) as { cancelled?: boolean }
+      if (!result?.cancelled) {
+        // The main process reports there was no run to cancel (e.g. it already
+        // finished): revert the flag so the button state visibly reflects it,
+        // instead of leaving the user with no feedback at all.
+        updateAiClusterUiState({ isCancelling: false })
+      }
+    } catch (error: unknown) {
+      updateAiClusterUiState({
+        isCancelling: false,
+        error: extractErrorMessage(error)
+      })
+    }
+  }, [currentAiClusterUiState.analyzing, currentAiClusterUiState.isCancelling])
 
   return {
     results,
     bugs,
     loading: sessionState.loading,
-    analyzing,
-    progress,
+    analyzing: currentAiClusterUiState.analyzing,
+    isCancelling: currentAiClusterUiState.isCancelling,
+    progress: currentAiClusterUiState.progress,
     canAnalyze,
     isStale,
-    error,
+    error: currentAiClusterUiState.error,
     analyze,
     cancel
   }
