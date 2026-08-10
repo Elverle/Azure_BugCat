@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Bot, ExternalLink } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
@@ -50,8 +50,16 @@ export default function BugDetailDrawer({
     html: string
   } | null>(null)
 
-  const sanitizedDescriptionHtml = sanitizeBugDescriptionHtml(bug?.descriptionHtml)
-  const pendingDescriptionHtml = stripAdoAttachmentImages(sanitizedDescriptionHtml)
+  // Parsing the description is the expensive part of a render: keep it tied to the
+  // html itself, so resizing the drawer (a per-pixel prop change) does not redo it.
+  const sanitizedDescriptionHtml = useMemo(
+    () => sanitizeBugDescriptionHtml(bug?.descriptionHtml),
+    [bug?.descriptionHtml]
+  )
+  const pendingDescriptionHtml = useMemo(
+    () => stripAdoAttachmentImages(sanitizedDescriptionHtml),
+    [sanitizedDescriptionHtml]
+  )
   const hasAdoAttachmentImages = sanitizedDescriptionHtml !== pendingDescriptionHtml
   const descriptionExpanded = bug != null && expandedForBugId === bug.id
   const resolvedHtml =

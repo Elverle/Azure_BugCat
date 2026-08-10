@@ -5,6 +5,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug } from '@shared/types'
 import BugDetailDrawer from '@renderer/components/dashboard/BugDetailDrawer'
 
+const { sanitizeCalls, stripCalls } = vi.hoisted(() => ({
+  sanitizeCalls: vi.fn(),
+  stripCalls: vi.fn()
+}))
+
+// Counts the real work without replacing it: the drawer must keep rendering the
+// same markup, it just must not redo the parse on every unrelated re-render.
+vi.mock('@renderer/lib/sanitize-bug-description-html', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@renderer/lib/sanitize-bug-description-html')>()
+  return {
+    ...actual,
+    sanitizeBugDescriptionHtml: (html?: string): string => {
+      sanitizeCalls(html)
+      return actual.sanitizeBugDescriptionHtml(html)
+    },
+    stripAdoAttachmentImages: (html: string): string => {
+      stripCalls(html)
+      return actual.stripAdoAttachmentImages(html)
+    }
+  }
+})
+
 Object.defineProperty(window, 'electronAPI', {
   configurable: true,
   writable: true,
@@ -301,5 +324,43 @@ describe('BugDetailDrawer', () => {
     const { container } = render(<BugDetailDrawer {...defaultProps} width={520} />)
     const drawer = container.firstElementChild as HTMLElement
     expect(drawer.style.width).toBe('520px')
+  })
+
+  it('does not re-sanitize the description when only the width changes', () => {
+    sanitizeCalls.mockClear()
+    const { rerender } = render(<BugDetailDrawer {...defaultProps} width={400} />)
+    const afterMount = sanitizeCalls.mock.calls.length
+
+    rerender(<BugDetailDrawer {...defaultProps} width={500} />)
+    rerender(<BugDetailDrawer {...defaultProps} width={600} />)
+
+    expect(sanitizeCalls.mock.calls.length).toBe(afterMount)
+  })
+
+  it('does not re-strip attachment images when only the width changes', () => {
+    stripCalls.mockClear()
+    const { rerender } = render(<BugDetailDrawer {...defaultProps} width={400} />)
+    const afterMount = stripCalls.mock.calls.length
+
+    rerender(<BugDetailDrawer {...defaultProps} width={500} />)
+    rerender(<BugDetailDrawer {...defaultProps} width={600} />)
+
+    expect(stripCalls.mock.calls.length).toBe(afterMount)
+  })
+
+  it('re-sanitizes when the drawer switches to a bug with different html', () => {
+    sanitizeCalls.mockClear()
+    const { rerender } = render(<BugDetailDrawer {...defaultProps} />)
+    const afterMount = sanitizeCalls.mock.calls.length
+
+    rerender(
+      <BugDetailDrawer
+        {...defaultProps}
+        bug={makeBug({ id: 2048, descriptionHtml: '<p>A different description</p>' })}
+      />
+    )
+
+    expect(sanitizeCalls.mock.calls.length).toBeGreaterThan(afterMount)
+    expect(screen.getByText('A different description')).toBeInTheDocument()
   })
 })
