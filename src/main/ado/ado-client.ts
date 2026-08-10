@@ -1,4 +1,10 @@
-import { AdoConnectionConfig, WiqlResponse, WorkItemRaw, ADO_FIELDS } from './types'
+import {
+  AdoConnectionConfig,
+  WiqlResponse,
+  WorkItemRaw,
+  ADO_FIELDS,
+  ADO_REQUEST_TIMEOUT_MS
+} from './types'
 import { isAppError, throwAppError } from '@shared/app-error'
 
 function buildAuthHeader(pat: string): string {
@@ -68,7 +74,7 @@ export async function fetchWiqlQuery(config: AdoConnectionConfig): Promise<WiqlR
   const url = `${baseUrl}/_apis/wit/wiql/${encodeURIComponent(config.queryId)}?api-version=7.0`
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30000)
+  const timeout = setTimeout(() => controller.abort(), ADO_REQUEST_TIMEOUT_MS)
 
   try {
     const response = await fetch(url, {
@@ -111,7 +117,7 @@ export async function fetchWorkItemsBatch(
   const url = `${baseUrl}/_apis/wit/workitems?ids=${idsCsv}&fields=${fieldsCsv}&api-version=7.0`
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30000)
+  const timeout = setTimeout(() => controller.abort(), ADO_REQUEST_TIMEOUT_MS)
 
   try {
     const response = await fetch(url, {
@@ -154,7 +160,7 @@ export async function fetchAdoAttachmentDataUrl(
   }
 
   const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 30000)
+  const timeout = setTimeout(() => controller.abort(), ADO_REQUEST_TIMEOUT_MS)
 
   try {
     const response = await fetch(attachmentUrl, {

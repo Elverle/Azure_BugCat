@@ -176,7 +176,56 @@ describe('useSettings', () => {
     expect(result.current.testAdoResult).toEqual({ type: 'success', message: 'ADO ok' })
   })
 
-  it('times out ADO and LLM connection tests after five seconds', async () => {
+  it('reports a slow connection test result instead of a false timeout', async () => {
+    let resolveAdo: ((value: { success: boolean; message: string }) => void) | undefined
+    installElectronApiMock({
+      testAdoConnection: vi.fn().mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveAdo = resolve
+          })
+      )
+    })
+
+    const { result } = renderHook(() => useSettings())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    vi.useFakeTimers()
+
+    // The main process bounds ADO at 30s and the LLM at 60s: a reply at 10s is
+    // slow, not lost, and the renderer must not overrule it with its own verdict.
+    await act(async () => {
+      const adoPromise = result.current.testAdoConnection()
+      await vi.advanceTimersByTimeAsync(10_000)
+      resolveAdo?.({ success: true, message: 'ADO ok' })
+      await adoPromise
+    })
+
+    expect(result.current.testAdoResult).toEqual({ type: 'success', message: 'ADO ok' })
+  })
+
+  it('auto-dismisses a connection result after five seconds', async () => {
+    const { result } = renderHook(() => useSettings())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    // The dismiss timer is scheduled by the effect that reacts to the result, so
+    // the clock has to be fake before the result exists.
+    vi.useFakeTimers()
+    await act(async () => {
+      await result.current.testAdoConnection()
+    })
+    expect(result.current.testAdoResult).toEqual({ type: 'success', message: 'ADO ok' })
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000)
+    })
+
+    expect(result.current.testAdoResult).toBeNull()
+  })
+
+  it('times out a connection test only once the main-process timeouts have elapsed', async () => {
     installElectronApiMock({
       testAdoConnection: vi.fn().mockImplementation(() => new Promise(() => undefined)),
       testLlmConnection: vi.fn().mockImplementation(() => new Promise(() => undefined))
@@ -188,9 +237,17 @@ describe('useSettings', () => {
 
     vi.useFakeTimers()
 
+    let adoPromise: Promise<void> | undefined
     await act(async () => {
-      const adoPromise = result.current.testAdoConnection()
-      await vi.advanceTimersByTimeAsync(5000)
+      adoPromise = result.current.testAdoConnection()
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+
+    // Still waiting: the main process's own ADO timeout has only just elapsed.
+    expect(result.current.testAdoResult).toBeNull()
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(35_000)
       await adoPromise
     })
 
@@ -201,7 +258,7 @@ describe('useSettings', () => {
 
     await act(async () => {
       const llmPromise = result.current.testLlmConnection()
-      await vi.advanceTimersByTimeAsync(5000)
+      await vi.advanceTimersByTimeAsync(65_000)
       await llmPromise
     })
 

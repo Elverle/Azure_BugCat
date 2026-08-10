@@ -38,3 +38,13 @@ export const ADO_FIELDS = [
 ] as const
 
 export const ADO_BATCH_SIZE = 200
+
+/** Per-request ceiling: every single call to Azure DevOps aborts after this. */
+export const ADO_REQUEST_TIMEOUT_MS = 30_000
+
+/**
+ * Ceiling for a whole multi-batch fetch. The per-request timeout bounds one
+ * call, not their number: a query large enough to need many batches would
+ * otherwise run for 30s x batches with nothing to stop it.
+ */
+export const ADO_FETCH_BUDGET_MS = 120_000

@@ -42,7 +42,14 @@ export interface UseSettingsReturn {
   textToCategories: (text: string) => string[]
 }
 
-const CONNECTION_TIMEOUT = 5000
+/**
+ * The main process bounds the connection tests itself (30s for ADO, 60s for the
+ * LLM), so this race is only a safety net against a reply that never comes: it
+ * must outlast those timeouts, or a slow-but-successful test is reported as a
+ * failure the user cannot explain.
+ */
+const TEST_CONNECTION_TIMEOUT_MS = 65000
+const RESULT_AUTO_DISMISS_MS = 5000
 
 export function useSettings(): UseSettingsReturn {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
@@ -139,7 +146,10 @@ export function useSettings(): UseSettingsReturn {
       const response = (await Promise.race([
         window.electronAPI.testAdoConnection(settings),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Connection test timed out')), CONNECTION_TIMEOUT)
+          setTimeout(
+            () => reject(new Error('Connection test timed out')),
+            TEST_CONNECTION_TIMEOUT_MS
+          )
         )
       ])) as { success: boolean; message: string }
       setTestAdoResult({
@@ -161,7 +171,10 @@ export function useSettings(): UseSettingsReturn {
       const response = (await Promise.race([
         window.electronAPI.testLlmConnection(settings),
         new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Connection test timed out')), CONNECTION_TIMEOUT)
+          setTimeout(
+            () => reject(new Error('Connection test timed out')),
+            TEST_CONNECTION_TIMEOUT_MS
+          )
         )
       ])) as { success: boolean; message: string }
 
@@ -180,14 +193,14 @@ export function useSettings(): UseSettingsReturn {
   // Auto-dismiss test connection results after 5 seconds
   useEffect(() => {
     if (testAdoResult) {
-      const timer = setTimeout(() => setTestAdoResult(null), CONNECTION_TIMEOUT)
+      const timer = setTimeout(() => setTestAdoResult(null), RESULT_AUTO_DISMISS_MS)
       return () => clearTimeout(timer)
     }
   }, [testAdoResult])
 
   useEffect(() => {
     if (testLlmResult) {
-      const timer = setTimeout(() => setTestLlmResult(null), CONNECTION_TIMEOUT)
+      const timer = setTimeout(() => setTestLlmResult(null), RESULT_AUTO_DISMISS_MS)
       return () => clearTimeout(timer)
     }
   }, [testLlmResult])
