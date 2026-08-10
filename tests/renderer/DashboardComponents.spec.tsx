@@ -160,6 +160,13 @@ describe('BugTable', () => {
     // 1 header row + 2 data rows
     expect(rows).toHaveLength(3)
   })
+
+  it('shows a dash in the priority cell when the bug has no priority', () => {
+    const withoutPriority = [{ ...mockBugs[0], priority: null }]
+    render(<BugTable bugs={withoutPriority} sortState={defaultSortState} onSort={vi.fn()} />)
+
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
 })
 
 // ============================================

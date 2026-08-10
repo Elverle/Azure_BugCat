@@ -326,6 +326,12 @@ describe('BugDetailDrawer', () => {
     expect(drawer.style.width).toBe('520px')
   })
 
+  it('shows a dash in the Priority field when the bug has no priority', () => {
+    render(<BugDetailDrawer {...defaultProps} bug={makeBug({ priority: null })} />)
+
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
   it('does not re-sanitize the description when only the width changes', () => {
     sanitizeCalls.mockClear()
     const { rerender } = render(<BugDetailDrawer {...defaultProps} width={400} />)

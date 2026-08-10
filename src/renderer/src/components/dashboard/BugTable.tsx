@@ -54,7 +54,7 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
       return <span className="font-medium text-gray-900 truncate block">{bug.title}</span>
 
     case 'priority':
-      return <span className="text-center block">{bug.priority}</span>
+      return <span className="text-center block">{bug.priority ?? '—'}</span>
 
     case 'state':
       return (

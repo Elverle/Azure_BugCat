@@ -72,7 +72,9 @@ export default function BugCard({ bug, onClick }: BugCardProps): JSX.Element {
             {bug.subCategory}
           </span>
         )}
-        <span className="text-xs text-gray-500">P{bug.priority}</span>
+        <span className="text-xs text-gray-500">
+          {bug.priority == null ? '—' : `P${bug.priority}`}
+        </span>
         {bug.assignee ? (
           <span className="text-sm text-gray-600">{bug.assignee}</span>
         ) : (

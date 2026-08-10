@@ -19,7 +19,11 @@ export function computeInputSignature(bug: BugItem): string {
     bug.title.trim().toLowerCase(),
     bug.description.trim().toLowerCase(),
     (bug.tags ?? []).slice().sort().join(';'),
-    String(bug.priority),
+    // A missing ADO priority is represented as null (see ado-service.ts), but legacy
+    // catalog entries persisted before that fix carry priority: 0. Folding null back
+    // to 0 here keeps the signature stable across the fix, so existing catalogs are
+    // not mass-invalidated (and re-categorized by the LLM) on the next fetch.
+    String(bug.priority ?? 0),
     bug.areaPath.trim().toLowerCase()
   ]
   const input = parts.join('\0')

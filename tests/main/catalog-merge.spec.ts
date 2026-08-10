@@ -93,6 +93,16 @@ describe('computeInputSignature', () => {
     const sig = computeInputSignature(makeBugItem())
     expect(sig).toMatch(/^[0-9a-f]{16}$/)
   })
+
+  it('computes the same input signature for priority 0 (legacy) and null (new) — review 3.4', () => {
+    // A bug catalogued before this fix has priority: 0 (the old "missing priority"
+    // sentinel). The same bug re-fetched today has priority: null. If the signature
+    // changed here, every such entry in every user's catalog would look "modified"
+    // and get bulk re-categorized by the LLM for no reason.
+    const legacy = makeBugItem({ priority: 0 })
+    const current = makeBugItem({ priority: null })
+    expect(computeInputSignature(current)).toBe(computeInputSignature(legacy))
+  })
 })
 
 describe('mergeFetchIntoCatalog', () => {

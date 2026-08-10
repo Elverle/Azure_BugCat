@@ -25,7 +25,7 @@ export interface BugItem {
   areaPath: string
   description: string
   descriptionHtml?: string
-  priority: number
+  priority: number | null
   createdDate: string
   updatedDate: string
   tags: string[]

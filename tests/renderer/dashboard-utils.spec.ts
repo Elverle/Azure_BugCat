@@ -186,6 +186,23 @@ describe('sortBugs', () => {
     expect(result[result.length - 1].priority).toBe(1)
   })
 
+  it('should sort bugs without a priority last in both directions', () => {
+    // A missing ADO priority is null, not 0: it must never sort as if it were
+    // the most urgent bug in the list.
+    const withMissing = [
+      { ...mockBugs[0], id: 9001, priority: null },
+      ...mockBugs.map((bug) => ({ ...bug }))
+    ]
+
+    const asc = sortBugs(withMissing, 'priority', 'asc')
+    expect(asc[asc.length - 1].priority).toBeNull()
+    expect(asc[0].priority).toBe(1)
+
+    const desc = sortBugs(withMissing, 'priority', 'desc')
+    expect(desc[desc.length - 1].priority).toBeNull()
+    expect(desc[0].priority).toBe(3)
+  })
+
   it('should return unchanged array when sortKey is null', () => {
     const result = sortBugs(mockBugs, null, 'asc')
     expect(result).toEqual(mockBugs)

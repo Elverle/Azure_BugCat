@@ -272,7 +272,7 @@ export default function BugDetailDrawer({
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Priority</div>
-                  <div className="text-sm text-gray-900">{bug.priority}</div>
+                  <div className="text-sm text-gray-900">{bug.priority ?? '—'}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Created</div>
