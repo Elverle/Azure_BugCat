@@ -20,6 +20,18 @@ function isSafeUrl(value: string): boolean {
   )
 }
 
+/**
+ * Shape-only check: does this https url *look like* an ADO work item attachment
+ * (`/_apis/wit/attachments/...`)? This deliberately does not, and cannot, check
+ * the host — the renderer has no notion of "the user's configured ADO org", so
+ * a url passing this check is a *candidate* for main-process resolution, never
+ * something safe to render directly. The main process is the only party that
+ * knows the configured org and is the actual security boundary: it re-validates
+ * every candidate against that org's origin before fetching it
+ * (`isAllowedAttachmentUrl` in `src/main/ado/ado-client.ts`), and only a
+ * resulting `data:image/...` url (see `resolveAdoAttachmentImages` below) is
+ * ever written into the DOM.
+ */
 export function isAdoAttachmentUrl(value: string): boolean {
   try {
     const url = new URL(value)
@@ -30,9 +42,13 @@ export function isAdoAttachmentUrl(value: string): boolean {
 }
 
 /**
- * Images are held to a stricter allowlist than other URLs: any third-party https
- * source (e.g. a remote tracking pixel) must be dropped, so only inline data URLs
- * and ADO attachment URLs are permitted as `img[src]`.
+ * Images are held to a stricter allowlist than other URLs: an inline data:image
+ * url is safe to render as-is, while an https url that merely looks like an ADO
+ * attachment (see `isAdoAttachmentUrl`) is only a candidate to be resolved by
+ * the main process — it must never be rendered as a plain `img[src]` (that is
+ * why `stripAdoAttachmentImages` removes it before first paint, and why
+ * `resolveAdoAttachmentImages` only ever writes back a `data:image/...` result).
+ * Any other third-party https source (e.g. a remote tracking pixel) is dropped.
  */
 function isSafeImageUrl(value: string): boolean {
   const normalized = value.trim().toLowerCase()
@@ -65,7 +81,11 @@ function sanitizeAttributes(element: Element): void {
     }
   }
 
-  if (element.tagName.toLowerCase() === 'a' && !element.getAttribute('target')) {
+  if (element.tagName.toLowerCase() === 'a') {
+    // Always force _blank, even overwriting an explicit target="_self": with
+    // the navigation guard installed, a same-window link is now a dead end
+    // instead of a (worse) full-app navigation, so every description link
+    // must go through window.open -> setWindowOpenHandler -> shell.openExternal.
     element.setAttribute('target', '_blank')
     element.setAttribute('rel', 'noopener noreferrer')
   }
@@ -135,7 +155,16 @@ export async function resolveAdoAttachmentImages(
 
       try {
         const dataUrl = await fetchDataUrl(src)
-        image.setAttribute('src', dataUrl)
+        // Only a data:image/... result is trusted enough to reach the DOM: the
+        // predicate above only tells us the src *looked like* an attachment
+        // candidate, not that the IPC layer actually resolved it safely. If it
+        // returns anything else (e.g. echoes back a remote url on a bug),
+        // remove the image instead of writing an unvalidated value into src.
+        if (dataUrl.trim().toLowerCase().startsWith('data:image/')) {
+          image.setAttribute('src', dataUrl)
+        } else {
+          image.remove()
+        }
       } catch {
         image.remove()
       }

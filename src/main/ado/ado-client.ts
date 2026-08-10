@@ -44,17 +44,24 @@ function isAllowedAttachmentUrl(orgUrl: string, attachmentUrl: string): boolean 
 
 const FALLBACK_ATTACHMENT_CONTENT_TYPE = 'image/png'
 
+// Matches a single, well-formed image media type token (e.g. `image/png`,
+// `image/svg+xml`) once any `;charset=...` parameter has been stripped. This
+// rejects values that merely start with `image/`, such as
+// `image/png, text/html` — what `Headers.get()` returns when an upstream
+// response (or a proxy) repeats the content-type header — which would
+// otherwise terminate the media type at the comma and corrupt the resulting
+// data url.
+const IMAGE_CONTENT_TYPE_PATTERN = /^image\/[a-z0-9][a-z0-9.+-]*$/
+
 /**
- * Only echo the response content-type into the data url when it is actually an
- * image; any other content-type (e.g. a mislabelled or malicious response) is
- * replaced with a safe fallback instead of being trusted verbatim.
+ * Only echo the response content-type into the data url when it is actually a
+ * single, valid image media type; anything else (e.g. a mislabelled or
+ * malicious response, or a multi-header value) is replaced with a safe
+ * fallback instead of being trusted verbatim.
  */
 function sanitizeAttachmentContentType(rawContentType: string | null): string {
-  const normalized = (rawContentType ?? '').toLowerCase()
-  if (!normalized.startsWith('image/')) {
-    return FALLBACK_ATTACHMENT_CONTENT_TYPE
-  }
-  return (rawContentType ?? '').split(';')[0].trim()
+  const mediaType = (rawContentType ?? '').split(';')[0].trim().toLowerCase()
+  return IMAGE_CONTENT_TYPE_PATTERN.test(mediaType) ? mediaType : FALLBACK_ATTACHMENT_CONTENT_TYPE
 }
 
 function mapResponseError(status: number, statusText: string): never {

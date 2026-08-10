@@ -160,6 +160,31 @@ describe('ado-client', () => {
     expect(result).toBe(`data:image/jpeg;base64,${Buffer.from([4, 5, 6]).toString('base64')}`)
   })
 
+  it('falls back to image/png for a multi-header content-type that starts with image/ but is not a valid media type', async () => {
+    // What `Headers.get('content-type')` returns when the upstream response
+    // (or a proxy in front of it) sends the header twice: node's fetch joins
+    // repeated headers with ", ". `startsWith('image/')` and `split(';')[0]`
+    // both let this through unsanitized, producing
+    // `data:image/png, text/html;base64,...` — a data url whose media type is
+    // terminated by the comma, so the payload after it is no longer valid
+    // base64 and the image silently fails to decode.
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: {
+        get: vi.fn().mockReturnValue('image/png, text/html')
+      },
+      arrayBuffer: async () => Uint8Array.from([9, 9, 9]).buffer
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await fetchAdoAttachmentDataUrl(
+      config,
+      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+    )
+
+    expect(result).toBe(`data:image/png;base64,${Buffer.from([9, 9, 9]).toString('base64')}`)
+  })
+
   it('rejects attachment urls outside the configured ADO organization', async () => {
     await expect(
       fetchAdoAttachmentDataUrl(
