@@ -12,6 +12,7 @@ import type {
   BugCatalog,
   SimilarityResult
 } from '@shared/types'
+import { UNCATEGORIZED } from '@shared/categorization'
 
 function makeBugItem(overrides: Partial<BugItem> = {}): BugItem {
   return {
@@ -42,6 +43,17 @@ function makeCatalogBug(overrides: Partial<CatalogBug> = {}): CatalogBug {
     inputSignature: '',
     everInSimilarityGroup: false,
     lastSimilarityGroupAt: null,
+    ...overrides
+  }
+}
+
+function makeCategorizedBug(overrides: Partial<CategorizedBug> = {}): CategorizedBug {
+  return {
+    ...makeBugItem(),
+    macroCategory: '',
+    subCategory: '',
+    categoryReason: '',
+    categorizedAt: '',
     ...overrides
   }
 }
@@ -88,7 +100,12 @@ describe('mergeFetchIntoCatalog', () => {
 
   it('empty catalog + N bugs creates N new entries, all uncategorized', () => {
     const bugs = [makeBugItem({ id: 1 }), makeBugItem({ id: 2, title: 'Second bug' })]
-    const { updatedCatalog, sessionBugs, newBugCount } = mergeFetchIntoCatalog(bugs, null, now)
+    const { updatedCatalog, sessionBugs, newBugCount } = mergeFetchIntoCatalog(
+      bugs,
+      null,
+      now,
+      new Set(bugs.map((b) => b.id))
+    )
 
     expect(Object.keys(updatedCatalog)).toHaveLength(2)
     expect(sessionBugs).toHaveLength(2)
@@ -124,13 +141,18 @@ describe('mergeFetchIntoCatalog', () => {
       })
     }
 
-    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog([bug], catalog, now)
+    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog(
+      [bug],
+      catalog,
+      now,
+      new Set([bug.id])
+    )
 
     expect(sessionBugs[0].macroCategory).toBe('Cat')
     expect(sessionBugs[0].subCategory).toBe('Sub')
     expect(sessionBugs[0].categorizedAt).toBe('2024-01-01T00:00:00Z')
     expect(updatedCatalog[10].lastSeenAt).toBe(now)
-    expect(mergeFetchIntoCatalog([bug], catalog, now).newBugCount).toBe(0)
+    expect(mergeFetchIntoCatalog([bug], catalog, now, new Set([bug.id])).newBugCount).toBe(0)
   })
 
   it('bug with changed signature → session bug has empty categorization, catalog entry updated', () => {
@@ -141,7 +163,12 @@ describe('mergeFetchIntoCatalog', () => {
     }
 
     const changedBug = makeBugItem({ id: 20, title: 'Changed title' })
-    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog([changedBug], catalog, now)
+    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog(
+      [changedBug],
+      catalog,
+      now,
+      new Set([changedBug.id])
+    )
 
     expect(sessionBugs[0].macroCategory).toBe('')
     expect(sessionBugs[0].categorizedAt).toBe('')
@@ -155,7 +182,7 @@ describe('mergeFetchIntoCatalog', () => {
       30: makeCatalogBug({ id: 30, inputSignature: computeInputSignature(bug) })
     }
 
-    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog([], catalog, now)
+    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog([], catalog, now, new Set())
 
     expect(sessionBugs).toHaveLength(0)
     expect(updatedCatalog[30].closedAt).toBe(now)
@@ -172,7 +199,7 @@ describe('mergeFetchIntoCatalog', () => {
       })
     }
 
-    const { updatedCatalog } = mergeFetchIntoCatalog([bug], catalog, now)
+    const { updatedCatalog } = mergeFetchIntoCatalog([bug], catalog, now, new Set([bug.id]))
 
     expect(updatedCatalog[40].closedAt).toBeNull()
     expect(updatedCatalog[40].lastSeenAt).toBe(now)
@@ -184,7 +211,7 @@ describe('mergeFetchIntoCatalog', () => {
       51: makeCatalogBug({ id: 51, closedAt: null })
     }
 
-    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog([], catalog, now)
+    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog([], catalog, now, new Set())
 
     expect(sessionBugs).toHaveLength(0)
     expect(updatedCatalog[50].closedAt).toBe(now)
@@ -209,7 +236,8 @@ describe('mergeFetchIntoCatalog', () => {
     const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog(
       [unchangedBug, changedBug, newBug],
       catalog,
-      now
+      now,
+      new Set([unchangedBug.id, changedBug.id, newBug.id])
     )
 
     // Session has 3 bugs (new + unchanged + changed), NOT the absent one
@@ -234,6 +262,28 @@ describe('mergeFetchIntoCatalog', () => {
     // New entry has lifecycle defaults
     expect(updatedCatalog[3].firstSeenAt).toBe(now)
     expect(updatedCatalog[3].everInSimilarityGroup).toBe(false)
+  })
+})
+
+describe('closure scope (review 1.1)', () => {
+  const NOW = '2024-06-01T12:00:00Z'
+
+  it('does NOT close a catalog bug that is in the full query result but beyond topN', () => {
+    const catalog = { 7: makeCatalogBug({ id: 7, closedAt: null }) }
+    const { updatedCatalog } = mergeFetchIntoCatalog([], catalog, NOW, new Set([7]))
+    expect(updatedCatalog[7].closedAt).toBeNull()
+  })
+
+  it('closes a catalog bug absent from the full query result', () => {
+    const catalog = { 7: makeCatalogBug({ id: 7, closedAt: null }) }
+    const { updatedCatalog } = mergeFetchIntoCatalog([], catalog, NOW, new Set([99]))
+    expect(updatedCatalog[7].closedAt).toBe(NOW)
+  })
+
+  it('does not close anything when closureScopeIds is null (query changed)', () => {
+    const catalog = { 7: makeCatalogBug({ id: 7, closedAt: null }) }
+    const { updatedCatalog } = mergeFetchIntoCatalog([], catalog, NOW, null)
+    expect(updatedCatalog[7].closedAt).toBeNull()
   })
 })
 
@@ -386,6 +436,64 @@ describe('mergeCategorization', () => {
     const { updatedCatalog } = mergeCategorization(sessionBugs, llmResults, catalog, now)
 
     expect(updatedCatalog[7].inputSignature).toBe(expectedSig)
+  })
+})
+
+describe('mergeCategorization with failed results', () => {
+  it('does not set categorizedAt for fallback "Non categorizzato" results', () => {
+    const bug = makeCategorizedBug({ id: 1, macroCategory: '', categorizedAt: '' })
+    const catalog = { 1: makeCatalogBug({ id: 1, categorizedAt: '' }) }
+    const failed = {
+      ...bug,
+      macroCategory: UNCATEGORIZED,
+      subCategory: 'Errore elaborazione',
+      categoryReason: 'N/D',
+      categorizedAt: '2026-01-01T00:00:00Z'
+    }
+
+    const { updatedCatalog, updatedSessionBugs } = mergeCategorization(
+      [bug],
+      [failed],
+      catalog,
+      '2026-01-01T00:00:00Z'
+    )
+
+    expect(updatedCatalog[1].categorizedAt).toBe('')
+    expect(updatedSessionBugs[0].categorizedAt).toBe('')
+    expect(updatedCatalog[1].macroCategory).toBe(UNCATEGORIZED)
+  })
+
+  it('keeps failed bugs eligible for re-categorization on next fetch (reset branch)', () => {
+    // Catalog entry left behind by a fallback categorization: macroCategory is the
+    // UNCATEGORIZED sentinel but categorizedAt is empty, and the bug's input has not
+    // changed since (same inputSignature). mergeFetchIntoCatalog must still take the
+    // reset branch (categorizedAt falsy) rather than the carry-over branch, so the bug
+    // is sent back to the LLM on the next categorization run instead of being treated
+    // as "already categorized as Non categorizzato".
+    const bug = makeBugItem({ id: 60 })
+    const signature = computeInputSignature(bug)
+    const catalog: BugCatalog = {
+      60: makeCatalogBug({
+        id: 60,
+        macroCategory: UNCATEGORIZED,
+        subCategory: 'Errore elaborazione',
+        categoryReason: 'N/D',
+        categorizedAt: '',
+        inputSignature: signature
+      })
+    }
+
+    const { updatedCatalog, sessionBugs } = mergeFetchIntoCatalog(
+      [bug],
+      catalog,
+      '2026-01-01T00:00:00Z',
+      new Set([bug.id])
+    )
+
+    expect(sessionBugs[0].macroCategory).toBe('')
+    expect(sessionBugs[0].categorizedAt).toBe('')
+    expect(updatedCatalog[60].macroCategory).toBe('')
+    expect(updatedCatalog[60].categorizedAt).toBe('')
   })
 })
 

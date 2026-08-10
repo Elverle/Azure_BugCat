@@ -182,7 +182,7 @@ export function ClosedBugsPage(): JSX.Element {
             </div>
           ) : (
             <div className="space-y-4">
-              {visibleCategoryDistribution.map(({ category, count, bugs, visibleBugs }) => {
+              {visibleCategoryDistribution.map(({ category, count, visibleBugs }) => {
                 const isCollapsed = collapsedCategories[category] ?? false
 
                 return (

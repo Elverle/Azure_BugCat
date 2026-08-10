@@ -48,10 +48,7 @@ export function validateIntRange(
   return null
 }
 
-export function validateApiKey(
-  value: string | undefined,
-  provider: LLMProviderType
-): string | null {
+export function validateApiKey(value: string | undefined): string | null {
   if (!value || value.trim().length === 0) {
     return 'API Key is required for this provider'
   }
@@ -90,7 +87,7 @@ export function validateSettings(settings: AppSettings): Record<string, string |
     queryId: validateUUID(settings.queryId),
     topN: validateIntRange(settings.topN, 1, 200, 'Top N'),
     chunkSize: validateIntRange(settings.chunkSize, 5, 30, 'Chunk Size'),
-    apiKey: validateApiKey(settings.apiKey, settings.llmProvider),
+    apiKey: validateApiKey(settings.apiKey),
     baseUrl: validateBaseUrl(settings.baseUrl, settings.llmProvider),
     pat: validateRequired(settings.pat, 'Personal Access Token')
   }

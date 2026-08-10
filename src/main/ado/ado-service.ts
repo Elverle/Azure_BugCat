@@ -1,18 +1,14 @@
-import { AppSettings, BugItem, AppError, TestConnectionResult } from '../../shared/types'
+import { AppSettings, BugItem, TestConnectionResult } from '../../shared/types'
 import { AdoConnectionConfig, WorkItemRaw, ADO_BATCH_SIZE } from './types'
 import { fetchWiqlQuery, fetchWorkItemsBatch } from './ado-client'
 import { htmlToText } from '../utils/html-to-text'
-
-function throwAppError(code: AppError['code'], message: string): never {
-  const err: AppError = { code, message }
-  throw err
-}
+import { throwAppError } from '@shared/app-error'
 
 function buildConfig(settings: AppSettings): AdoConnectionConfig {
-  if (!settings.orgUrl?.trim()) throwAppError('ADO_AUTH_ERROR', 'URL organizzazione mancante')
-  if (!settings.projectName?.trim()) throwAppError('ADO_AUTH_ERROR', 'Nome progetto mancante')
-  if (!settings.queryId?.trim()) throwAppError('ADO_NOT_FOUND', 'Query ID mancante')
-  if (!settings.pat?.trim()) throwAppError('ADO_AUTH_ERROR', 'Personal Access Token mancante')
+  if (!settings.orgUrl?.trim()) throwAppError('ADO_AUTH_ERROR', 'Organization URL is missing')
+  if (!settings.projectName?.trim()) throwAppError('ADO_AUTH_ERROR', 'Project name is missing')
+  if (!settings.queryId?.trim()) throwAppError('ADO_NOT_FOUND', 'Query ID is missing')
+  if (!settings.pat?.trim()) throwAppError('ADO_AUTH_ERROR', 'Personal Access Token is missing')
 
   return {
     orgUrl: settings.orgUrl.trim(),
@@ -56,37 +52,39 @@ function mapWorkItemToBug(item: WorkItemRaw): BugItem {
   }
 }
 
-export async function fetchBugsFromQuery(settings: AppSettings): Promise<BugItem[]> {
+export interface FetchBugsResult {
+  bugs: BugItem[]
+  allQueryIds: number[]
+}
+
+export async function fetchBugsFromQuery(settings: AppSettings): Promise<FetchBugsResult> {
   const config = buildConfig(settings)
 
-  try {
-    const wiqlResponse = await fetchWiqlQuery(config)
+  const wiqlResponse = await fetchWiqlQuery(config)
 
-    if (wiqlResponse.workItems.length === 0) {
-      throwAppError('ADO_EMPTY', 'Nessun bug trovato nella query')
-    }
-
-    let ids = wiqlResponse.workItems.map((wi) => wi.id)
-
-    if (config.topN > 0) {
-      ids = ids.slice(0, config.topN)
-    }
-
-    const batches: number[][] = []
-    for (let i = 0; i < ids.length; i += ADO_BATCH_SIZE) {
-      batches.push(ids.slice(i, i + ADO_BATCH_SIZE))
-    }
-
-    const results: WorkItemRaw[] = []
-    for (const batch of batches) {
-      const items = await fetchWorkItemsBatch(config, batch)
-      results.push(...items)
-    }
-
-    return results.map(mapWorkItemToBug)
-  } catch (error: unknown) {
-    throw error
+  if (wiqlResponse.workItems.length === 0) {
+    throwAppError('ADO_EMPTY', 'The query returned no bugs')
   }
+
+  const allQueryIds = wiqlResponse.workItems.map((wi) => wi.id)
+  let ids = allQueryIds
+
+  if (config.topN > 0) {
+    ids = ids.slice(0, config.topN)
+  }
+
+  const batches: number[][] = []
+  for (let i = 0; i < ids.length; i += ADO_BATCH_SIZE) {
+    batches.push(ids.slice(i, i + ADO_BATCH_SIZE))
+  }
+
+  const results: WorkItemRaw[] = []
+  for (const batch of batches) {
+    const items = await fetchWorkItemsBatch(config, batch)
+    results.push(...items)
+  }
+
+  return { bugs: results.map(mapWorkItemToBug), allQueryIds }
 }
 
 export async function testAdoConnection(settings: AppSettings): Promise<TestConnectionResult> {
@@ -95,13 +93,13 @@ export async function testAdoConnection(settings: AppSettings): Promise<TestConn
     const wiqlResponse = await fetchWiqlQuery(config)
     return {
       success: true,
-      message: `Connessione riuscita — ${wiqlResponse.workItems.length} bug trovati`
+      message: `Connection successful — ${wiqlResponse.workItems.length} bugs found`
     }
   } catch (error: unknown) {
     const message =
       error && typeof error === 'object' && 'message' in error
         ? (error as { message: string }).message
-        : 'Errore di connessione'
+        : 'Connection error'
     return { success: false, message }
   }
 }

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug, SessionData, SimilarityResult } from '@shared/types'
 import { useAiCluster } from '@renderer/hooks/useAiCluster'
+import { resetSessionStoreForTests } from '@renderer/state/session-store'
 
 const mockBug: CategorizedBug = {
   id: 1,
@@ -42,6 +43,9 @@ type ElectronApiMock = {
   getSession: ReturnType<typeof vi.fn>
   findSimilarBugs: ReturnType<typeof vi.fn>
   onFindSimilarProgress: ReturnType<typeof vi.fn>
+  onFindSimilarDone: ReturnType<typeof vi.fn>
+  cancelFindSimilar: ReturnType<typeof vi.fn>
+  getFindSimilarStatus: ReturnType<typeof vi.fn>
   getSettings: ReturnType<typeof vi.fn>
 }
 
@@ -51,6 +55,9 @@ function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): Elect
     getSession: vi.fn().mockResolvedValue(mockSession),
     findSimilarBugs: vi.fn().mockResolvedValue(mockSimilarityResult),
     onFindSimilarProgress: vi.fn().mockReturnValue(cleanup),
+    onFindSimilarDone: vi.fn().mockReturnValue(cleanup),
+    cancelFindSimilar: vi.fn().mockResolvedValue({ cancelled: true }),
+    getFindSimilarStatus: vi.fn().mockResolvedValue({ active: false }),
     getSettings: vi.fn().mockResolvedValue(null),
     ...overrides
   }
@@ -66,6 +73,11 @@ function installElectronApiMock(overrides: Partial<ElectronApiMock> = {}): Elect
 describe('useAiCluster', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
+    resetSessionStoreForTests()
+  })
+
+  afterEach(() => {
+    resetSessionStoreForTests()
   })
 
   it('loads session on mount and sets canAnalyze when categorized', async () => {
@@ -131,6 +143,15 @@ describe('useAiCluster', () => {
 
   it('runs analysis and updates results', async () => {
     const api = installElectronApiMock()
+    // The main process persists the analysis into the session, so a later
+    // getSession returns it — the hook reads the results back from the store.
+    api.findSimilarBugs.mockImplementation(async () => {
+      api.getSession.mockResolvedValue({
+        ...mockSession,
+        similarityResults: mockSimilarityResult
+      })
+      return mockSimilarityResult
+    })
 
     const { result } = renderHook(() => useAiCluster())
 
@@ -149,7 +170,7 @@ describe('useAiCluster', () => {
 
   it('sets error state when analysis fails', async () => {
     installElectronApiMock({
-      findSimilarBugs: vi.fn().mockRejectedValue({ message: 'Settings non configurate' })
+      findSimilarBugs: vi.fn().mockRejectedValue({ message: 'Settings not configured' })
     })
 
     const { result } = renderHook(() => useAiCluster())
@@ -160,7 +181,7 @@ describe('useAiCluster', () => {
       await result.current.analyze()
     })
 
-    expect(result.current.error).toBe('Settings non configurate')
+    expect(result.current.error).toBe('Settings not configured')
     expect(result.current.analyzing).toBe(false)
   })
 
@@ -194,5 +215,79 @@ describe('useAiCluster', () => {
     await waitFor(() => expect(result.current.loading).toBe(false))
 
     expect(result.current.isStale).toBe(false)
+  })
+
+  it('does not set an error when analysis is cancelled by the user (review 2.2)', async () => {
+    installElectronApiMock({
+      findSimilarBugs: vi
+        .fn()
+        .mockRejectedValue({ code: 'OPERATION_CANCELLED', message: 'Operation cancelled' })
+    })
+
+    const { result } = renderHook(() => useAiCluster())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.analyze()
+    })
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.analyzing).toBe(false)
+  })
+
+  it('cancel() invokes cancelFindSimilar (review 2.2)', async () => {
+    const api = installElectronApiMock()
+
+    const { result } = renderHook(() => useAiCluster())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.cancel()
+    })
+
+    expect(api.cancelFindSimilar).toHaveBeenCalledTimes(1)
+  })
+
+  it('reattaches to a run already in progress at mount and clears state on done (review 2.2)', async () => {
+    let doneCallback: (() => void) | undefined
+    const api = installElectronApiMock({
+      getFindSimilarStatus: vi.fn().mockResolvedValue({ active: true }),
+      onFindSimilarDone: vi.fn((callback: () => void) => {
+        doneCallback = callback
+        return vi.fn()
+      })
+    })
+
+    const { result } = renderHook(() => useAiCluster())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    await waitFor(() => expect(result.current.analyzing).toBe(true))
+
+    expect(api.getFindSimilarStatus).toHaveBeenCalledTimes(1)
+
+    api.getSession.mockResolvedValue({
+      ...mockSession,
+      similarityResults: mockSimilarityResult
+    })
+
+    await act(async () => {
+      doneCallback?.()
+      await Promise.resolve()
+    })
+
+    await waitFor(() => expect(result.current.analyzing).toBe(false))
+    expect(result.current.results).toEqual(mockSimilarityResult)
+  })
+
+  it('does not reattach when no similarity run is active at mount (review 2.2)', async () => {
+    installElectronApiMock({ getFindSimilarStatus: vi.fn().mockResolvedValue({ active: false }) })
+
+    const { result } = renderHook(() => useAiCluster())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    expect(result.current.analyzing).toBe(false)
   })
 })

@@ -1,29 +1,18 @@
-import { AppError } from '../../../shared/types'
+import { throwAppError } from '@shared/app-error'
 import { ChatOptions, LLMProviderConfig } from '../types'
+
+// Re-exported so the providers keep a single import site for the whole
+// AppError toolkit; the implementation lives in src/shared/app-error.ts.
+export { isAppError, throwAppError } from '@shared/app-error'
 
 export const DEFAULT_PROVIDER_TIMEOUT_MS = 60000
 export const TEST_CONNECTION_SYSTEM_PROMPT =
   'You are a test assistant. Respond with: {"status":"ok"}'
 export const TEST_CONNECTION_USER_MESSAGE = 'Test connection'
 
-export function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
-
-export function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
-}
-
 export function assertApiKey(apiKey: string | undefined, providerName: string): string {
   if (!apiKey?.trim()) {
-    throwAppError('LLM_AUTH_ERROR', `API Key mancante per ${providerName}`)
+    throwAppError('LLM_AUTH_ERROR', `API key is missing for ${providerName}`)
   }
 
   return apiKey
@@ -70,6 +59,28 @@ export function createRequestTimeout(
     },
     didTimeout: () => timedOut
   }
+}
+
+/**
+ * Classifies an aborted request as a timeout or a user cancellation using the
+ * abort signal's own state, never the thrown error's `.name`. The OpenAI and
+ * Anthropic SDKs raise `APIUserAbortError` on abort, whose `.name` is
+ * `'Error'` — matching on `error.name === 'AbortError'` is dead code for
+ * those providers. `signal.aborted` is provider-agnostic and always true
+ * when the abort actually happened, regardless of which library threw.
+ *
+ * No-op if the signal was never aborted, so callers can call this
+ * unconditionally before falling through to their own error mapping.
+ */
+export function throwIfRequestAborted(
+  requestTimeout: { didTimeout: () => boolean; signal: AbortSignal },
+  providerLabel: string
+): void {
+  if (!requestTimeout.signal.aborted) return
+  if (requestTimeout.didTimeout()) {
+    throwAppError('LLM_TIMEOUT', `Request to ${providerLabel} timed out`)
+  }
+  throwAppError('OPERATION_CANCELLED', 'Operation cancelled')
 }
 
 export function getStructuredOutputMetadata(responseSchema: ChatOptions['responseSchema']): {

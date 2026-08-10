@@ -45,7 +45,7 @@ describe('ado-client', () => {
 
     await expect(fetchWiqlQuery(config)).rejects.toMatchObject({
       code: 'ADO_AUTH_ERROR',
-      message: 'Autenticazione fallita: 401 Unauthorized'
+      message: 'Authentication failed: 401 Unauthorized'
     })
   })
 
@@ -60,11 +60,11 @@ describe('ado-client', () => {
 
     await expect(fetchWiqlQuery(config)).rejects.toMatchObject({
       code: 'ADO_AUTH_ERROR',
-      message: 'Autenticazione fallita: 403 Forbidden'
+      message: 'Authentication failed: 403 Forbidden'
     })
     await expect(fetchWiqlQuery(config)).rejects.toMatchObject({
       code: 'ADO_NOT_FOUND',
-      message: 'Risorsa non trovata: 404 Not Found'
+      message: 'Resource not found: 404 Not Found'
     })
   })
 
@@ -73,7 +73,7 @@ describe('ado-client', () => {
 
     await expect(fetchWorkItemsBatch(config, [1, 2])).rejects.toMatchObject({
       code: 'ADO_TIMEOUT',
-      message: 'Errore di rete: socket hang up'
+      message: 'Network error: socket hang up'
     })
   })
 
@@ -85,14 +85,14 @@ describe('ado-client', () => {
 
     await expect(fetchWiqlQuery(config)).rejects.toMatchObject({
       code: 'ADO_TIMEOUT',
-      message: 'Timeout nella connessione ad Azure DevOps'
+      message: 'Azure DevOps connection timed out'
     })
 
     await expect(
       fetchWiqlQuery({ ...config, orgUrl: 'http://dev.azure.com/gversino' })
     ).rejects.toMatchObject({
       code: 'ADO_AUTH_ERROR',
-      message: 'URL organizzazione non valido: deve iniziare con https://'
+      message: 'Invalid organization URL: it must start with https://'
     })
   })
 
@@ -132,7 +132,7 @@ describe('ado-client', () => {
       )
     ).rejects.toMatchObject({
       code: 'ADO_NOT_FOUND',
-      message: 'URL attachment Azure DevOps non valido'
+      message: 'Invalid Azure DevOps attachment URL'
     })
   })
 })

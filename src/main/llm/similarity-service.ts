@@ -1,5 +1,4 @@
 import {
-  AppError,
   AppSettings,
   CategorizedBug,
   CategorySimilarityResult,
@@ -13,16 +12,7 @@ import { buildSimilarBugsSystemPrompt, buildSimilarBugsUserMessage } from './pro
 import { chatWithRetry } from './llm-service'
 import { isBlockingLLMError } from './error-policy'
 import { parseLlmJson } from './llm-json'
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
-}
+import { extractErrorMessage, isAppError, throwAppError } from '@shared/app-error'
 
 export interface SimilarityProgressCallback {
   (progress: SimilarityProgress): void
@@ -31,7 +21,8 @@ export interface SimilarityProgressCallback {
 export async function findSimilarBugs(
   settings: AppSettings,
   bugs: CategorizedBug[],
-  onProgress?: SimilarityProgressCallback
+  onProgress?: SimilarityProgressCallback,
+  signal?: AbortSignal
 ): Promise<SimilarityResult> {
   const provider: LLMProvider = createLLMProvider(settings.llmProvider, {
     apiKey: settings.apiKey,
@@ -60,6 +51,10 @@ export async function findSimilarBugs(
   const total = eligibleGroups.length
 
   for (const [macroCategory, groupBugs] of eligibleGroups) {
+    if (signal?.aborted) {
+      throwAppError('OPERATION_CANCELLED', 'Operation cancelled')
+    }
+
     try {
       const userMessage = buildSimilarBugsUserMessage(
         groupBugs.map((b) => ({
@@ -71,21 +66,26 @@ export async function findSimilarBugs(
       )
 
       const raw = await chatWithRetry(provider, systemPrompt, userMessage, {
-        responseSchema: 'similar-bugs'
+        responseSchema: 'similar-bugs',
+        signal
       })
 
       const parsed = parseSimilarityResponse(raw)
       categories.push({ macroCategory, groups: parsed })
     } catch (error: unknown) {
+      // A cancellation must propagate and end the whole run — isBlockingLLMError
+      // does not list OPERATION_CANCELLED, so without this explicit check it
+      // would fall through to the catch-all below and be recorded as an
+      // ordinary per-category error instead of aborting the analysis.
+      if (isAppError(error) && error.code === 'OPERATION_CANCELLED') {
+        throw error
+      }
+
       if (isAppError(error) && isBlockingLLMError(error)) {
         throw error
       }
 
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : ((error as AppError)?.message ?? 'Errore sconosciuto')
-      categories.push({ macroCategory, groups: [], error: errorMessage })
+      categories.push({ macroCategory, groups: [], error: extractErrorMessage(error) })
     }
 
     completed++
@@ -107,13 +107,14 @@ function parseSimilarityResponse(raw: string): SimilarityGroup[] {
     throw new SyntaxError('Invalid JSON in similarity response')
   }
 
-  if (!parsed || !Array.isArray(parsed.groups)) {
+  const groups = (parsed as { groups?: unknown }).groups
+  if (!Array.isArray(groups)) {
     console.warn('[Similarity] LLM response missing groups array, treating as empty')
     return []
   }
 
   // Validate and filter each group
-  return parsed.groups.filter(
+  return groups.filter(
     (g: unknown): g is SimilarityGroup =>
       g !== null &&
       typeof g === 'object' &&

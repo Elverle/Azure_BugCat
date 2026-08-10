@@ -27,7 +27,7 @@ describe('generic-provider', () => {
     await expect(provider.chat('system', 'user')).rejects.toMatchObject({
       code: 'LLM_PARSE_ERROR',
       message:
-        'Base URL del provider generico probabilmente errato: https://api.example.com/v1/chat/completions ha restituito HTML invece di JSON. Verifica che il baseUrl punti alla root API compatibile OpenAI e non a una pagina web.'
+        'The generic provider base URL is likely wrong: https://api.example.com/v1/chat/completions returned HTML instead of JSON. Make sure baseUrl points to an OpenAI-compatible API root, not a web page.'
     })
   })
 })

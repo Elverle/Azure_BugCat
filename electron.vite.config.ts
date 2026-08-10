@@ -4,11 +4,25 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {
+    resolve: {
+      alias: {
+        '@shared': resolve('src/shared'),
+        '@main': resolve('src/main')
+      }
+    },
     build: {
       externalizeDeps: { exclude: ['electron-store', '@openrouter/sdk'] }
     }
   },
-  preload: {},
+  // Only `@shared` here: the preload bundle has no business importing main-process
+  // code, so leaving `@main` unresolved keeps that mistake a build failure.
+  preload: {
+    resolve: {
+      alias: {
+        '@shared': resolve('src/shared')
+      }
+    }
+  },
   renderer: {
     resolve: {
       alias: {

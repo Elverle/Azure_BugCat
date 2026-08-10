@@ -213,6 +213,7 @@ function buildStructuredRequestDetails(
 
 export class OpenRouterProvider implements LLMProvider {
   readonly name = 'openrouter'
+  readonly displayName = 'OpenRouter'
   private client: OpenRouter
 
   constructor(private config: LLMProviderConfig) {
@@ -259,7 +260,7 @@ export class OpenRouterProvider implements LLMProvider {
 
       const content = extractOpenRouterContent(response)
       if (!content) {
-        throwAppError('LLM_PARSE_ERROR', 'Risposta vuota da OpenRouter')
+        throwAppError('LLM_PARSE_ERROR', 'Empty response from OpenRouter')
       }
       return content
     } catch (error: unknown) {
@@ -292,7 +293,7 @@ export class OpenRouterProvider implements LLMProvider {
         ) {
           throwAppError(
             'LLM_PARSE_ERROR',
-            'OpenRouter ha instradato la richiesta verso un provider o modello che non supporta correttamente structured outputs con json_schema. Seleziona un modello compatibile oppure cambia routing/provider.',
+            'OpenRouter routed the request to a provider or model that does not properly support structured outputs with json_schema. Select a compatible model, or change the routing/provider.',
             {
               ...errorDetails,
               reason: 'structured-output-routing-mismatch'
@@ -300,17 +301,21 @@ export class OpenRouterProvider implements LLMProvider {
           )
         }
 
-        throwAppError('LLM_PARSE_ERROR', 'Risposta OpenRouter non valida secondo SDK', errorDetails)
+        throwAppError(
+          'LLM_PARSE_ERROR',
+          'The OpenRouter response failed SDK validation',
+          errorDetails
+        )
       }
 
       // SDK error classes with statusCode
       if (error !== null && typeof error === 'object' && 'statusCode' in error) {
         const statusCode = (error as { statusCode: number }).statusCode
         if (statusCode === 429) {
-          throwAppError('LLM_RATE_LIMIT', 'Rate limit raggiunto per OpenRouter')
+          throwAppError('LLM_RATE_LIMIT', 'Rate limit reached for OpenRouter')
         }
         if (statusCode === 401 || statusCode === 403) {
-          throwAppError('LLM_AUTH_ERROR', 'Autenticazione non valida per OpenRouter')
+          throwAppError('LLM_AUTH_ERROR', 'Invalid authentication for OpenRouter')
         }
       }
 
@@ -322,15 +327,15 @@ export class OpenRouterProvider implements LLMProvider {
           error.name === 'AbortError'
         ) {
           if (!requestTimeout.didTimeout()) {
-            throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
+            throwAppError('OPERATION_CANCELLED', 'Operation cancelled')
           }
-          throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta a OpenRouter')
+          throwAppError('LLM_TIMEOUT', 'Request to OpenRouter timed out')
         }
       }
 
       throwAppError(
         'UNKNOWN_ERROR',
-        `Errore OpenRouter: ${error instanceof Error ? error.message : 'sconosciuto'}`
+        `OpenRouter error: ${error instanceof Error ? error.message : 'unknown'}`
       )
     } finally {
       requestTimeout.dispose()

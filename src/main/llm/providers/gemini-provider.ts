@@ -8,11 +8,13 @@ import {
   isAppError,
   TEST_CONNECTION_SYSTEM_PROMPT,
   TEST_CONNECTION_USER_MESSAGE,
-  throwAppError
+  throwAppError,
+  throwIfRequestAborted
 } from './provider-shared'
 
 export class GeminiProvider implements LLMProvider {
   readonly name = 'gemini'
+  readonly displayName = 'Gemini'
   private client: GoogleGenAI
 
   constructor(private config: LLMProviderConfig) {
@@ -39,29 +41,24 @@ export class GeminiProvider implements LLMProvider {
 
       const content = response.text
       if (!content) {
-        throwAppError('LLM_PARSE_ERROR', 'Risposta vuota da Gemini')
+        throwAppError('LLM_PARSE_ERROR', 'Empty response from Gemini')
       }
       return content
     } catch (error: unknown) {
       if (isAppError(error)) throw error
+      throwIfRequestAborted(requestTimeout, 'Gemini')
       const message = error instanceof Error ? error.message : String(error)
       if (message.includes('429') || message.includes('RESOURCE_EXHAUSTED')) {
-        throwAppError('LLM_RATE_LIMIT', 'Rate limit raggiunto per Gemini')
+        throwAppError('LLM_RATE_LIMIT', 'Rate limit reached for Gemini')
       }
       if (
         message.includes('401') ||
         message.includes('403') ||
         message.includes('API_KEY_INVALID')
       ) {
-        throwAppError('LLM_AUTH_ERROR', 'Autenticazione non valida per gemini')
+        throwAppError('LLM_AUTH_ERROR', 'Invalid authentication for Gemini')
       }
-      if (error instanceof Error && error.name === 'AbortError') {
-        if (!requestTimeout.didTimeout()) {
-          throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
-        }
-        throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta a Gemini')
-      }
-      throwAppError('UNKNOWN_ERROR', `Errore Gemini: ${message}`)
+      throwAppError('UNKNOWN_ERROR', `Gemini error: ${message}`)
     } finally {
       requestTimeout.dispose()
     }

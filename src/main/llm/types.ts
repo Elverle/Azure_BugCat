@@ -16,7 +16,10 @@ export interface ChatOptions {
 }
 
 export interface LLMProvider {
+  /** Machine id, used for diagnostics and log lines. Never shown to the user. */
   readonly name: string
+  /** User-facing name, interpolated into error messages ('OpenAI', 'the generic provider', ...). */
+  readonly displayName: string
   chat(systemPrompt: string, userMessage: string, options?: ChatOptions): Promise<string>
   testConnection(): Promise<void>
 }

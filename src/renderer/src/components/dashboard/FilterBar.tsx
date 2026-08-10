@@ -36,17 +36,18 @@ export function FilterBar({
   searchText,
   onSearchChange
 }: FilterBarProps): JSX.Element {
-  const [localSearch, setLocalSearch] = useState(searchText)
+  // While the user types, the draft holds the pending text tagged with the value it
+  // was typed over; committing it drops the draft so the box falls back to the prop
+  // and an external change (Reset) always wins, with no effect syncing it back.
+  const [draft, setDraft] = useState<{ committed: string; text: string } | null>(null)
+  const localSearch = draft?.committed === searchText ? draft.text : searchText
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  useEffect(() => {
-    setLocalSearch(searchText)
-  }, [searchText])
 
   useEffect(() => {
     if (localSearch === searchText) return
 
     timerRef.current = setTimeout(() => {
+      setDraft(null)
       onSearchChange(localSearch)
     }, DEBOUNCE_MS)
 
@@ -65,7 +66,7 @@ export function FilterBar({
           type="text"
           placeholder="Search titles, descriptions..."
           value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
+          onChange={(e) => setDraft({ committed: searchText, text: e.target.value })}
           className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 rounded bg-gray-50 focus:ring-1 focus:ring-blue-500 outline-none"
         />
       </div>

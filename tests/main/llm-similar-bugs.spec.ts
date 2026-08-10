@@ -7,6 +7,7 @@ const mockTestConnection = vi.fn()
 vi.mock('@main/llm/provider-factory', () => ({
   createLLMProvider: vi.fn(() => ({
     name: 'generic',
+    displayName: 'the generic provider',
     chat: mockChat,
     testConnection: mockTestConnection
   }))
@@ -230,5 +231,44 @@ describe('findSimilarBugs', () => {
     expect(mockChat).toHaveBeenCalledWith(expect.any(String), expect.any(String), {
       responseSchema: 'similar-bugs'
     })
+  })
+
+  it('stops between groups when the signal is aborted (review 2.2)', async () => {
+    const controller = new AbortController()
+    mockChat.mockImplementationOnce(async () => {
+      // Abort lands right after group 1's request completes — the loop must not
+      // start group 2's request once it checks the signal.
+      controller.abort()
+      return JSON.stringify({ groups: [] })
+    })
+
+    const bugs = [
+      makeCategorizedBug(1, 'Costi'),
+      makeCategorizedBug(2, 'Costi'),
+      makeCategorizedBug(3, 'Validazioni'),
+      makeCategorizedBug(4, 'Validazioni')
+    ]
+
+    await expect(
+      findSimilarBugs(baseSettings, bugs, undefined, controller.signal)
+    ).rejects.toMatchObject({ code: 'OPERATION_CANCELLED' })
+
+    expect(mockChat).toHaveBeenCalledTimes(1)
+  })
+
+  it('rethrows a mid-flight cancellation instead of recording it as a group error (review 2.2)', async () => {
+    const controller = new AbortController()
+    mockChat.mockImplementationOnce(async () => {
+      controller.abort()
+      // Mirrors what chatWithRetry surfaces once a signal aborts mid-request
+      // (llm-service.ts:147-149).
+      throw { code: 'OPERATION_CANCELLED', message: 'Operation cancelled' }
+    })
+
+    const bugs = [makeCategorizedBug(1, 'Costi'), makeCategorizedBug(2, 'Costi')]
+
+    await expect(
+      findSimilarBugs(baseSettings, bugs, undefined, controller.signal)
+    ).rejects.toMatchObject({ code: 'OPERATION_CANCELLED' })
   })
 })

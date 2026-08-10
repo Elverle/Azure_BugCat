@@ -108,27 +108,41 @@ describe('anthropic-provider', () => {
     })
   })
 
-  it('aborts the request using configured timeout', async () => {
+  it('maps timeout to LLM_TIMEOUT even when the SDK abort error name is not AbortError', async () => {
     vi.useFakeTimers()
     mockCreate.mockImplementation(
       (_request, options: { signal: AbortSignal }) =>
         new Promise((_, reject) => {
           options.signal.addEventListener('abort', () => {
-            const error = new Error('Aborted')
-            error.name = 'AbortError'
-            reject(error)
+            reject(new Error('Request was aborted.')) // come il vero APIUserAbortError: name === 'Error'
           })
         })
     )
 
     const provider = new AnthropicProvider({ apiKey: 'sk-ant-test', timeout: 30 })
-    const result = provider.chat('system', 'user')
-    const pendingExpectation = expect(result).rejects.toMatchObject({
+    const pending = expect(provider.chat('system', 'user')).rejects.toMatchObject({
       code: 'LLM_TIMEOUT'
     })
-
     await vi.advanceTimersByTimeAsync(30)
+    await pending
+  })
 
-    await pendingExpectation
+  it('maps user cancellation to OPERATION_CANCELLED even when the SDK abort error name is not AbortError', async () => {
+    const controller = new AbortController()
+    mockCreate.mockImplementation(
+      (_request, options: { signal: AbortSignal }) =>
+        new Promise((_, reject) => {
+          options.signal.addEventListener('abort', () => {
+            reject(new Error('Request was aborted.'))
+          })
+        })
+    )
+
+    const provider = new AnthropicProvider({ apiKey: 'sk-ant-test' })
+    const pending = expect(
+      provider.chat('system', 'user', { signal: controller.signal })
+    ).rejects.toMatchObject({ code: 'OPERATION_CANCELLED' })
+    controller.abort()
+    await pending
   })
 })

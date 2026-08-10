@@ -90,6 +90,25 @@ describe('useClosedBugKpis', () => {
     expect(result.current.error).toBeNull()
   })
 
+  it('exposes the message of a typed AppError rejection', async () => {
+    // What the preload actually delivers since the IPC error contract landed:
+    // a plain { code, message }, not an Error instance.
+    const getCatalogClosed = vi
+      .fn()
+      .mockRejectedValue({ code: 'STORE_ERROR', message: 'Catalogo non leggibile' })
+    Object.defineProperty(window, 'electronAPI', {
+      value: { getCatalogClosed },
+      writable: true,
+      configurable: true
+    })
+
+    const { result } = renderHook(() => useClosedBugKpis())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.kpis).toBeNull()
+    expect(result.current.error).toBe('Catalogo non leggibile')
+  })
+
   it('exposes error when IPC call rejects', async () => {
     const getCatalogClosed = vi.fn().mockRejectedValue(new Error('Store corrupted'))
     Object.defineProperty(window, 'electronAPI', {

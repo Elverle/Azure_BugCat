@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { AppSettings } from '../../src/shared/types'
+import type { AppSettings, CategorizedBug, SessionData } from '../../src/shared/types'
 import { IPC_CHANNELS } from '../../src/shared/ipc-channels'
+import { UNCATEGORIZED } from '../../src/shared/categorization'
 
 const {
   handlers,
@@ -69,6 +70,10 @@ const baseSettings: AppSettings = {
   pat: 'pat-token',
   categories: []
 }
+
+const fetchEvent = (): { sender: { id: number; send: ReturnType<typeof vi.fn> } } => ({
+  sender: { id: 1, send: vi.fn() }
+})
 
 describe('registerIPCHandlers', () => {
   beforeEach(() => {
@@ -151,38 +156,40 @@ describe('registerIPCHandlers', () => {
       }
     )
 
-    expect(resultWithoutKey).toEqual({ success: false, message: 'API Key mancante' })
+    expect(resultWithoutKey).toEqual({ success: false, message: 'API key is missing' })
   })
 
   it('reads persisted settings for bug fetching and throws if they are missing', async () => {
     storeGet.mockReturnValueOnce(null)
 
-    await expect(handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()).rejects.toMatchObject({
-      code: 'STORE_ERROR',
-      message: 'Settings non configurate'
-    })
+    await expect(handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())).rejects.toThrow(
+      'STORE_ERROR::Settings not configured'
+    )
 
     storeGet.mockImplementation((key: string) => {
       if (key === 'settings') return baseSettings
       if (key === 'bugCatalog') return null
       return null
     })
-    fetchBugsFromQuery.mockResolvedValue([
-      {
-        id: 1,
-        title: 'Bug 1',
-        state: 'Active',
-        assignee: null,
-        areaPath: 'Project\\Area',
-        description: 'Description',
-        priority: 2,
-        createdDate: '2024-01-01T00:00:00Z',
-        updatedDate: '2024-01-01T00:00:00Z',
-        tags: []
-      }
-    ])
+    fetchBugsFromQuery.mockResolvedValue({
+      bugs: [
+        {
+          id: 1,
+          title: 'Bug 1',
+          state: 'Active',
+          assignee: null,
+          areaPath: 'Project\\Area',
+          description: 'Description',
+          priority: 2,
+          createdDate: '2024-01-01T00:00:00Z',
+          updatedDate: '2024-01-01T00:00:00Z',
+          tags: []
+        }
+      ],
+      allQueryIds: [1]
+    })
 
-    const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+    const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
     expect(fetchBugsFromQuery).toHaveBeenCalledWith(baseSettings)
     expect(storeSet).toHaveBeenCalledWith('bugCatalog', expect.any(Object))
     expect(storeSet).toHaveBeenCalledWith(
@@ -251,7 +258,7 @@ describe('registerIPCHandlers', () => {
           signal?.addEventListener(
             'abort',
             () => {
-              reject({ code: 'OPERATION_CANCELLED', message: 'Categorizzazione annullata' })
+              reject({ code: 'OPERATION_CANCELLED', message: 'Operation cancelled' })
             },
             { once: true }
           )
@@ -265,7 +272,7 @@ describe('registerIPCHandlers', () => {
     const categorizePromise = categorizeHandler?.(event)
 
     await expect(cancelHandler?.({ sender: { id: 99 } })).resolves.toEqual({ cancelled: true })
-    await expect(categorizePromise).rejects.toMatchObject({ code: 'OPERATION_CANCELLED' })
+    await expect(categorizePromise).rejects.toThrow('OPERATION_CANCELLED::Operation cancelled')
     expect(storeSet).not.toHaveBeenCalledWith('session', expect.objectContaining({ bugs: [] }))
     expect(storeSet).not.toHaveBeenCalled()
   })
@@ -298,10 +305,15 @@ describe('registerIPCHandlers', () => {
 
     void categorizeHandler?.(event)
 
-    await expect(categorizeHandler?.(event)).rejects.toMatchObject({
-      code: 'UNKNOWN_ERROR',
-      message: 'Categorizzazione gia in corso'
-    })
+    await expect(categorizeHandler?.(event)).rejects.toThrow(
+      'UNKNOWN_ERROR::Categorization already in progress'
+    )
+    // The rejected invocation never started a run (run 1 is still pending on
+    // the same webContents), so it must not announce completion — a renderer
+    // listening for run 1's DONE event would otherwise unsubscribe on this
+    // false signal and never hear about run 1's real completion (review M5
+    // fix round 1).
+    expect(event.sender.send).not.toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
   })
 
   describe('ADO_FETCH_BUGS — incremental merge', () => {
@@ -324,9 +336,9 @@ describe('registerIPCHandlers', () => {
         if (key === 'bugCatalog') return null
         return null
       })
-      fetchBugsFromQuery.mockResolvedValue([makeBug(1), makeBug(2)])
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [makeBug(1), makeBug(2)], allQueryIds: [1, 2] })
 
-      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
 
       expect(storeSet).toHaveBeenCalledWith(
         'bugCatalog',
@@ -372,11 +384,13 @@ describe('registerIPCHandlers', () => {
       storeGet.mockImplementation((key: string) => {
         if (key === 'settings') return baseSettings
         if (key === 'bugCatalog') return existingCatalog
+        if (key === 'catalogMetadata')
+          return { lastClearedAt: null, queryId: baseSettings.queryId }
         return null
       })
-      fetchBugsFromQuery.mockResolvedValue([bug1])
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [bug1], allQueryIds: [1] })
 
-      const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+      const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
 
       expect(result).toEqual([
         expect.objectContaining({
@@ -417,15 +431,129 @@ describe('registerIPCHandlers', () => {
       storeGet.mockImplementation((key: string) => {
         if (key === 'settings') return baseSettings
         if (key === 'bugCatalog') return existingCatalog
+        if (key === 'catalogMetadata')
+          return { lastClearedAt: null, queryId: baseSettings.queryId }
         return null
       })
-      fetchBugsFromQuery.mockResolvedValue([]) // Bug 1 not in this fetch
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [] }) // Bug 1 not in this fetch, and not beyond topN either
 
-      const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.()
+      const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
 
       expect(result).toEqual([]) // No session bugs
       const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
       expect(catalogCall![1][1].closedAt).toEqual(expect.any(String))
+    })
+
+    it('does not close a pre-existing catalog on the first fetch after upgrade, when catalogMetadata has no stored queryId', async () => {
+      // Simulates a catalog persisted before this feature shipped: bugCatalog has
+      // data, but catalogMetadata carries no queryId at all (undefined, not merely
+      // a different value). A missing queryId must be treated as a mismatch — the
+      // same safe default as an actual query change — rather than as an implicit
+      // match that would silently close the whole existing catalog.
+      const { computeInputSignature } = await import('@main/utils/catalog-merge')
+      const bug1 = makeBug(1)
+      const sig = computeInputSignature(bug1)
+
+      const existingCatalog = {
+        1: {
+          ...bug1,
+          macroCategory: 'UI',
+          subCategory: 'Layout',
+          categoryReason: 'reason',
+          categorizedAt: '2024-06-01T00:00:00Z',
+          firstSeenAt: '2024-05-01T00:00:00Z',
+          lastSeenAt: '2024-05-15T00:00:00Z',
+          closedAt: null,
+          inputSignature: sig,
+          everInSimilarityGroup: false,
+          lastSimilarityGroupAt: null
+        }
+      }
+
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'bugCatalog') return existingCatalog
+        if (key === 'catalogMetadata') return { lastClearedAt: null } // no queryId field
+        return null
+      })
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [] }) // Bug 1 absent from this fetch too
+
+      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
+
+      const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
+      expect(catalogCall![1][1].closedAt).toBeNull()
+
+      const metadataCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'catalogMetadata')
+      expect(metadataCall![1]).toEqual(
+        expect.objectContaining({ queryId: baseSettings.queryId })
+      )
+    })
+
+    it('does not close anything when catalogMetadata.queryId differs from settings.queryId, but updates the stored queryId', async () => {
+      const { computeInputSignature } = await import('@main/utils/catalog-merge')
+      const bug1 = makeBug(1)
+      const sig = computeInputSignature(bug1)
+
+      const existingCatalog = {
+        1: {
+          ...bug1,
+          macroCategory: 'UI',
+          subCategory: 'Layout',
+          categoryReason: 'reason',
+          categorizedAt: '2024-06-01T00:00:00Z',
+          firstSeenAt: '2024-05-01T00:00:00Z',
+          lastSeenAt: '2024-05-15T00:00:00Z',
+          closedAt: null,
+          inputSignature: sig,
+          everInSimilarityGroup: false,
+          lastSimilarityGroupAt: null
+        }
+      }
+
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'bugCatalog') return existingCatalog
+        if (key === 'catalogMetadata') return { lastClearedAt: null, queryId: 'a-different-query' }
+        return null
+      })
+      // The full WIQL result set for the new query does not include bug 1 at all —
+      // under a naive implementation this would close it, but the query changed,
+      // so this fetch must not derive any closures from it.
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [999] })
+
+      await handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)?.(fetchEvent())
+
+      const catalogCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'bugCatalog')
+      expect(catalogCall![1][1].closedAt).toBeNull()
+
+      const metadataCall = storeSet.mock.calls.find((c: unknown[]) => c[0] === 'catalogMetadata')
+      expect(metadataCall![1]).toEqual(
+        expect.objectContaining({ queryId: baseSettings.queryId })
+      )
+    })
+  })
+
+  describe('ADO_FETCH_BUGS — concurrency guard', () => {
+    it('rejects a second concurrent bug fetch on the same webContents', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'bugCatalog') return null
+        return null
+      })
+
+      fetchBugsFromQuery.mockImplementation(
+        () =>
+          new Promise(() => {
+            // Stays pending so the second invocation hits the in-flight guard.
+          })
+      )
+
+      const fetchHandler = handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)
+      const event = { sender: { id: 55, send: vi.fn() } }
+
+      void fetchHandler?.(event)
+
+      await expect(fetchHandler?.(event)).rejects.toThrow(/already in progress/i)
     })
   })
 
@@ -472,6 +600,10 @@ describe('registerIPCHandlers', () => {
           categorizedAt: expect.any(String)
         })
       )
+      // No run was ever registered for this invocation, so it must not send
+      // DONE — the caller's own promise resolving is already the complete
+      // signal here (review M5 fix round 1).
+      expect(event.sender.send).not.toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
     })
 
     it('does not update categorizedAt when all bugs already categorized and timestamp exists', async () => {
@@ -556,6 +688,211 @@ describe('registerIPCHandlers', () => {
     })
   })
 
+  describe('LLM_CATEGORIZE — incremental persistence per chunk (review 2.1)', () => {
+    const NOW = '2026-06-01T00:00:00.000Z'
+
+    const uncategorized = (id: number): unknown => ({
+      id,
+      title: `Bug ${id}`,
+      state: 'Active',
+      assignee: null,
+      areaPath: 'Project\\Area',
+      description: `Description ${id}`,
+      priority: 2,
+      createdDate: '2024-01-01T00:00:00Z',
+      updatedDate: '2024-01-01T00:00:00Z',
+      tags: [],
+      macroCategory: '',
+      subCategory: '',
+      categoryReason: '',
+      categorizedAt: ''
+    })
+
+    const categorized = (id: number, macroCategory: string): unknown => ({
+      ...(uncategorized(id) as Record<string, unknown>),
+      macroCategory,
+      subCategory: 'Layout',
+      categoryReason: 'Looks like a UI bug',
+      categorizedAt: '2026-06-01T00:00:01.000Z'
+    })
+
+    const catalogEntry = (id: number): unknown => ({
+      ...(uncategorized(id) as Record<string, unknown>),
+      firstSeenAt: '2024-05-01T00:00:00Z',
+      lastSeenAt: '2024-05-01T00:00:00Z',
+      closedAt: null,
+      inputSignature: `sig-${id}`,
+      everInSimilarityGroup: false,
+      lastSimilarityGroupAt: null
+    })
+
+    const fakeEvent = (): { sender: { id: number; send: ReturnType<typeof vi.fn> } } => ({
+      sender: { id: 1, send: vi.fn() }
+    })
+
+    it('persists completed chunks even when a later chunk fails with a blocking error', async () => {
+      const fakeStore: Record<string, unknown> = {
+        settings: baseSettings,
+        session: { bugs: [uncategorized(1), uncategorized(2)], fetchedAt: NOW },
+        bugCatalog: { 1: catalogEntry(1), 2: catalogEntry(2) }
+      }
+      storeGet.mockImplementation((key: string) => fakeStore[key])
+      storeSet.mockImplementation((key: string, value: unknown) => {
+        fakeStore[key] = value
+      })
+
+      categorizeBugs.mockImplementation(
+        async (
+          _s: unknown,
+          _bugs: unknown,
+          onProgress: (progress: {
+            total: number
+            completed: number
+            currentChunk: unknown[]
+          }) => void
+        ) => {
+          onProgress({ total: 2, completed: 1, currentChunk: [categorized(1, 'UI')] })
+          throw { code: 'LLM_TIMEOUT', message: 'Request to OpenAI timed out' }
+        }
+      )
+
+      await expect(handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)?.(fakeEvent())).rejects.toThrow(
+        /LLM_TIMEOUT/
+      )
+
+      const session = fakeStore.session as {
+        bugs: Array<{ id: number; macroCategory: string; categorizedAt: string }>
+      }
+      expect(session.bugs.find((b) => b.id === 1)?.macroCategory).toBe('UI')
+      expect(session.bugs.find((b) => b.id === 1)?.categorizedAt).not.toBe('')
+      expect(session.bugs.find((b) => b.id === 2)?.categorizedAt).toBe('')
+    })
+
+    it('persists a chunk containing a failed categorization sentinel and keeps that bug retry-eligible', async () => {
+      // A sentinel-carrying chunk is the normal shape of a non-blocking chunk
+      // failure in production (llm-service.ts marks the chunk UNCATEGORIZED and
+      // still calls onProgress with it), not an exotic edge case — persistChunk
+      // must not treat it like a real categorization.
+      const fakeStore: Record<string, unknown> = {
+        settings: baseSettings,
+        session: { bugs: [uncategorized(1), uncategorized(2)], fetchedAt: NOW },
+        bugCatalog: { 1: catalogEntry(1), 2: catalogEntry(2) }
+      }
+      storeGet.mockImplementation((key: string) => fakeStore[key])
+      storeSet.mockImplementation((key: string, value: unknown) => {
+        fakeStore[key] = value
+      })
+
+      categorizeBugs.mockImplementation(
+        async (
+          _s: unknown,
+          _bugs: unknown,
+          onProgress: (progress: {
+            total: number
+            completed: number
+            currentChunk: unknown[]
+          }) => void
+        ) => {
+          onProgress({
+            total: 2,
+            completed: 1,
+            currentChunk: [categorized(1, UNCATEGORIZED)]
+          })
+          throw { code: 'LLM_TIMEOUT', message: 'Request to OpenAI timed out' }
+        }
+      )
+
+      await expect(handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)?.(fakeEvent())).rejects.toThrow(
+        /LLM_TIMEOUT/
+      )
+
+      const session = fakeStore.session as {
+        bugs: Array<{ id: number; macroCategory: string; categorizedAt: string }>
+      }
+      const bug1 = session.bugs.find((b) => b.id === 1)
+      expect(bug1?.macroCategory).toBe(UNCATEGORIZED)
+      expect(bug1?.categorizedAt).toBe('')
+
+      const catalog = fakeStore.bugCatalog as Record<
+        number,
+        { macroCategory: string; categorizedAt: string }
+      >
+      expect(catalog[1].macroCategory).toBe(UNCATEGORIZED)
+      expect(catalog[1].categorizedAt).toBe('')
+    })
+  })
+
+  describe('LLM_CATEGORIZE — done event, post-reload resync (review M5)', () => {
+    const NOW = '2026-06-01T00:00:00.000Z'
+
+    const uncategorizedBug = (id: number): unknown => ({
+      id,
+      title: `Bug ${id}`,
+      state: 'Active',
+      assignee: null,
+      areaPath: 'Project\\Area',
+      description: `Description ${id}`,
+      priority: 2,
+      createdDate: '2024-01-01T00:00:00Z',
+      updatedDate: '2024-01-01T00:00:00Z',
+      tags: [],
+      macroCategory: '',
+      subCategory: '',
+      categoryReason: '',
+      categorizedAt: ''
+    })
+
+    it('sends LLM_CATEGORIZE_DONE once the run settles, so a reloaded renderer can resync', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'session') return { bugs: [uncategorizedBug(1)], fetchedAt: NOW }
+        return null
+      })
+      categorizeBugs.mockResolvedValue([
+        {
+          ...(uncategorizedBug(1) as Record<string, unknown>),
+          macroCategory: 'UI',
+          subCategory: 'Layout',
+          categoryReason: 'reason',
+          categorizedAt: NOW
+        }
+      ])
+
+      const send = vi.fn()
+      const event = { sender: { id: 10, send } }
+
+      await handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)?.(event)
+
+      expect(send).toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
+    })
+
+    it('does not let a send failure on a destroyed webContents replace the real outcome (review addendum §2)', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'session') return { bugs: [uncategorizedBug(1)], fetchedAt: NOW }
+        return null
+      })
+      categorizeBugs.mockRejectedValue({
+        code: 'LLM_TIMEOUT',
+        message: 'Request to OpenAI timed out'
+      })
+
+      // Simulates the window having closed mid-run: send() throws synchronously,
+      // as Electron does for a destroyed webContents.
+      const send = vi.fn(() => {
+        throw new Error('Object has been destroyed')
+      })
+      const event = { sender: { id: 11, send } }
+
+      // Without the guard, the throw from send() inside the finally block would
+      // replace this rejection with an unrelated UNKNOWN_ERROR.
+      await expect(handlers.get(IPC_CHANNELS.LLM_CATEGORIZE)?.(event)).rejects.toThrow(
+        'LLM_TIMEOUT::Request to OpenAI timed out'
+      )
+      expect(send).toHaveBeenCalledWith(IPC_CHANNELS.LLM_CATEGORIZE_DONE)
+    })
+  })
+
   describe('LLM_FIND_SIMILAR — catalog metadata update', () => {
     it('updates catalog similarity metadata after finding similar bugs', async () => {
       const session = {
@@ -618,6 +955,117 @@ describe('registerIPCHandlers', () => {
       expect(catalogCall).toBeDefined()
       expect(catalogCall![1][1].everInSimilarityGroup).toBe(true)
       expect(catalogCall![1][1].lastSimilarityGroupAt).toBe('2024-06-15T00:00:00Z')
+    })
+  })
+
+  describe('LLM_FIND_SIMILAR — safe write, guard, cancel/status/done (review 2.2)', () => {
+    const NOW = '2026-06-01T00:00:00.000Z'
+
+    const categorized = (id: number, macroCategory: string): CategorizedBug => ({
+      id,
+      title: `Bug ${id}`,
+      state: 'Active',
+      assignee: null,
+      areaPath: 'Project\\Area',
+      description: `Description ${id}`,
+      priority: 2,
+      createdDate: '2024-01-01T00:00:00Z',
+      updatedDate: '2024-01-01T00:00:00Z',
+      tags: [],
+      macroCategory,
+      subCategory: 'Layout',
+      categoryReason: 'Looks like a UI bug',
+      categorizedAt: '2026-06-01T00:00:01.000Z'
+    })
+
+    const fakeEvent = (): { sender: { id: number; send: ReturnType<typeof vi.fn> } } => ({
+      sender: { id: 1, send: vi.fn() }
+    })
+
+    it('does not clobber a session refreshed during a similarity run (lost update)', async () => {
+      const staleBugs = [categorized(1, 'A')]
+      const freshBugs = [categorized(1, 'A'), categorized(2, 'B')]
+      const fakeStore: Record<string, unknown> = {
+        settings: baseSettings,
+        session: { bugs: staleBugs, fetchedAt: NOW, categorizedAt: NOW }
+      }
+      storeGet.mockImplementation((key: string) => fakeStore[key])
+      storeSet.mockImplementation((key: string, value: unknown) => {
+        fakeStore[key] = value
+      })
+
+      findSimilarBugs.mockImplementation(async () => {
+        // Simulates a bug fetch completing in the background while the analysis runs.
+        fakeStore.session = { bugs: freshBugs, fetchedAt: 'LATER', categorizedAt: NOW }
+        return { categories: [], analyzedAt: 'LATER' }
+      })
+
+      await handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR)?.(fakeEvent())
+
+      const session = fakeStore.session as SessionData
+      expect(session.bugs).toHaveLength(2) // the fetch was NOT reverted
+      expect(session.similarityResults?.analyzedAt).toBe('LATER')
+    })
+
+    it('rejects a second concurrent similarity run', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'session') {
+          return { bugs: [categorized(1, 'A'), categorized(2, 'A')], fetchedAt: NOW, categorizedAt: NOW }
+        }
+        return null
+      })
+
+      findSimilarBugs.mockImplementation(
+        () =>
+          new Promise(() => {
+            // Stays pending so the second invocation hits the in-flight guard.
+          })
+      )
+
+      const event = fakeEvent()
+      void handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR)?.(event)
+
+      await expect(handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR)?.(event)).rejects.toThrow(
+        /already in progress/i
+      )
+    })
+
+    it('exposes similarity status and cancels an active run', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'session') {
+          return { bugs: [categorized(1, 'A'), categorized(2, 'A')], fetchedAt: NOW, categorizedAt: NOW }
+        }
+        return null
+      })
+
+      let capturedSignal: AbortSignal | undefined
+      findSimilarBugs.mockImplementation(
+        (_settings, _bugs, _onProgress, signal?: AbortSignal) =>
+          new Promise((_, reject) => {
+            capturedSignal = signal
+            signal?.addEventListener(
+              'abort',
+              () => reject({ code: 'OPERATION_CANCELLED', message: 'Operation cancelled' }),
+              { once: true }
+            )
+          })
+      )
+
+      const event = fakeEvent()
+      const statusHandler = handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR_STATUS)
+      const cancelHandler = handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR_CANCEL)
+
+      const runPromise = handlers.get(IPC_CHANNELS.LLM_FIND_SIMILAR)?.(event)
+
+      await expect(statusHandler?.(event)).resolves.toEqual({ active: true })
+
+      await expect(cancelHandler?.(event)).resolves.toEqual({ cancelled: true })
+      expect(capturedSignal?.aborted).toBe(true)
+
+      await expect(runPromise).rejects.toThrow('OPERATION_CANCELLED')
+      await expect(statusHandler?.(event)).resolves.toEqual({ active: false })
     })
   })
 

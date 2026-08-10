@@ -1,4 +1,4 @@
-import { Archive, Bug, Database } from 'lucide-react'
+import { Archive, Bug } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@renderer/lib/utils'
 

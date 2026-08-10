@@ -9,11 +9,13 @@ import {
   isAppError,
   TEST_CONNECTION_SYSTEM_PROMPT,
   TEST_CONNECTION_USER_MESSAGE,
-  throwAppError
+  throwAppError,
+  throwIfRequestAborted
 } from './provider-shared'
 
 export class AnthropicProvider implements LLMProvider {
   readonly name = 'anthropic'
+  readonly displayName = 'Anthropic'
   private client: Anthropic
 
   constructor(private config: LLMProviderConfig) {
@@ -57,28 +59,23 @@ export class AnthropicProvider implements LLMProvider {
 
       const textBlock = response.content.find((block) => block.type === 'text')
       if (!textBlock || textBlock.type !== 'text') {
-        throwAppError('LLM_PARSE_ERROR', 'Risposta vuota da Anthropic')
+        throwAppError('LLM_PARSE_ERROR', 'Empty response from Anthropic')
       }
       return textBlock.text
     } catch (error: unknown) {
       if (isAppError(error)) throw error
+      throwIfRequestAborted(requestTimeout, 'Anthropic')
       if (error instanceof Anthropic.APIError) {
         if (error.status === 429) {
-          throwAppError('LLM_RATE_LIMIT', 'Rate limit raggiunto per Anthropic')
+          throwAppError('LLM_RATE_LIMIT', 'Rate limit reached for Anthropic')
         }
         if (error.status === 401 || error.status === 403) {
-          throwAppError('LLM_AUTH_ERROR', 'Autenticazione non valida per anthropic')
+          throwAppError('LLM_AUTH_ERROR', 'Invalid authentication for Anthropic')
         }
-      }
-      if (error instanceof Error && error.name === 'AbortError') {
-        if (!requestTimeout.didTimeout()) {
-          throwAppError('OPERATION_CANCELLED', 'Categorizzazione annullata')
-        }
-        throwAppError('LLM_TIMEOUT', 'Timeout nella richiesta a Anthropic')
       }
       throwAppError(
         'UNKNOWN_ERROR',
-        `Errore Anthropic: ${error instanceof Error ? error.message : 'sconosciuto'}`
+        `Anthropic error: ${error instanceof Error ? error.message : 'unknown'}`
       )
     } finally {
       requestTimeout.dispose()

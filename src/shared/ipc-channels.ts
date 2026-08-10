@@ -20,11 +20,15 @@ export const IPC_CHANNELS = {
   LLM_CATEGORIZE_CANCEL: 'llm:categorize-cancel',
   LLM_CATEGORIZE_STATUS: 'llm:categorize-status',
   LLM_CATEGORIZE_PROGRESS: 'llm:categorize-progress',
+  LLM_CATEGORIZE_DONE: 'llm:categorize-done',
   LLM_TEST_CONNECTION: 'llm:test-connection',
 
   // LLM - Similarity
   LLM_FIND_SIMILAR: 'llm:find-similar',
+  LLM_FIND_SIMILAR_CANCEL: 'llm:find-similar-cancel',
+  LLM_FIND_SIMILAR_STATUS: 'llm:find-similar-status',
   LLM_FIND_SIMILAR_PROGRESS: 'llm:find-similar-progress',
+  LLM_FIND_SIMILAR_DONE: 'llm:find-similar-done',
 
   // Session
   SESSION_GET: 'session:get',

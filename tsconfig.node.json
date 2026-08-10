@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
     "composite": true,
+    "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "outDir": "./out",
     "rootDir": "./src",
     "strict": true,
     "skipLibCheck": true,
-    "noEmit": false,
-    "declaration": true,
+    "noEmit": true,
     "sourceMap": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
@@ -21,5 +20,5 @@
       "@main/*": ["src/main/*"]
     }
   },
-  "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*", "electron.vite.config.ts"]
+  "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*"]
 }

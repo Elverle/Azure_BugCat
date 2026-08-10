@@ -6,30 +6,23 @@ import {
   ChunkProgress,
   LLMCategorizeResult
 } from '../../shared/types'
+import {
+  UNCATEGORIZED,
+  PROCESSING_ERROR,
+  NO_LLM_RESPONSE,
+  NOT_AVAILABLE,
+  isFailedCategorization
+} from '../../shared/categorization'
 import { LLMProvider, ChatOptions } from './types'
 import { createLLMProvider } from './provider-factory'
 import { buildSystemPrompt, buildUserMessage } from './prompts'
 import { splitIntoChunks } from './chunking'
 import { validateLLMResponse } from './response-validator'
 import { isBlockingLLMError } from './error-policy'
+import { isAppError, throwAppError } from '@shared/app-error'
 
 const RETRY_DELAYS = [2000, 4000, 8000]
 const MAX_TITLE_LOG_LENGTH = 120
-
-function throwAppError(code: AppError['code'], message: string, details?: unknown): never {
-  const err: AppError = { code, message, ...(details !== undefined && { details }) }
-  throw err
-}
-
-function isAppError(error: unknown): error is AppError {
-  return (
-    error !== null &&
-    typeof error === 'object' &&
-    'code' in error &&
-    'message' in error &&
-    typeof (error as AppError).message === 'string'
-  )
-}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -38,7 +31,7 @@ function sleep(ms: number): Promise<void> {
 function buildCancellationError(): AppError {
   return {
     code: 'OPERATION_CANCELLED',
-    message: 'Categorizzazione annullata'
+    message: 'Operation cancelled'
   }
 }
 
@@ -158,7 +151,7 @@ export async function chatWithRetry(
         if (options?.signal?.aborted) {
           throw buildCancellationError()
         }
-        throwAppError('LLM_TIMEOUT', `Timeout nella richiesta al provider ${provider.name}`, {
+        throwAppError('LLM_TIMEOUT', `Request to ${provider.displayName} timed out`, {
           provider: provider.name,
           attempt: attempt + 1,
           originalError: buildErrorDiagnostics(error)
@@ -220,7 +213,7 @@ export async function categorizeBugs(
           ? buildCancellationError()
           : ({
               code: 'LLM_TIMEOUT',
-              message: `Timeout nella richiesta al provider ${provider.name}`,
+              message: `Request to ${provider.displayName} timed out`,
               details: {
                 provider: provider.name,
                 originalError: buildErrorDiagnostics(error)
@@ -247,9 +240,9 @@ export async function categorizeBugs(
 
       chunkResults = chunk.map((bug) => ({
         bugId: bug.id,
-        macroCategory: 'Non categorizzato',
-        subCategory: 'Errore elaborazione',
-        categoryReason: 'N/D'
+        macroCategory: UNCATEGORIZED,
+        subCategory: PROCESSING_ERROR,
+        categoryReason: NOT_AVAILABLE
       }))
     }
 
@@ -280,12 +273,13 @@ function applyCategorization(bugs: BugItem[], results: LLMCategorizeResult[]): C
 
   return bugs.map((bug) => {
     const result = resultMap.get(bug.id)
+    const macroCategory = result?.macroCategory ?? UNCATEGORIZED
     return {
       ...bug,
-      macroCategory: result?.macroCategory ?? 'Non categorizzato',
-      subCategory: result?.subCategory ?? 'Nessuna risposta LLM',
-      categoryReason: result?.categoryReason ?? 'N/D',
-      categorizedAt: now
+      macroCategory,
+      subCategory: result?.subCategory ?? NO_LLM_RESPONSE,
+      categoryReason: result?.categoryReason ?? NOT_AVAILABLE,
+      categorizedAt: isFailedCategorization(macroCategory) ? '' : now
     }
   })
 }

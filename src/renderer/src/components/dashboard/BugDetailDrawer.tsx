@@ -42,49 +42,44 @@ export default function BugDetailDrawer({
 }: BugDetailDrawerProps): JSX.Element {
   const drawerRef = useRef<HTMLDivElement>(null)
   const resizeStateRef = useRef<{ startX: number; startWidth: number } | null>(null)
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false)
-  const [resolvedDescriptionHtml, setResolvedDescriptionHtml] = useState<string>('')
+  // Both pieces of state are tagged with the bug / html they belong to, so they
+  // fall back to their default as soon as the drawer shows different content.
+  const [expandedForBugId, setExpandedForBugId] = useState<number | null>(null)
+  const [resolvedDescription, setResolvedDescription] = useState<{
+    source: string
+    html: string
+  } | null>(null)
+
   const sanitizedDescriptionHtml = sanitizeBugDescriptionHtml(bug?.descriptionHtml)
   const pendingDescriptionHtml = stripAdoAttachmentImages(sanitizedDescriptionHtml)
   const hasAdoAttachmentImages = sanitizedDescriptionHtml !== pendingDescriptionHtml
+  const descriptionExpanded = bug != null && expandedForBugId === bug.id
+  const resolvedHtml =
+    resolvedDescription?.source === sanitizedDescriptionHtml ? resolvedDescription.html : ''
   const descriptionHtml = hasAdoAttachmentImages
-    ? resolvedDescriptionHtml || pendingDescriptionHtml
+    ? resolvedHtml || pendingDescriptionHtml
     : sanitizedDescriptionHtml
   const hasDescriptionContent = Boolean(descriptionHtml || bug?.description)
 
   useEffect(() => {
-    setDescriptionExpanded(false)
-  }, [bug?.id])
-
-  useEffect(() => {
-    let disposed = false
-
     if (!hasAdoAttachmentImages) {
-      setResolvedDescriptionHtml('')
-      return () => {
-        disposed = true
-      }
+      return
     }
 
-    async function resolveDescriptionHtml(): Promise<void> {
-      if (!sanitizedDescriptionHtml) {
-        if (!disposed) {
-          setResolvedDescriptionHtml('')
-        }
-        return
-      }
+    let disposed = false
 
+    async function resolveDescriptionHtml(): Promise<void> {
       try {
         const html = await resolveAdoAttachmentImages(
           sanitizedDescriptionHtml,
           window.electronAPI.fetchAdoAttachmentDataUrl
         )
         if (!disposed) {
-          setResolvedDescriptionHtml(html)
+          setResolvedDescription({ source: sanitizedDescriptionHtml, html })
         }
       } catch {
         if (!disposed) {
-          setResolvedDescriptionHtml(pendingDescriptionHtml)
+          setResolvedDescription({ source: sanitizedDescriptionHtml, html: pendingDescriptionHtml })
         }
       }
     }
@@ -94,7 +89,7 @@ export default function BugDetailDrawer({
     return () => {
       disposed = true
     }
-  }, [bug?.id, hasAdoAttachmentImages, pendingDescriptionHtml, sanitizedDescriptionHtml])
+  }, [hasAdoAttachmentImages, pendingDescriptionHtml, sanitizedDescriptionHtml])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent): void {
@@ -295,7 +290,7 @@ export default function BugDetailDrawer({
                 <div className="flex items-center justify-between gap-3 mb-2">
                   <div className="text-xs text-gray-500">Description</div>
                   <button
-                    onClick={() => setDescriptionExpanded((current) => !current)}
+                    onClick={() => setExpandedForBugId(descriptionExpanded ? null : bug.id)}
                     className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
                   >
                     {descriptionExpanded ? 'Riduci descrizione' : 'Espandi descrizione'}

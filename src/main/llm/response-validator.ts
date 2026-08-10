@@ -1,4 +1,5 @@
 import { BugItem, LLMCategorizeResult, LLMResponse } from '../../shared/types'
+import { UNCATEGORIZED, NO_LLM_RESPONSE, NOT_AVAILABLE } from '../../shared/categorization'
 import { parseLlmJson } from './llm-json'
 import { normalizeTechnicalLayer } from './technical-layer'
 
@@ -55,7 +56,7 @@ function normalizeBugId(value: unknown): number | null {
   return null
 }
 
-function getStringField(value: unknown, fallback = 'N/D'): string {
+function getStringField(value: unknown, fallback = NOT_AVAILABLE): string {
   if (typeof value !== 'string') {
     return fallback
   }
@@ -103,13 +104,13 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
 
   if (parsed === null) {
     logValidationFailure('invalid-json', raw, chunkBugs)
-    return buildFallbackResults(chunkBugs, 'Non categorizzato', 'Errore parsing')
+    return buildFallbackResults(chunkBugs, UNCATEGORIZED, 'Errore parsing')
   }
 
   const resultItems = getResultItems(parsed)
   if (!resultItems) {
     logValidationFailure('missing-results-array', raw, chunkBugs)
-    return buildFallbackResults(chunkBugs, 'Non categorizzato', 'Errore parsing')
+    return buildFallbackResults(chunkBugs, UNCATEGORIZED, 'Errore parsing')
   }
 
   const resultMap = new Map<number, LLMCategorizeResult>()
@@ -161,9 +162,9 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
     } else {
       results.push({
         bugId: bug.id,
-        macroCategory: 'Non categorizzato',
-        subCategory: 'Nessuna risposta LLM',
-        categoryReason: 'N/D'
+        macroCategory: UNCATEGORIZED,
+        subCategory: NO_LLM_RESPONSE,
+        categoryReason: NOT_AVAILABLE
       })
     }
   }
@@ -180,6 +181,6 @@ function buildFallbackResults(
     bugId: bug.id,
     macroCategory,
     subCategory,
-    categoryReason: 'N/D'
+    categoryReason: NOT_AVAILABLE
   }))
 }
