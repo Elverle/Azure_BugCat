@@ -87,8 +87,11 @@ export function AdoConnectionSection({
               type="number"
               min={1}
               max={200}
-              value={settings.topN}
-              onChange={(e) => onFieldChange('topN', parseInt(e.target.value) || 0)}
+              value={Number.isNaN(settings.topN) ? '' : settings.topN}
+              onChange={(e) => {
+                const raw = e.target.value
+                onFieldChange('topN', raw.trim() === '' ? Number.NaN : parseInt(raw, 10))
+              }}
             />
             {touched.topN && errors.topN && (
               <p className="text-xs text-red-500 mt-1">{errors.topN}</p>

@@ -131,8 +131,11 @@ export function LlmProviderSection({
             type="number"
             min={5}
             max={30}
-            value={settings.chunkSize}
-            onChange={(e) => onFieldChange('chunkSize', parseInt(e.target.value) || 0)}
+            value={Number.isNaN(settings.chunkSize) ? '' : settings.chunkSize}
+            onChange={(e) => {
+              const raw = e.target.value
+              onFieldChange('chunkSize', raw.trim() === '' ? Number.NaN : parseInt(raw, 10))
+            }}
           />
           {touched.chunkSize && errors.chunkSize && (
             <p className="text-xs text-red-500 mt-1">{errors.chunkSize}</p>
