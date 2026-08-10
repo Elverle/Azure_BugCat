@@ -36,6 +36,21 @@ function isAllowedAttachmentUrl(orgUrl: string, attachmentUrl: string): boolean 
   }
 }
 
+const FALLBACK_ATTACHMENT_CONTENT_TYPE = 'image/png'
+
+/**
+ * Only echo the response content-type into the data url when it is actually an
+ * image; any other content-type (e.g. a mislabelled or malicious response) is
+ * replaced with a safe fallback instead of being trusted verbatim.
+ */
+function sanitizeAttachmentContentType(rawContentType: string | null): string {
+  const normalized = (rawContentType ?? '').toLowerCase()
+  if (!normalized.startsWith('image/')) {
+    return FALLBACK_ATTACHMENT_CONTENT_TYPE
+  }
+  return (rawContentType ?? '').split(';')[0].trim()
+}
+
 function mapResponseError(status: number, statusText: string): never {
   if (status === 401 || status === 403) {
     throwAppError('ADO_AUTH_ERROR', `Authentication failed: ${status} ${statusText}`)
@@ -155,7 +170,7 @@ export async function fetchAdoAttachmentDataUrl(
       mapResponseError(response.status, response.statusText)
     }
 
-    const contentType = response.headers.get('content-type') || 'image/png'
+    const contentType = sanitizeAttachmentContentType(response.headers.get('content-type'))
     const buffer = Buffer.from(await response.arrayBuffer())
     return `data:${contentType};base64,${buffer.toString('base64')}`
   } catch (error: unknown) {

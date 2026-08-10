@@ -29,6 +29,16 @@ export function isAdoAttachmentUrl(value: string): boolean {
   }
 }
 
+/**
+ * Images are held to a stricter allowlist than other URLs: any third-party https
+ * source (e.g. a remote tracking pixel) must be dropped, so only inline data URLs
+ * and ADO attachment URLs are permitted as `img[src]`.
+ */
+function isSafeImageUrl(value: string): boolean {
+  const normalized = value.trim().toLowerCase()
+  return normalized.startsWith('data:image/') || isAdoAttachmentUrl(value.trim())
+}
+
 function sanitizeAttributes(element: Element): void {
   const allowedAttributes = ALLOWED_ATTRIBUTES_BY_TAG.get(element.tagName.toLowerCase())
 
@@ -42,7 +52,10 @@ function sanitizeAttributes(element: Element): void {
       continue
     }
 
-    if (URL_ATTRIBUTE_NAMES.has(attributeName) && !isSafeUrl(attribute.value)) {
+    const isImgSrc = element.tagName.toLowerCase() === 'img' && attributeName === 'src'
+    const urlIsSafe = isImgSrc ? isSafeImageUrl(attribute.value) : isSafeUrl(attribute.value)
+
+    if (URL_ATTRIBUTE_NAMES.has(attributeName) && !urlIsSafe) {
       element.removeAttribute(attribute.name)
       continue
     }

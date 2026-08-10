@@ -124,6 +124,42 @@ describe('ado-client', () => {
     )
   })
 
+  it('whitelists non-image content types to image/png in the data url', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: {
+        get: vi.fn().mockReturnValue('text/html; charset=utf-8')
+      },
+      arrayBuffer: async () => Uint8Array.from([1, 2, 3]).buffer
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await fetchAdoAttachmentDataUrl(
+      config,
+      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+    )
+
+    expect(result).toBe(`data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`)
+  })
+
+  it('strips charset parameters from an allowed image content type', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: {
+        get: vi.fn().mockReturnValue('image/jpeg; charset=binary')
+      },
+      arrayBuffer: async () => Uint8Array.from([4, 5, 6]).buffer
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const result = await fetchAdoAttachmentDataUrl(
+      config,
+      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.jpg'
+    )
+
+    expect(result).toBe(`data:image/jpeg;base64,${Buffer.from([4, 5, 6]).toString('base64')}`)
+  })
+
   it('rejects attachment urls outside the configured ADO organization', async () => {
     await expect(
       fetchAdoAttachmentDataUrl(
