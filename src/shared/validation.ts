@@ -1,4 +1,5 @@
 import type { AppSettings, LLMProviderType } from '@shared/types'
+import { throwAppError } from './app-error'
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
@@ -95,4 +96,48 @@ export function validateSettings(settings: AppSettings): Record<string, string |
 
 export function isSettingsValid(errors: Record<string, string | null>): boolean {
   return Object.values(errors).every((v) => v === null)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object'
+}
+
+/**
+ * Main-process gate for `SETTINGS_SET`: the renderer already validates before
+ * calling `setSettings`, but the main process is the actual trust boundary —
+ * it must not persist whatever crosses the IPC bridge on faith. Rejects a
+ * non-object payload, a payload whose fields have the wrong primitive type,
+ * and (via `validateSettings`/`isSettingsValid`) a payload whose values are
+ * the right type but out of range — including `NaN`, which passes a bare
+ * `typeof x === 'number'` check but is caught by `validateIntRange`.
+ */
+export function assertValidSettings(input: unknown): AppSettings {
+  if (!isRecord(input)) {
+    throwAppError('STORE_ERROR', 'Invalid settings payload: expected an object')
+  }
+
+  const candidate = input as unknown as AppSettings
+  if (
+    typeof candidate.orgUrl !== 'string' ||
+    typeof candidate.projectName !== 'string' ||
+    typeof candidate.queryId !== 'string' ||
+    typeof candidate.pat !== 'string' ||
+    typeof candidate.topN !== 'number' ||
+    typeof candidate.chunkSize !== 'number' ||
+    typeof candidate.llmProvider !== 'string' ||
+    !Array.isArray(candidate.categories)
+  ) {
+    throwAppError('STORE_ERROR', 'Invalid settings payload: unexpected field types')
+  }
+
+  const errors = validateSettings(candidate)
+  if (!isSettingsValid(errors)) {
+    const detail = Object.entries(errors)
+      .filter(([, message]) => message !== null)
+      .map(([field, message]) => `${field}: ${message}`)
+      .join('; ')
+    throwAppError('STORE_ERROR', `Invalid settings: ${detail}`)
+  }
+
+  return candidate
 }

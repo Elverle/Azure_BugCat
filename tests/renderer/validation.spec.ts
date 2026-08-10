@@ -9,7 +9,7 @@ import {
   validateOrgUrl,
   validateSettings,
   validateUUID
-} from '@renderer/lib/validation'
+} from '@shared/validation'
 
 const validSettings: AppSettings = {
   orgUrl: 'https://dev.azure.com/gversino',

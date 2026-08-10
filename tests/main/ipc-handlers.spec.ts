@@ -121,6 +121,37 @@ describe('registerIPCHandlers', () => {
     )
   })
 
+  describe('SETTINGS_SET — main-process validation (review 2.4)', () => {
+    it('rejects malformed settings payloads instead of persisting them', async () => {
+      await expect(
+        handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, { ...baseSettings, orgUrl: 123 })
+      ).rejects.toThrow(/^STORE_ERROR::/)
+      expect(storeSet).not.toHaveBeenCalled()
+    })
+
+    it('rejects a non-object payload instead of persisting it', async () => {
+      await expect(handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, null)).rejects.toThrow(
+        /^STORE_ERROR::/
+      )
+      expect(storeSet).not.toHaveBeenCalled()
+    })
+
+    // review B5: an emptied Top N/Chunk Size field now sends NaN rather than 0.
+    // typeof NaN === 'number', so a bare primitive-type check would let it through —
+    // only validateIntRange (via validateSettings/isSettingsValid) actually rejects it.
+    it('rejects NaN numeric fields instead of persisting them', async () => {
+      await expect(
+        handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, { ...baseSettings, topN: Number.NaN })
+      ).rejects.toThrow(/^STORE_ERROR::/)
+      expect(storeSet).not.toHaveBeenCalled()
+    })
+
+    it('persists valid settings', async () => {
+      await handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, baseSettings)
+      expect(storeSet).toHaveBeenCalledWith('settings', baseSettings)
+    })
+  })
+
   it('fetches ADO attachments through the main process using persisted settings', async () => {
     storeGet.mockReturnValueOnce(baseSettings)
     fetchAdoAttachmentDataUrl.mockResolvedValue('data:image/png;base64,AAA=')

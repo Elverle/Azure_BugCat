@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { AppSettings } from '@shared/types'
 import { extractErrorMessage } from '@shared/app-error'
-import { validateSettings, isSettingsValid } from '@renderer/lib/validation'
+import { validateSettings, isSettingsValid } from '@shared/validation'
 
 const DEFAULT_SETTINGS: AppSettings = {
   orgUrl: '',

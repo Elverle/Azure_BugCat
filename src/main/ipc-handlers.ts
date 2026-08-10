@@ -12,6 +12,7 @@ import {
   TestConnectionResult
 } from '../shared/types'
 import { encodeIpcError, throwAppError } from '@shared/app-error'
+import { assertValidSettings } from '@shared/validation'
 import { fetchBugsFromQuery, testAdoConnection } from './ado/ado-service'
 import { fetchAdoAttachmentDataUrl } from './ado/ado-client'
 import { categorizeBugs, testLLMConnection, findSimilarBugs } from './llm'
@@ -55,7 +56,10 @@ export function registerIPCHandlers(): void {
     return store.get('settings')
   })
   handle(IPC_CHANNELS.SETTINGS_SET, (_event, settings: unknown) => {
-    store.set('settings', settings)
+    // The renderer already validates before calling this, but the main process is
+    // the actual trust boundary — a malformed or out-of-range payload persisted
+    // here would corrupt the store for every later read (review 2.4).
+    store.set('settings', assertValidSettings(settings))
   })
 
   // Session
