@@ -41,7 +41,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-15',
     tags: ['auth'],
     macroCategory: 'Authentication',
-    subCategory: 'OAuth',
+    technicalLayer: 'OAuth',
     categoryReason: 'OAuth related',
     categorizedAt: '2026-01-15'
   },
@@ -57,7 +57,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-16',
     tags: [],
     macroCategory: 'Authentication',
-    subCategory: 'SSO',
+    technicalLayer: 'SSO',
     categoryReason: 'SSO issue',
     categorizedAt: '2026-01-16'
   }
@@ -69,7 +69,7 @@ const defaultFilterState: FilterState = {
   statuses: [],
   assignees: [],
   macroCategories: [],
-  subCategories: [],
+  technicalLayers: [],
   searchText: ''
 }
 
@@ -258,7 +258,7 @@ describe('FilterBar', () => {
     statuses: ['Active', 'Resolved'],
     assignees: ['Laura K.', 'Marco R.'],
     macroCategories: ['Authentication', 'UI'],
-    subCategories: ['OAuth', 'SSO']
+    technicalLayers: ['OAuth', 'SSO']
   }
 
   function renderFilterBar(overrides = {}): ReturnType<typeof render> {

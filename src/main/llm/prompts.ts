@@ -1,4 +1,4 @@
-import { TECHNICAL_LAYER_VALUES } from './technical-layer'
+import { TECHNICAL_LAYER_VALUES } from '../../shared/technical-layer'
 
 export function buildSystemPrompt(categories: string[]): string {
   const technicalLayerList = TECHNICAL_LAYER_VALUES.join(', ')
@@ -21,7 +21,7 @@ export function buildSystemPrompt(categories: string[]): string {
     '- Prefer the category that best matches the functional area or user-visible problem described by the bug.',
     '- If multiple categories look plausible, choose the most specific one that is directly supported by title and description.',
     '- Do not return Non categorizzato, Altro, Unknown, Other, or any invented category unless that exact value is explicitly present in the allowed category list.',
-    `- The subCategory is the technical ownership layer. Use exactly one of: ${technicalLayerList}.`,
+    `- The technicalLayer is the technical ownership layer. Use exactly one of: ${technicalLayerList}.`,
     '- Use FE for UI, client-side logic, rendering, navigation, browser behavior, or frontend validations.',
     '- Use BE for API, server-side logic, database, integrations, jobs, persistence, or backend validations.',
     '- Use FE/BE only when the evidence clearly points to a boundary issue, contract mismatch, or both layers.',
@@ -31,18 +31,18 @@ export function buildSystemPrompt(categories: string[]): string {
     'Example:',
     'Title: "Validazioni finali - Valore non mostrato durante il caricamento"',
     'Best category: "Validazioni"',
-    'Best subCategory: "FE"',
+    'Best technicalLayer: "FE"',
     'Reason: the title explicitly points to final validations and a value not shown during loading, which suggests a frontend validation or display issue.',
     '',
     'Title: "Costo extra - errore apertura modale"',
     'Best category: "Costi"',
-    'Best subCategory: "FE"',
+    'Best technicalLayer: "FE"',
     'Reason: the core issue is about accommodation cost and the modal opening error points to a frontend interaction problem.',
     '',
     'Output format:',
     'Return ONLY valid JSON, no markdown fences, no preamble, no explanation outside the JSON.',
     'Return exactly one result for each input bug.',
-    `Each result must include: bugId (number), macroCategory (string), subCategory (string: ${technicalLayerList}), categoryReason (string).`
+    `Each result must include: bugId (number), macroCategory (string), technicalLayer (string: ${technicalLayerList}), categoryReason (string).`
   ].join('\n')
 
   if (categories.length > 0) {
@@ -72,7 +72,7 @@ export function buildUserMessage(
   return (
     'Analyze each bug below and assign the most appropriate category using title, description, and tags.\n' +
     'Use tag and title as the primary signals, and use description as supporting evidence when helpful.\n' +
-    `Set subCategory to exactly one technical layer: ${TECHNICAL_LAYER_VALUES.join(', ')}.\n\n` +
+    `Set technicalLayer to exactly one technical layer: ${TECHNICAL_LAYER_VALUES.join(', ')}.\n\n` +
     JSON.stringify(payload, null, 2)
   )
 }

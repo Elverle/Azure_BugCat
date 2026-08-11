@@ -28,7 +28,7 @@ function makeCategorizedBug(id: number, macroCategory: string): CategorizedBug {
     updatedDate: '2026-01-01T00:00:00Z',
     tags: [],
     macroCategory,
-    subCategory: 'Sub',
+    technicalLayer: 'Sub',
     categoryReason: 'reason',
     categorizedAt: '2026-01-01T12:00:00Z'
   }

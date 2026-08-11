@@ -28,7 +28,7 @@ const mockSession: SessionData = {
       updatedDate: '2026-01-01T10:00:00Z',
       tags: ['costi', 'modale'],
       macroCategory: 'Costi',
-      subCategory: 'FE',
+      technicalLayer: 'FE',
       categoryReason: 'Problema UI sulla modale costo',
       categorizedAt: '2026-01-01T10:00:00Z'
     },
@@ -44,7 +44,7 @@ const mockSession: SessionData = {
       updatedDate: '2026-01-01T10:05:00Z',
       tags: ['costi'],
       macroCategory: 'Costi',
-      subCategory: 'FE',
+      technicalLayer: 'FE',
       categoryReason: 'Problema di visualizzazione costo',
       categorizedAt: '2026-01-01T10:00:00Z'
     }

@@ -25,7 +25,7 @@ const COLUMNS: ColumnDef[] = [
   { key: 'assignee', label: 'Assegnatario', className: 'w-32' },
   { key: 'areaPath', label: 'Area Path', className: 'w-40' },
   { key: 'macroCategory', label: 'Macro-cat', className: 'w-28' },
-  { key: 'subCategory', label: 'Sotto-cat', className: 'w-28' }
+  { key: 'technicalLayer', label: 'Sotto-cat', className: 'w-28' }
 ]
 
 function SortIcon({
@@ -93,8 +93,8 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
       )
     }
 
-    case 'subCategory': {
-      const subColor = getCategoryColor(bug.subCategory)
+    case 'technicalLayer': {
+      const subColor = getCategoryColor(bug.technicalLayer)
       return (
         <span
           className={cn(
@@ -103,7 +103,7 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
             subColor.text
           )}
         >
-          {bug.subCategory || '—'}
+          {bug.technicalLayer || '—'}
         </span>
       )
     }

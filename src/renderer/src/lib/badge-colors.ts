@@ -57,10 +57,10 @@ export function getCategoryColor(category: string): { bg: string; text: string }
   return CATEGORY_PALETTE[index]
 }
 
-export function getSubCategoryBgTint(subCategory: string): string {
-  if (!subCategory) {
+export function getTechnicalLayerBgTint(technicalLayer: string): string {
+  if (!technicalLayer) {
     return 'bg-white'
   }
-  const index = hashString(subCategory) % TINT_PALETTE.length
+  const index = hashString(technicalLayer) % TINT_PALETTE.length
   return TINT_PALETTE[index]
 }

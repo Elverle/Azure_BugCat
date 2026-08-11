@@ -33,7 +33,8 @@ export interface BugItem {
 
 export interface CategorizedBug extends BugItem {
   macroCategory: string
-  subCategory: string
+  /** TechnicalLayer | PROCESSING_ERROR | NO_LLM_RESPONSE | '' (not categorized yet) */
+  technicalLayer: string
   categoryReason: string
   categorizedAt: string
 }
@@ -75,7 +76,7 @@ export interface ChunkProgress {
 export interface LLMCategorizeResult {
   bugId: number
   macroCategory: string
-  subCategory: string
+  technicalLayer: string
   categoryReason: string
 }
 

@@ -240,7 +240,7 @@ export default function BugDetailDrawer({
                     <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1">
                       Sub-Category
                     </div>
-                    <div className="text-sm font-medium text-gray-900">{bug.subCategory}</div>
+                    <div className="text-sm font-medium text-gray-900">{bug.technicalLayer}</div>
                   </div>
                 </div>
                 <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1 mt-2">

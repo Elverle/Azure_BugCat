@@ -18,7 +18,7 @@ import {
   groupBugs,
   computeKpis,
   getUniqueValues,
-  getSubCategoriesForMacros,
+  getTechnicalLayersForMacros,
   EMPTY_FILTER_STATE,
   DEFAULT_SORT_STATE,
   type FilterState,
@@ -81,25 +81,25 @@ export function DashboardPage(): JSX.Element {
       statuses: getUniqueValues(bugs, 'state'),
       assignees,
       macroCategories: getUniqueValues(bugs, 'macroCategory'),
-      subCategories: getSubCategoriesForMacros(bugs, selectedFilters.macroCategories)
+      technicalLayers: getTechnicalLayersForMacros(bugs, selectedFilters.macroCategories)
     }
   }, [bugs, selectedFilters.macroCategories])
 
   // Sub-category selections that the current macro-category choice (or the current
   // bug set) no longer offers are dropped here rather than reconciled in an effect.
   const filterState = useMemo<FilterState>(() => {
-    if (selectedFilters.subCategories.length === 0) {
+    if (selectedFilters.technicalLayers.length === 0) {
       return selectedFilters
     }
 
-    const reconciled = selectedFilters.subCategories.filter((sub) =>
-      filterOptions.subCategories.includes(sub)
+    const reconciled = selectedFilters.technicalLayers.filter((sub) =>
+      filterOptions.technicalLayers.includes(sub)
     )
 
-    return reconciled.length === selectedFilters.subCategories.length
+    return reconciled.length === selectedFilters.technicalLayers.length
       ? selectedFilters
-      : { ...selectedFilters, subCategories: reconciled }
-  }, [selectedFilters, filterOptions.subCategories])
+      : { ...selectedFilters, technicalLayers: reconciled }
+  }, [selectedFilters, filterOptions.technicalLayers])
 
   // Computed values
   const filteredBugs = useMemo(

@@ -52,7 +52,7 @@ export function mergeFetchIntoCatalog(
         ...existing,
         ...bug,
         macroCategory: existing.macroCategory,
-        subCategory: existing.subCategory,
+        technicalLayer: existing.technicalLayer,
         categoryReason: existing.categoryReason,
         categorizedAt: existing.categorizedAt,
         lastSeenAt: now,
@@ -63,7 +63,7 @@ export function mergeFetchIntoCatalog(
       sessionBugs.push({
         ...bug,
         macroCategory: existing.macroCategory,
-        subCategory: existing.subCategory,
+        technicalLayer: existing.technicalLayer,
         categoryReason: existing.categoryReason,
         categorizedAt: existing.categorizedAt
       })
@@ -73,7 +73,7 @@ export function mergeFetchIntoCatalog(
         ...existing,
         ...bug,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: '',
         lastSeenAt: now,
@@ -84,7 +84,7 @@ export function mergeFetchIntoCatalog(
       sessionBugs.push({
         ...bug,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: ''
       })
@@ -94,7 +94,7 @@ export function mergeFetchIntoCatalog(
       catalog[bug.id] = {
         ...bug,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: '',
         firstSeenAt: now,
@@ -108,7 +108,7 @@ export function mergeFetchIntoCatalog(
       sessionBugs.push({
         ...bug,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: ''
       })
@@ -149,7 +149,7 @@ export function mergeCategorization(
       return {
         ...bug,
         macroCategory: llmResult.macroCategory,
-        subCategory: llmResult.subCategory,
+        technicalLayer: llmResult.technicalLayer,
         categoryReason: llmResult.categoryReason,
         categorizedAt: isFailedCategorization(llmResult.macroCategory) ? '' : now
       }
@@ -164,7 +164,7 @@ export function mergeCategorization(
       const updatedEntry: CatalogBug = {
         ...entry,
         macroCategory: llmResult.macroCategory,
-        subCategory: llmResult.subCategory,
+        technicalLayer: llmResult.technicalLayer,
         categoryReason: llmResult.categoryReason,
         categorizedAt: isFailedCategorization(llmResult.macroCategory) ? '' : now,
         inputSignature: computeInputSignature(entry)

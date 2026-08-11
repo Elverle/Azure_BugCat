@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CATEGORIZATION_SCHEMA, SIMILAR_BUGS_SCHEMA, getSchema } from '@main/llm/schemas'
-import { TECHNICAL_LAYER_VALUES } from '@main/llm/technical-layer'
+import { TECHNICAL_LAYER_VALUES } from '@shared/technical-layer'
 
 describe('schemas', () => {
   describe('CATEGORIZATION_SCHEMA', () => {
@@ -13,7 +13,7 @@ describe('schemas', () => {
     it('defines results as array of objects with required fields', () => {
       const items = CATEGORIZATION_SCHEMA.properties.results.items
       expect(items.type).toBe('object')
-      expect(items.required).toEqual(['bugId', 'macroCategory', 'subCategory', 'categoryReason'])
+      expect(items.required).toEqual(['bugId', 'macroCategory', 'technicalLayer', 'categoryReason'])
       expect(items.additionalProperties).toBe(false)
     })
 
@@ -21,8 +21,8 @@ describe('schemas', () => {
       const props = CATEGORIZATION_SCHEMA.properties.results.items.properties
       expect(props.bugId.type).toBe('number')
       expect(props.macroCategory.type).toBe('string')
-      expect(props.subCategory.type).toBe('string')
-      expect(props.subCategory.enum).toEqual(TECHNICAL_LAYER_VALUES)
+      expect(props.technicalLayer.type).toBe('string')
+      expect(props.technicalLayer.enum).toEqual(TECHNICAL_LAYER_VALUES)
       expect(props.categoryReason.type).toBe('string')
     })
   })

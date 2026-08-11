@@ -18,7 +18,7 @@ function makeBug(overrides: Partial<CategorizedBug> = {}): CategorizedBug {
     updatedDate: '2026-01-15',
     tags: ['auth'],
     macroCategory: 'Authentication',
-    subCategory: 'OAuth',
+    technicalLayer: 'OAuth',
     categoryReason: 'OAuth related',
     categorizedAt: '2026-01-15',
     ...overrides

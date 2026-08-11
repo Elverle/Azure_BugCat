@@ -232,7 +232,7 @@ describe('registerIPCHandlers', () => {
           expect.objectContaining({
             id: 1,
             macroCategory: '',
-            subCategory: '',
+            technicalLayer: '',
             categoryReason: '',
             categorizedAt: ''
           })
@@ -243,7 +243,7 @@ describe('registerIPCHandlers', () => {
       expect.objectContaining({
         id: 1,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: ''
       })
@@ -263,7 +263,7 @@ describe('registerIPCHandlers', () => {
         {
           id: 42,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'test',
           categorizedAt: '2026-05-01T00:00:00.000Z'
         }
@@ -400,7 +400,7 @@ describe('registerIPCHandlers', () => {
         1: {
           ...bug1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'test reason',
           categorizedAt: '2024-06-01T00:00:00Z',
           firstSeenAt: '2024-05-01T00:00:00Z',
@@ -427,7 +427,7 @@ describe('registerIPCHandlers', () => {
         expect.objectContaining({
           id: 1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'test reason',
           categorizedAt: '2024-06-01T00:00:00Z'
         })
@@ -447,7 +447,7 @@ describe('registerIPCHandlers', () => {
         1: {
           ...bug1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'reason',
           categorizedAt: '2024-06-01T00:00:00Z',
           firstSeenAt: '2024-05-01T00:00:00Z',
@@ -489,7 +489,7 @@ describe('registerIPCHandlers', () => {
         1: {
           ...bug1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'reason',
           categorizedAt: '2024-06-01T00:00:00Z',
           firstSeenAt: '2024-05-01T00:00:00Z',
@@ -529,7 +529,7 @@ describe('registerIPCHandlers', () => {
         1: {
           ...bug1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'reason',
           categorizedAt: '2024-06-01T00:00:00Z',
           firstSeenAt: '2024-05-01T00:00:00Z',
@@ -628,7 +628,7 @@ describe('registerIPCHandlers', () => {
       updatedDate: '2024-01-01T00:00:00Z',
       tags: [],
       macroCategory: categorizedAt ? 'UI' : '',
-      subCategory: categorizedAt ? 'Layout' : '',
+      technicalLayer: categorizedAt ? 'Layout' : '',
       categoryReason: categorizedAt ? 'reason' : '',
       categorizedAt
     })
@@ -723,7 +723,7 @@ describe('registerIPCHandlers', () => {
         {
           ...bug2,
           macroCategory: 'Performance',
-          subCategory: 'Memory',
+          technicalLayer: 'Memory',
           categoryReason: 'reason',
           categorizedAt: '2024-06-02T00:00:00Z'
         }
@@ -761,7 +761,7 @@ describe('registerIPCHandlers', () => {
       updatedDate: '2024-01-01T00:00:00Z',
       tags: [],
       macroCategory: '',
-      subCategory: '',
+      technicalLayer: '',
       categoryReason: '',
       categorizedAt: ''
     })
@@ -769,7 +769,7 @@ describe('registerIPCHandlers', () => {
     const categorized = (id: number, macroCategory: string): unknown => ({
       ...(uncategorized(id) as Record<string, unknown>),
       macroCategory,
-      subCategory: 'Layout',
+      technicalLayer: 'Layout',
       categoryReason: 'Looks like a UI bug',
       categorizedAt: '2026-06-01T00:00:01.000Z'
     })
@@ -895,7 +895,7 @@ describe('registerIPCHandlers', () => {
       updatedDate: '2024-01-01T00:00:00Z',
       tags: [],
       macroCategory: '',
-      subCategory: '',
+      technicalLayer: '',
       categoryReason: '',
       categorizedAt: ''
     })
@@ -910,7 +910,7 @@ describe('registerIPCHandlers', () => {
         {
           ...(uncategorizedBug(1) as Record<string, unknown>),
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'reason',
           categorizedAt: NOW
         }
@@ -958,7 +958,7 @@ describe('registerIPCHandlers', () => {
           {
             id: 1,
             macroCategory: 'UI',
-            subCategory: 'Layout',
+            technicalLayer: 'Layout',
             categoryReason: 'r',
             categorizedAt: '2024-06-01'
           }
@@ -1031,7 +1031,7 @@ describe('registerIPCHandlers', () => {
       updatedDate: '2024-01-01T00:00:00Z',
       tags: [],
       macroCategory,
-      subCategory: 'Layout',
+      technicalLayer: 'Layout',
       categoryReason: 'Looks like a UI bug',
       categorizedAt: '2026-06-01T00:00:01.000Z'
     })
@@ -1171,7 +1171,7 @@ describe('registerIPCHandlers', () => {
           updatedDate: '2024-01-01',
           tags: [],
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'r',
           categorizedAt: '2024-06-01',
           firstSeenAt: '2024-05-01',
@@ -1193,7 +1193,7 @@ describe('registerIPCHandlers', () => {
           updatedDate: '2024-01-01',
           tags: [],
           macroCategory: 'Performance',
-          subCategory: 'Memory',
+          technicalLayer: 'Memory',
           categoryReason: 'r',
           categorizedAt: '2024-06-01',
           firstSeenAt: '2024-05-01',
@@ -1238,7 +1238,7 @@ describe('registerIPCHandlers', () => {
           updatedDate: '2024-01-01',
           tags: [],
           macroCategory: '',
-          subCategory: '',
+          technicalLayer: '',
           categoryReason: '',
           categorizedAt: '',
           firstSeenAt: '2024-05-01',

@@ -51,7 +51,7 @@ function makeBug(overrides: Partial<CategorizedBug> = {}): CategorizedBug {
     updatedDate: '2026-01-20T14:30:00Z',
     tags: ['OAuth', 'Safari'],
     macroCategory: 'Authentication',
-    subCategory: 'OAuth',
+    technicalLayer: 'OAuth',
     categoryReason: 'The description mentions MSAL token exchange failure and Safari ITP.',
     categorizedAt: '2026-01-20T15:00:00Z',
     ...overrides
@@ -97,7 +97,7 @@ describe('BugDetailDrawer', () => {
   })
 
   it('shows "Non ancora categorizzato" for uncategorized bug', () => {
-    const uncategorized = makeBug({ macroCategory: '', subCategory: '', categoryReason: '' })
+    const uncategorized = makeBug({ macroCategory: '', technicalLayer: '', categoryReason: '' })
     render(<BugDetailDrawer {...defaultProps} bug={uncategorized} />)
 
     expect(screen.getByText('Non ancora categorizzato')).toBeInTheDocument()

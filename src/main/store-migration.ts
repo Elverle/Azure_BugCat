@@ -1,6 +1,6 @@
 import { computeInputSignature } from './utils/catalog-merge'
 
-export const CURRENT_SCHEMA_VERSION = 3
+export const CURRENT_SCHEMA_VERSION = 4
 
 export type Migration = {
   version: number
@@ -90,6 +90,31 @@ export const migrations: Migration[] = [
       }
 
       data.bugCatalog = catalog
+      return data
+    }
+  },
+  {
+    version: 4,
+    up: (data) => {
+      // Rename subCategory -> technicalLayer everywhere the field was persisted.
+      // NOTE (Fase 2): this same `up` will be EXTENDED with the italian -> english
+      // sentinel conversion. v4 must not reach users in an intermediate state.
+      const renameLayer = (bug: Record<string, unknown>): Record<string, unknown> => {
+        if ('subCategory' in bug) {
+          bug.technicalLayer = bug.subCategory
+          delete bug.subCategory
+        }
+        return bug
+      }
+
+      const session = data.session as { bugs?: Record<string, unknown>[] } | null
+      if (session?.bugs) session.bugs = session.bugs.map(renameLayer)
+
+      const catalog = data.bugCatalog as Record<string, Record<string, unknown>> | null
+      if (catalog) {
+        for (const key of Object.keys(catalog)) catalog[key] = renameLayer(catalog[key])
+      }
+
       return data
     }
   }

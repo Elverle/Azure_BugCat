@@ -16,7 +16,7 @@ function makeCatalogBug(overrides: Partial<CatalogBug> = {}): CatalogBug {
     updatedDate: '2024-01-01T00:00:00Z',
     tags: [],
     macroCategory: '',
-    subCategory: '',
+    technicalLayer: '',
     categoryReason: '',
     categorizedAt: '',
     firstSeenAt: '2024-05-01T00:00:00Z',
