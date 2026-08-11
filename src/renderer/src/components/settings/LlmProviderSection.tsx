@@ -134,7 +134,10 @@ export function LlmProviderSection({
             value={Number.isNaN(settings.chunkSize) ? '' : settings.chunkSize}
             onChange={(e) => {
               const raw = e.target.value
-              onFieldChange('chunkSize', raw.trim() === '' ? Number.NaN : parseInt(raw, 10))
+              // Number(), not parseInt(): parseInt silently truncates legal
+              // <input type="number"> values ("1.9" -> 1, "1e5" -> 1) instead of
+              // letting validateIntRange reject them with a visible message.
+              onFieldChange('chunkSize', raw.trim() === '' ? Number.NaN : Number(raw))
             }}
           />
           {touched.chunkSize && errors.chunkSize && (

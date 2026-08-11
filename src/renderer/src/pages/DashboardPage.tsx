@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { List, Layers, Bug, Sparkles, Play, AlertTriangle, Loader2, XCircle } from 'lucide-react'
+import { List, Layers, Bug, Sparkles, Play, AlertTriangle, Loader2 } from 'lucide-react'
 import { useDashboard } from '@renderer/hooks/useDashboard'
 import { useAiCluster } from '@renderer/hooks/useAiCluster'
 import { useBugDrawer } from '@renderer/hooks/useBugDrawer'
@@ -450,7 +450,8 @@ function DashboardSimilaritySection({
     isStale,
     error,
     analyze,
-    cancel
+    cancel,
+    clearError
   } = useAiCluster()
 
   if (loading) {
@@ -522,13 +523,6 @@ function DashboardSimilaritySection({
           </div>
         )}
 
-        {error && !analyzing && (
-          <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            <XCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
-
         {analyzing && progress && (
           <div>
             <div className="flex justify-between text-xs text-gray-500 mb-1">
@@ -592,6 +586,19 @@ function DashboardSimilaritySection({
           </div>
         ) : null}
       </div>
+
+      {/* Module-scope `error` (see useAiCluster) survives a tab switch or a
+          route navigation, so it needs an explicit dismiss affordance — a
+          successful analyze() is not the only way out of it. Consistent with
+          categorizeError/fetchError above (FIX 4). */}
+      <ConfirmDialog
+        open={error !== null && !analyzing}
+        title="Errore analisi similarità"
+        description={error ?? ''}
+        confirmLabel="Chiudi"
+        onConfirm={clearError}
+        onCancel={clearError}
+      />
     </>
   )
 }

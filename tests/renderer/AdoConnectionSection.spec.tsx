@@ -55,4 +55,20 @@ describe('AdoConnectionSection', () => {
 
     expect(onFieldChange).toHaveBeenCalledWith('topN', 50)
   })
+
+  it('reports a fractional Top N as-is instead of silently truncating it (FIX 7)', () => {
+    const { onFieldChange } = renderSection()
+
+    fireEvent.change(screen.getByLabelText('Top N Bugs'), { target: { value: '1.9' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('topN', 1.9)
+  })
+
+  it('reports an exponent-notation Top N at its real value instead of parseInt truncating it to 1 (FIX 7)', () => {
+    const { onFieldChange } = renderSection()
+
+    fireEvent.change(screen.getByLabelText('Top N Bugs'), { target: { value: '1e5' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('topN', 100000)
+  })
 })

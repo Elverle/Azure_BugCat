@@ -1,10 +1,5 @@
 import { AppSettings, BugItem, TestConnectionResult } from '../../shared/types'
-import {
-  AdoConnectionConfig,
-  WorkItemRaw,
-  ADO_BATCH_SIZE,
-  ADO_FETCH_BUDGET_MS
-} from './types'
+import { AdoConnectionConfig, WorkItemRaw, ADO_BATCH_SIZE } from './types'
 import { fetchWiqlQuery, fetchWorkItemsBatch } from './ado-client'
 import { htmlToText } from '../utils/html-to-text'
 import { throwAppError } from '@shared/app-error'
@@ -84,14 +79,7 @@ export async function fetchBugsFromQuery(settings: AppSettings): Promise<FetchBu
   }
 
   const results: WorkItemRaw[] = []
-  const deadline = Date.now() + ADO_FETCH_BUDGET_MS
   for (const batch of batches) {
-    if (Date.now() >= deadline) {
-      throwAppError(
-        'ADO_TIMEOUT',
-        `Fetching the query took longer than ${Math.round(ADO_FETCH_BUDGET_MS / 1000)}s. Lower "Top N" in the settings to fetch fewer bugs at a time.`
-      )
-    }
     const items = await fetchWorkItemsBatch(config, batch)
     results.push(...items)
   }

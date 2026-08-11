@@ -142,15 +142,19 @@ export function useSettings(): UseSettingsReturn {
   const testAdoConnection = useCallback(async () => {
     setTestAdoLoading(true)
     setTestAdoResult(null)
+    // Captured so the race timer can be cancelled once the real response wins —
+    // otherwise it stays scheduled for the rest of its 65s and later rejects a
+    // promise nobody is awaiting (FIX 6).
+    let raceTimeout: ReturnType<typeof setTimeout> | undefined
     try {
       const response = (await Promise.race([
         window.electronAPI.testAdoConnection(settings),
-        new Promise<never>((_, reject) =>
-          setTimeout(
+        new Promise<never>((_, reject) => {
+          raceTimeout = setTimeout(
             () => reject(new Error('Connection test timed out')),
             TEST_CONNECTION_TIMEOUT_MS
           )
-        )
+        })
       ])) as { success: boolean; message: string }
       setTestAdoResult({
         type: response.success ? 'success' : 'error',
@@ -160,6 +164,7 @@ export function useSettings(): UseSettingsReturn {
       const message = err instanceof Error ? err.message : 'Connection test failed.'
       setTestAdoResult({ type: 'error', message })
     } finally {
+      clearTimeout(raceTimeout)
       setTestAdoLoading(false)
     }
   }, [settings])
@@ -167,15 +172,18 @@ export function useSettings(): UseSettingsReturn {
   const testLlmConnection = useCallback(async () => {
     setTestLlmLoading(true)
     setTestLlmResult(null)
+    // See testAdoConnection above: cancelled once the real response wins so it
+    // does not linger for the rest of its 65s (FIX 6).
+    let raceTimeout: ReturnType<typeof setTimeout> | undefined
     try {
       const response = (await Promise.race([
         window.electronAPI.testLlmConnection(settings),
-        new Promise<never>((_, reject) =>
-          setTimeout(
+        new Promise<never>((_, reject) => {
+          raceTimeout = setTimeout(
             () => reject(new Error('Connection test timed out')),
             TEST_CONNECTION_TIMEOUT_MS
           )
-        )
+        })
       ])) as { success: boolean; message: string }
 
       setTestLlmResult({
@@ -186,6 +194,7 @@ export function useSettings(): UseSettingsReturn {
       const message = err instanceof Error ? err.message : 'Connection test failed.'
       setTestLlmResult({ type: 'error', message })
     } finally {
+      clearTimeout(raceTimeout)
       setTestLlmLoading(false)
     }
   }, [settings])

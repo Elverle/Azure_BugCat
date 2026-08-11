@@ -314,6 +314,70 @@ describe('useAiCluster', () => {
     expect(result.current.analyzing).toBe(false)
   })
 
+  it('clears a stuck analyzing flag on remount when the run finished while unmounted (FIX 1, regression from d00a666)', async () => {
+    // First mount adopts a run already in progress...
+    const api = installElectronApiMock({
+      getFindSimilarStatus: vi.fn().mockResolvedValue({ active: true })
+    })
+
+    const { result, unmount } = renderHook(() => useAiCluster())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    await waitFor(() => expect(result.current.analyzing).toBe(true))
+
+    // ...then the view is switched away before DONE fires — this tears down the
+    // DONE listener that was installed for the adopted run, exactly like
+    // DashboardSimilaritySection unmounting on a tab switch.
+    unmount()
+
+    // The run finishes while nothing is listening: getFindSimilarStatus now
+    // reports no active run, and the session already carries the result the
+    // main process persisted.
+    api.getFindSimilarStatus.mockResolvedValue({ active: false })
+    api.getSession.mockResolvedValue({
+      ...mockSession,
+      similarityResults: mockSimilarityResult
+    })
+
+    // Switching back mounts a fresh hook instance. Without the fix, `analyzing`
+    // stays stuck at `true` forever (module-scope store, no listener left to
+    // clear it) and the freshly computed results never surface.
+    const { result: remounted } = renderHook(() => useAiCluster())
+    await waitFor(() => expect(remounted.current.loading).toBe(false))
+
+    await waitFor(() => expect(remounted.current.analyzing).toBe(false))
+    expect(remounted.current.results).toEqual(mockSimilarityResult)
+  })
+
+  it('does not cancel a locally started analyze() when a late status check resolves inactive (FIX 1)', async () => {
+    let resolveStatus: (status: { active: boolean }) => void = () => {}
+    installElectronApiMock({
+      getFindSimilarStatus: vi.fn().mockImplementation(
+        () =>
+          new Promise((resolve) => {
+            resolveStatus = resolve
+          })
+      ),
+      findSimilarBugs: vi.fn().mockImplementation(() => new Promise(() => {}))
+    })
+
+    const { result } = renderHook(() => useAiCluster())
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    act(() => {
+      void result.current.analyze()
+    })
+    await waitFor(() => expect(result.current.analyzing).toBe(true))
+
+    // The mount's status check resolves late, after the user already started
+    // their own run — it must not clobber it.
+    await act(async () => {
+      resolveStatus({ active: false })
+      await Promise.resolve()
+    })
+
+    expect(result.current.analyzing).toBe(true)
+  })
+
   it('keeps the error visible on a fresh mount after a run failed while unmounted (Task 18b item 3)', async () => {
     let rejectFindSimilar: (error: unknown) => void = () => {}
     installElectronApiMock({
@@ -417,6 +481,29 @@ describe('useAiCluster', () => {
 
     expect(result.current.isCancelling).toBe(false)
     expect(api.cancelFindSimilar).toHaveBeenCalledTimes(1)
+  })
+
+  it('clearError resets the error without touching other state (FIX 4)', async () => {
+    installElectronApiMock({
+      findSimilarBugs: vi.fn().mockRejectedValue({ message: 'Settings not configured' })
+    })
+
+    const { result } = renderHook(() => useAiCluster())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    await act(async () => {
+      await result.current.analyze()
+    })
+
+    expect(result.current.error).toBe('Settings not configured')
+
+    act(() => {
+      result.current.clearError()
+    })
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.analyzing).toBe(false)
   })
 
   it('sets error when cancelFindSimilar rejects, without an unhandled rejection (Task 18b item 4)', async () => {

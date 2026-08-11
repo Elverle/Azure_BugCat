@@ -3,6 +3,14 @@ import { throwAppError } from './app-error'
 
 const UUID_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
 
+const VALID_LLM_PROVIDERS: readonly LLMProviderType[] = [
+  'openai',
+  'anthropic',
+  'generic',
+  'gemini',
+  'openrouter'
+]
+
 const ADO_ORG_URL_REGEX = /^https:\/\/(dev\.azure\.com\/[^/\s]+|[^/\s]+\.visualstudio\.com)\/?$/
 
 export function validateOrgUrl(url: string): string | null {
@@ -124,8 +132,12 @@ export function assertValidSettings(input: unknown): AppSettings {
     typeof candidate.pat !== 'string' ||
     typeof candidate.topN !== 'number' ||
     typeof candidate.chunkSize !== 'number' ||
-    typeof candidate.llmProvider !== 'string' ||
-    !Array.isArray(candidate.categories)
+    !VALID_LLM_PROVIDERS.includes(candidate.llmProvider) ||
+    (candidate.apiKey !== undefined && typeof candidate.apiKey !== 'string') ||
+    (candidate.baseUrl !== undefined && typeof candidate.baseUrl !== 'string') ||
+    (candidate.llmModel !== undefined && typeof candidate.llmModel !== 'string') ||
+    !Array.isArray(candidate.categories) ||
+    candidate.categories.some((category) => typeof category !== 'string')
   ) {
     throwAppError('STORE_ERROR', 'Invalid settings payload: unexpected field types')
   }

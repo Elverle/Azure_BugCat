@@ -305,6 +305,34 @@ describe('DashboardPage', () => {
     expect(screen.queryByRole('button', { name: /categorize/i })).not.toBeInTheDocument()
   })
 
+  it('shows a dismissible popup when the similarity analysis fails (FIX 4)', async () => {
+    mockElectronAPI.findSimilarBugs.mockRejectedValue({
+      code: 'LLM_TIMEOUT',
+      message: 'Request to OpenAI timed out'
+    })
+
+    render(<DashboardPage />)
+
+    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    fireEvent.click(similarityTab)
+
+    const analyzeButton = await screen.findByRole('button', { name: /Analizza Similarità/i })
+    fireEvent.click(analyzeButton)
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Errore analisi similarità' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('Request to OpenAI timed out')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chiudi' }))
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Errore analisi similarità' })
+      ).not.toBeInTheDocument()
+    )
+  })
+
   it('disables the similarity cancel button while cancelling and re-enables it once settled (Task 18b item 4)', async () => {
     let resolveCancel: ((value: { cancelled: boolean }) => void) | undefined
     mockElectronAPI.findSimilarBugs.mockImplementation(() => new Promise(() => {}))

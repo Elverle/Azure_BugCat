@@ -586,6 +586,33 @@ describe('registerIPCHandlers', () => {
 
       await expect(fetchHandler?.(event)).rejects.toThrow(/already in progress/i)
     })
+
+    // FIX 8: the `finally` block only ever had its *rejection* of a second
+    // concurrent call (while the first is still pending) covered — never that a
+    // FAILED (not just a successful) run actually releases its in-flight token
+    // afterwards, so a later, non-concurrent call is accepted rather than
+    // rejected as "already in progress".
+    it('releases the in-flight token after a rejecting fetch, so a later call on the same webContents is accepted', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'bugCatalog') return null
+        return null
+      })
+
+      fetchBugsFromQuery.mockRejectedValueOnce({
+        code: 'ADO_TIMEOUT',
+        message: 'Network error: socket hang up'
+      })
+
+      const fetchHandler = handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)
+      const event = { sender: { id: 66, send: vi.fn() } }
+
+      await expect(fetchHandler?.(event)).rejects.toThrow('ADO_TIMEOUT::Network error')
+
+      fetchBugsFromQuery.mockResolvedValueOnce({ bugs: [], allQueryIds: [] })
+
+      await expect(fetchHandler?.(event)).resolves.toEqual([])
+    })
   })
 
   describe('LLM_CATEGORIZE — selective categorization', () => {

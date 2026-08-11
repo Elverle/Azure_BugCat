@@ -96,53 +96,6 @@ describe('ado-service', () => {
     expect(allQueryIds).toEqual(Array.from({ length: 500 }, (_, index) => index + 1))
   })
 
-  it('gives up with a typed timeout once the overall fetch budget is exhausted', async () => {
-    vi.useFakeTimers()
-    try {
-      const ids = Array.from({ length: 801 }, (_, index) => ({
-        id: index + 1,
-        url: `u${index + 1}`
-      }))
-      fetchWiqlQuery.mockResolvedValue({ workItems: ids })
-      // Every batch is individually within its own 30s request timeout; it is
-      // their number that makes the whole fetch run long.
-      fetchWorkItemsBatch.mockImplementation(async (_config, batch: number[]) => {
-        vi.advanceTimersByTime(50_000)
-        return batch.map(makeWorkItem)
-      })
-
-      await expect(fetchBugsFromQuery({ ...baseSettings, topN: 0 })).rejects.toMatchObject({
-        code: 'ADO_TIMEOUT'
-      })
-      // Budget 120s: batches start at 0s, 50s and 100s; the fourth is never started.
-      expect(fetchWorkItemsBatch).toHaveBeenCalledTimes(3)
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
-  it('completes every batch when the fetch stays inside the budget', async () => {
-    vi.useFakeTimers()
-    try {
-      const ids = Array.from({ length: 801 }, (_, index) => ({
-        id: index + 1,
-        url: `u${index + 1}`
-      }))
-      fetchWiqlQuery.mockResolvedValue({ workItems: ids })
-      fetchWorkItemsBatch.mockImplementation(async (_config, batch: number[]) => {
-        vi.advanceTimersByTime(1_000)
-        return batch.map(makeWorkItem)
-      })
-
-      const { bugs } = await fetchBugsFromQuery({ ...baseSettings, topN: 0 })
-
-      expect(fetchWorkItemsBatch).toHaveBeenCalledTimes(5)
-      expect(bugs).toHaveLength(801)
-    } finally {
-      vi.useRealTimers()
-    }
-  })
-
   it('returns a typed empty-result error when the query has no bugs', async () => {
     fetchWiqlQuery.mockResolvedValue({ workItems: [] })
 

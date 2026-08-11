@@ -268,6 +268,37 @@ describe('useSettings', () => {
     })
   })
 
+  it('cancels the 65s race timer once the ADO response wins, instead of leaving it dangling (FIX 6)', async () => {
+    const { result } = renderHook(() => useSettings())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    vi.useFakeTimers()
+    await act(async () => {
+      await result.current.testAdoConnection()
+    })
+    expect(result.current.testAdoResult).toEqual({ type: 'success', message: 'ADO ok' })
+
+    // Only the 5s auto-dismiss timer (scheduled by the effect reacting to the
+    // result) should still be pending — the 65s race timeout must have been
+    // cleared once the real response won, not left scheduled for another 60s.
+    expect(vi.getTimerCount()).toBe(1)
+  })
+
+  it('cancels the 65s race timer once the LLM response wins, instead of leaving it dangling (FIX 6)', async () => {
+    const { result } = renderHook(() => useSettings())
+
+    await waitFor(() => expect(result.current.loading).toBe(false))
+
+    vi.useFakeTimers()
+    await act(async () => {
+      await result.current.testLlmConnection()
+    })
+    expect(result.current.testLlmResult).toEqual({ type: 'error', message: 'LLM placeholder' })
+
+    expect(vi.getTimerCount()).toBe(1)
+  })
+
   it('passes the current unsaved form state to the LLM connection test', async () => {
     const electronAPI = installElectronApiMock({
       testLlmConnection: vi.fn().mockResolvedValue({ success: false, message: 'API key is missing' })
