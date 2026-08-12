@@ -124,16 +124,56 @@ export interface OpenAiCompatibleProfile {
   /** Top-level body fields sent only when a response schema is active. */
   structuredOutputBody?: Record<string, unknown>
   /**
-   * Runs on a failing response, before the shared status mapping. Throw an
-   * AppError to classify a provider-specific failure; return to fall through.
+   * Runs whenever a response cannot be turned into content — either because
+   * the status failed or because a 2xx payload carried none. Throw an AppError
+   * to classify a provider-specific failure; return to fall through to the
+   * shared mapping.
+   *
+   * Both call sites matter: a router can report an upstream refusal inside a
+   * 200 error envelope just as readily as behind a 4xx, and a provider that
+   * only inspected the failing statuses would miss half of its own diagnosis.
    */
-  onErrorResponse?: (context: {
+  onUnusableResponse?: (context: {
     status: number
     bodyText: string
     responseSchema?: ChatOptions['responseSchema']
   }) => void
   /** Same contract, for a body that did not parse as JSON. */
   onNonJsonResponse?: (context: { response: Response; bodyText: string; url: string }) => void
+}
+
+const RESPONSE_BODY_PREVIEW_LIMIT = 4000
+const RESPONSE_BODY_EXCERPT_LIMIT = 200
+
+export function toResponseBodyPreview(value: string): string {
+  return value.length > RESPONSE_BODY_PREVIEW_LIMIT
+    ? `${value.slice(0, RESPONSE_BODY_PREVIEW_LIMIT)}...`
+    : value
+}
+
+/**
+ * Turns a failing body into something worth showing the user. Only `code` and
+ * `message` survive `encodeIpcError`, so a reason left in `details` never
+ * reaches the screen — "HTTP 402 Payment Required" on its own tells the user
+ * nothing they can act on, while "Insufficient credits" does.
+ */
+function describeErrorBody(bodyText: string): string {
+  const trimmed = bodyText.trim()
+  if (!trimmed) {
+    return ''
+  }
+
+  let envelopeMessage: unknown
+  try {
+    envelopeMessage = (JSON.parse(trimmed) as { error?: { message?: unknown } })?.error?.message
+  } catch {
+    envelopeMessage = undefined
+  }
+
+  const text = typeof envelopeMessage === 'string' && envelopeMessage ? envelopeMessage : trimmed
+  return text.length > RESPONSE_BODY_EXCERPT_LIMIT
+    ? `${text.slice(0, RESPONSE_BODY_EXCERPT_LIMIT)}...`
+    : text
 }
 
 /**
@@ -227,7 +267,7 @@ export async function openAiCompatibleChat(
     const bodyText = await response.text()
 
     if (!response.ok) {
-      profile.onErrorResponse?.({ status: response.status, bodyText, responseSchema })
+      profile.onUnusableResponse?.({ status: response.status, bodyText, responseSchema })
 
       if (response.status === 401 || response.status === 403) {
         throwAppError('LLM_AUTH_ERROR', `Invalid authentication for ${profile.displayName}`)
@@ -235,9 +275,12 @@ export async function openAiCompatibleChat(
       if (response.status === 429) {
         throwAppError('LLM_RATE_LIMIT', `Rate limit reached for ${profile.displayName}`)
       }
+
+      const reason = describeErrorBody(bodyText)
       throwAppError(
         'UNKNOWN_ERROR',
-        `${profile.errorPrefix}: HTTP ${response.status} ${response.statusText}`
+        `${profile.errorPrefix}: HTTP ${response.status} ${response.statusText}${reason ? ` — ${reason}` : ''}`,
+        { status: response.status, responseBodyPreview: toResponseBodyPreview(bodyText) }
       )
     }
 
@@ -251,7 +294,11 @@ export async function openAiCompatibleChat(
 
     const content = extractMessageContent(payload)
     if (!content) {
-      throwAppError('LLM_PARSE_ERROR', `Empty response from ${profile.displayName}`)
+      profile.onUnusableResponse?.({ status: response.status, bodyText, responseSchema })
+      throwAppError('LLM_PARSE_ERROR', `Empty response from ${profile.displayName}`, {
+        status: response.status,
+        responseBodyPreview: toResponseBodyPreview(bodyText)
+      })
     }
 
     return content

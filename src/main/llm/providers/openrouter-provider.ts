@@ -5,12 +5,12 @@ import {
   openAiCompatibleChat,
   TEST_CONNECTION_SYSTEM_PROMPT,
   TEST_CONNECTION_USER_MESSAGE,
-  throwAppError
+  throwAppError,
+  toResponseBodyPreview
 } from './provider-shared'
 
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1'
 const DEFAULT_MODEL = 'openai/gpt-4o'
-const RESPONSE_BODY_PREVIEW_LIMIT = 4000
 
 /**
  * Attribution only — these place the app in the openrouter.ai rankings and
@@ -22,29 +22,34 @@ const ATTRIBUTION_HEADERS = {
   'X-Title': 'BugCat'
 }
 
-function toPreview(value: string): string {
-  return value.length > RESPONSE_BODY_PREVIEW_LIMIT
-    ? `${value.slice(0, RESPONSE_BODY_PREVIEW_LIMIT)}...`
-    : value
-}
-
 /**
  * OpenRouter is a router, not a model host, so a request carrying
  * `response_format: json_schema` can fail for a reason no direct provider has:
  * no backend behind the chosen model honours structured outputs. It surfaces
- * either as a 404 announcing that no endpoint was found, or as an upstream
- * complaint that `response_format` arrived as plain `json` where `json_schema`
- * was expected — the second signature is quoted verbatim from a real failure.
+ * either as a 404 saying no endpoint supports them, or as an upstream complaint
+ * that `response_format` arrived as plain `json` where `json_schema` was
+ * expected — the second signature is quoted verbatim from a real failure.
  *
  * Retrying either one is pointless, which is why the caller has to be able to
  * tell them apart: `error-policy.ts` reads `details.reason` to stop the retry
  * ladder immediately instead of burning the budget on a routing decision that
  * will not change.
+ *
+ * The 404 branch has to stay narrow. `No endpoints found` is also OpenRouter's
+ * answer to an unknown model slug and to a data-policy refusal, and blaming
+ * structured outputs for a typo would send the user to the wrong setting — so
+ * the body has to name the capability, not just the missing endpoint.
  */
 function isStructuredOutputRoutingMismatch(status: number, bodyText: string): boolean {
   const text = bodyText.toLowerCase()
 
-  if (status === 404 && text.includes('no endpoints found')) {
+  if (
+    status === 404 &&
+    text.includes('no endpoints found') &&
+    (text.includes('structured output') ||
+      text.includes('response_format') ||
+      text.includes('json_schema'))
+  ) {
     return true
   }
 
@@ -83,7 +88,7 @@ export class OpenRouterProvider implements LLMProvider {
         // to a backend that ignores `response_format` and answers in free text.
         // The whole categorization pipeline rests on it.
         structuredOutputBody: { provider: { require_parameters: true } },
-        onErrorResponse: ({ status, bodyText, responseSchema }) => {
+        onUnusableResponse: ({ status, bodyText, responseSchema }) => {
           if (!responseSchema || !isStructuredOutputRoutingMismatch(status, bodyText)) {
             return
           }
@@ -95,7 +100,7 @@ export class OpenRouterProvider implements LLMProvider {
               provider: 'openrouter',
               responseSchema,
               status,
-              responseBodyPreview: toPreview(bodyText),
+              responseBodyPreview: toResponseBodyPreview(bodyText),
               reason: 'structured-output-routing-mismatch'
             }
           )

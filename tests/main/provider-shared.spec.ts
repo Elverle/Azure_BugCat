@@ -242,26 +242,51 @@ describe('openAiCompatibleChat', () => {
     })
 
     it('maps any other failing status to UNKNOWN_ERROR behind the profile prefix', async () => {
-      stubFetch(jsonResponse({ error: 'boom' }, 500))
+      stubFetch(new Response('', { status: 500 }))
 
       await expect(openAiCompatibleChat(makeProfile(), 's', 'u')).rejects.toMatchObject({
         code: 'UNKNOWN_ERROR',
         message: expect.stringContaining('Test provider error: HTTP 500')
       })
     })
+
+    it('carries the reason out of an error envelope into the message', async () => {
+      stubFetch(jsonResponse({ error: { message: 'Insufficient credits' } }, 402))
+
+      await expect(openAiCompatibleChat(makeProfile(), 's', 'u')).rejects.toMatchObject({
+        code: 'UNKNOWN_ERROR',
+        message: expect.stringContaining('Insufficient credits')
+      })
+    })
+
+    it('falls back to a bounded excerpt when the body is not an error envelope', async () => {
+      stubFetch(new Response('upstream exploded', { status: 502 }))
+
+      await expect(openAiCompatibleChat(makeProfile(), 's', 'u')).rejects.toMatchObject({
+        code: 'UNKNOWN_ERROR',
+        message: expect.stringContaining('upstream exploded')
+      })
+    })
+
+    it('keeps the failing body out of the message once it grows unreasonable', async () => {
+      stubFetch(new Response('x'.repeat(5000), { status: 500 }))
+
+      const error = await openAiCompatibleChat(makeProfile(), 's', 'u').catch((e) => e)
+      expect(error.message.length).toBeLessThan(400)
+    })
   })
 
   describe('provider hooks', () => {
-    it('lets onErrorResponse classify a failing response before the shared mapping', async () => {
+    it('lets onUnusableResponse classify a failing response before the shared mapping', async () => {
       stubFetch(jsonResponse({ error: { message: 'No endpoints found' } }, 404))
-      const onErrorResponse = vi.fn(() => {
+      const onUnusableResponse = vi.fn(() => {
         throwAppError('LLM_PARSE_ERROR', 'routed wrong', {
           reason: 'structured-output-routing-mismatch'
         })
       })
 
       await expect(
-        openAiCompatibleChat(makeProfile({ onErrorResponse }), 's', 'u', {
+        openAiCompatibleChat(makeProfile({ onUnusableResponse }), 's', 'u', {
           responseSchema: 'categorization'
         })
       ).rejects.toMatchObject({
@@ -270,20 +295,39 @@ describe('openAiCompatibleChat', () => {
       })
     })
 
-    it('hands onErrorResponse the status, the body and the active schema', async () => {
+    it('hands onUnusableResponse the status, the body and the active schema', async () => {
       stubFetch(new Response('the raw body', { status: 404 }))
-      const onErrorResponse = vi.fn()
+      const onUnusableResponse = vi.fn()
 
       await expect(
-        openAiCompatibleChat(makeProfile({ onErrorResponse }), 's', 'u', {
+        openAiCompatibleChat(makeProfile({ onUnusableResponse }), 's', 'u', {
           responseSchema: 'categorization'
         })
       ).rejects.toMatchObject({ code: 'UNKNOWN_ERROR' })
 
-      expect(onErrorResponse).toHaveBeenCalledWith(
+      expect(onUnusableResponse).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 404,
           bodyText: 'the raw body',
+          responseSchema: 'categorization'
+        })
+      )
+    })
+
+    it('also consults onUnusableResponse when a successful response carries no content', async () => {
+      stubFetch(jsonResponse({ error: { message: 'upstream refused the schema' } }))
+      const onUnusableResponse = vi.fn()
+
+      await expect(
+        openAiCompatibleChat(makeProfile({ onUnusableResponse }), 's', 'u', {
+          responseSchema: 'categorization'
+        })
+      ).rejects.toMatchObject({ code: 'LLM_PARSE_ERROR' })
+
+      expect(onUnusableResponse).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 200,
+          bodyText: '{"error":{"message":"upstream refused the schema"}}',
           responseSchema: 'categorization'
         })
       )

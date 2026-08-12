@@ -71,7 +71,10 @@ export function filterBugs(bugs: CategorizedBug[], filters: FilterState): Catego
       return false
     }
 
-    if (filters.technicalLayers.length > 0 && !filters.technicalLayers.includes(bug.technicalLayer)) {
+    if (
+      filters.technicalLayers.length > 0 &&
+      !filters.technicalLayers.includes(bug.technicalLayer)
+    ) {
       return false
     }
 

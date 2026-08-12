@@ -221,6 +221,66 @@ describe('openrouter-provider', () => {
       })
     })
 
+    it('reports a routing mismatch when a 200 carries an upstream error envelope', async () => {
+      stubFetch(
+        new Response(
+          JSON.stringify({
+            error: {
+              message: 'validation errors on response_format with input: json, expected json_schema'
+            }
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        )
+      )
+
+      await expect(
+        new OpenRouterProvider({ apiKey: 'sk-or-test' }).chat('s', 'u', {
+          responseSchema: 'categorization'
+        })
+      ).rejects.toMatchObject({
+        code: 'LLM_PARSE_ERROR',
+        details: expect.objectContaining({
+          status: 200,
+          reason: 'structured-output-routing-mismatch'
+        })
+      })
+    })
+
+    it('reads an unknown model slug as a plain failure, not a routing mismatch', async () => {
+      stubFetch(
+        new Response(
+          JSON.stringify({ error: { message: 'No endpoints found for openai/typo-model.' } }),
+          { status: 404 }
+        )
+      )
+
+      await expect(
+        new OpenRouterProvider({ apiKey: 'sk-or-test' }).chat('s', 'u', {
+          responseSchema: 'categorization'
+        })
+      ).rejects.toMatchObject({
+        code: 'UNKNOWN_ERROR',
+        message: expect.stringContaining('No endpoints found for openai/typo-model.')
+      })
+    })
+
+    it('reads a data-policy refusal as a plain failure, not a routing mismatch', async () => {
+      stubFetch(
+        new Response(
+          JSON.stringify({
+            error: { message: 'No endpoints found matching your data policy.' }
+          }),
+          { status: 404 }
+        )
+      )
+
+      await expect(
+        new OpenRouterProvider({ apiKey: 'sk-or-test' }).chat('s', 'u', {
+          responseSchema: 'categorization'
+        })
+      ).rejects.toMatchObject({ code: 'UNKNOWN_ERROR' })
+    })
+
     it('does not read a missing endpoint as a routing mismatch when no schema was requested', async () => {
       stubFetch(
         new Response(JSON.stringify({ error: { message: 'No endpoints found for this model' } }), {
