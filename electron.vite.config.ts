@@ -11,7 +11,7 @@ export default defineConfig({
       }
     },
     build: {
-      externalizeDeps: { exclude: ['electron-store', '@openrouter/sdk'] }
+      externalizeDeps: { exclude: ['electron-store'] }
     }
   },
   // Only `@shared` here: the preload bundle has no business importing main-process
