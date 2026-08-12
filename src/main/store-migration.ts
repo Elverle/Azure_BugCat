@@ -97,8 +97,19 @@ export const migrations: Migration[] = [
     version: 4,
     up: (data) => {
       // Rename subCategory -> technicalLayer everywhere the field was persisted.
+      //
       // NOTE (Fase 2): this same `up` will be EXTENDED with the italian -> english
-      // sentinel conversion. v4 must not reach users in an intermediate state.
+      // sentinel conversion. Confirmed on 2026-08-12 that it stays v4 and does not
+      // become a v5. Two consequences follow, neither of them enforced by code:
+      //
+      //   1. No release between Fase 1 and Fase 2. `migrateStore` returns early on
+      //      schemaVersion >= CURRENT_SCHEMA_VERSION, so a store that reached 4
+      //      under the rename-only `up` never runs the extended one.
+      //
+      //   2. The developer's own machine is not exempt. Any store that opened the
+      //      app between this commit and Fase 2 has to have its schemaVersion
+      //      lowered, or its config reset, once the sentinel conversion lands —
+      //      otherwise it keeps the italian sentinels forever.
       const renameLayer = (bug: Record<string, unknown>): Record<string, unknown> => {
         if ('subCategory' in bug) {
           bug.technicalLayer = bug.subCategory
