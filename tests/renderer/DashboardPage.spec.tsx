@@ -111,19 +111,19 @@ describe('DashboardPage', () => {
     })
   })
 
-  it('renders the Similarita tab in Dashboard and shows the Motivation panel', async () => {
+  it('renders the similarity tab in Dashboard and shows the Motivation panel', async () => {
     render(<DashboardPage />)
 
-    expect(await screen.findByText('Nuovi rispetto allo storico: 2')).toBeInTheDocument()
+    expect(await screen.findByText('New compared to history: 2')).toBeInTheDocument()
 
-    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    const similarityTab = await screen.findByRole('button', { name: /Similarity/i })
     fireEvent.click(similarityTab)
 
     await waitFor(() => {
-      expect(screen.getByText('Motivazione')).toBeInTheDocument()
+      expect(screen.getByText('Reason')).toBeInTheDocument()
     })
 
-    expect(screen.getByRole('heading', { name: 'Similarità' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Similarity' })).toBeInTheDocument()
     expect(
       screen.getByText('Entrambi i bug descrivono la mancata apertura della modale costo.')
     ).toBeInTheDocument()
@@ -131,7 +131,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('#102')).toBeInTheDocument()
   })
 
-  it('resyncs the Similarita section from the shared session store after a categorization', async () => {
+  it('resyncs the similarity section from the shared session store after a categorization', async () => {
     const recategorizedSession: SessionData = {
       bugs: mockSession.bugs,
       fetchedAt: mockSession.fetchedAt,
@@ -145,15 +145,15 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    const similarityTab = await screen.findByRole('button', { name: /Similarity/i })
     fireEvent.click(similarityTab)
-    expect(await screen.findByText('Motivazione')).toBeInTheDocument()
+    expect(await screen.findByText('Reason')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /categorize/i }))
 
     // No remount key on the section: it re-reads the refreshed session by itself.
-    expect(await screen.findByText('Nessuna analisi eseguita')).toBeInTheDocument()
-    expect(screen.queryByText('Motivazione')).not.toBeInTheDocument()
+    expect(await screen.findByText('No analysis run yet')).toBeInTheDocument()
+    expect(screen.queryByText('Reason')).not.toBeInTheDocument()
   })
 
   it('shows a popup when categorization fails with a blocking error', async () => {
@@ -211,7 +211,7 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    expect(await screen.findByText('Nessun bug caricato')).toBeInTheDocument()
+    expect(await screen.findByText('No bugs loaded')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Fetch Bugs/i }))
 
     expect(
@@ -229,7 +229,7 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    expect(await screen.findByText('Nessun bug caricato')).toBeInTheDocument()
+    expect(await screen.findByText('No bugs loaded')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Categorize/i }))
 
     expect(await screen.findByRole('dialog', { name: 'Configuration problem' })).toBeInTheDocument()
@@ -313,10 +313,10 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    const similarityTab = await screen.findByRole('button', { name: /Similarity/i })
     fireEvent.click(similarityTab)
 
-    const analyzeButton = await screen.findByRole('button', { name: /Analizza Similarità/i })
+    const analyzeButton = await screen.findByRole('button', { name: /Analyze similarity/i })
     fireEvent.click(analyzeButton)
 
     expect(
@@ -345,16 +345,16 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    const similarityTab = await screen.findByRole('button', { name: /Similarity/i })
     fireEvent.click(similarityTab)
 
-    const analyzeButton = await screen.findByRole('button', { name: /Analizza Similarità/i })
+    const analyzeButton = await screen.findByRole('button', { name: /Analyze similarity/i })
     fireEvent.click(analyzeButton)
 
-    const cancelButton = await screen.findByRole('button', { name: /Annulla analisi/i })
+    const cancelButton = await screen.findByRole('button', { name: /Cancel analysis/i })
     fireEvent.click(cancelButton)
 
-    expect(await screen.findByRole('button', { name: /Annullamento/i })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: /Cancelling/i })).toBeDisabled()
 
     await act(async () => {
       resolveCancel?.({ cancelled: false })
@@ -363,6 +363,6 @@ describe('DashboardPage', () => {
 
     // The run is still active (main process reported cancelled: false), so the
     // button reverts to the enabled "cancel" state rather than staying stuck.
-    expect(await screen.findByRole('button', { name: /^Annulla analisi$/i })).not.toBeDisabled()
+    expect(await screen.findByRole('button', { name: /^Cancel analysis$/i })).not.toBeDisabled()
   })
 })

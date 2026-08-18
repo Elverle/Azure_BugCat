@@ -96,26 +96,26 @@ describe('BugDetailDrawer', () => {
     expect(screen.getByText('OAuth, Safari')).toBeInTheDocument()
   })
 
-  it('shows "Non ancora categorizzato" for uncategorized bug', () => {
+  it('shows "Not categorized yet" for uncategorized bug', () => {
     const uncategorized = makeBug({ macroCategory: '', technicalLayer: '', categoryReason: '' })
     render(<BugDetailDrawer {...defaultProps} bug={uncategorized} />)
 
-    expect(screen.getByText('Non ancora categorizzato')).toBeInTheDocument()
+    expect(screen.getByText('Not categorized yet')).toBeInTheDocument()
     expect(screen.queryByText('Authentication')).not.toBeInTheDocument()
   })
 
-  it('shows "Nessuna descrizione disponibile" for empty description', () => {
+  it('shows "No description available" for empty description', () => {
     const noDesc = makeBug({ description: '', descriptionHtml: '' })
     render(<BugDetailDrawer {...defaultProps} bug={noDesc} />)
 
-    expect(screen.getByText('Nessuna descrizione disponibile')).toBeInTheDocument()
+    expect(screen.getByText('No description available')).toBeInTheDocument()
   })
 
   it('calls onClose when X button is clicked', () => {
     const onClose = vi.fn()
     render(<BugDetailDrawer {...defaultProps} onClose={onClose} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Chiudi dettaglio' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close details' }))
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
@@ -131,7 +131,7 @@ describe('BugDetailDrawer', () => {
     const onPrev = vi.fn()
     render(<BugDetailDrawer {...defaultProps} onPrev={onPrev} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bug precedente' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Previous bug' }))
     expect(onPrev).toHaveBeenCalledTimes(1)
   })
 
@@ -139,27 +139,27 @@ describe('BugDetailDrawer', () => {
     const onNext = vi.fn()
     render(<BugDetailDrawer {...defaultProps} onNext={onNext} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bug successivo' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Next bug' }))
     expect(onNext).toHaveBeenCalledTimes(1)
   })
 
   it('disables prev button when hasPrev is false', () => {
     render(<BugDetailDrawer {...defaultProps} hasPrev={false} />)
 
-    expect(screen.getByRole('button', { name: 'Bug precedente' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Previous bug' })).toBeDisabled()
   })
 
   it('disables next button when hasNext is false', () => {
     render(<BugDetailDrawer {...defaultProps} hasNext={false} />)
 
-    expect(screen.getByRole('button', { name: 'Bug successivo' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Next bug' })).toBeDisabled()
   })
 
   it('resizes the drawer while dragging the left border handle', () => {
     const onResize = vi.fn()
     render(<BugDetailDrawer {...defaultProps} onResize={onResize} width={400} />)
 
-    fireEvent.mouseDown(screen.getByRole('separator', { name: 'Ridimensiona dettaglio' }), {
+    fireEvent.mouseDown(screen.getByRole('separator', { name: 'Resize details' }), {
       clientX: 800
     })
     fireEvent.mouseMove(document, { clientX: 700 })
@@ -172,7 +172,7 @@ describe('BugDetailDrawer', () => {
     const onResize = vi.fn()
     render(<BugDetailDrawer {...defaultProps} onResize={onResize} width={400} />)
 
-    fireEvent.mouseDown(screen.getByRole('separator', { name: 'Ridimensiona dettaglio' }), {
+    fireEvent.mouseDown(screen.getByRole('separator', { name: 'Resize details' }), {
       clientX: 800
     })
     fireEvent.mouseMove(document, { clientX: 100 })
@@ -186,7 +186,7 @@ describe('BugDetailDrawer', () => {
   it('toggles the description between collapsed and expanded states', () => {
     render(<BugDetailDrawer {...defaultProps} />)
 
-    const toggleButton = screen.getByRole('button', { name: 'Espandi descrizione' })
+    const toggleButton = screen.getByRole('button', { name: 'Expand description' })
     const description = screen
       .getByText('Users report redirect loop on Safari when using Microsoft Account login.')
       .closest('div[class*="prose"]')
@@ -195,19 +195,19 @@ describe('BugDetailDrawer', () => {
     expect(description?.className).toContain('max-h-64')
     fireEvent.click(toggleButton)
 
-    expect(screen.getByRole('button', { name: 'Riduci descrizione' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Collapse description' })).toBeInTheDocument()
     expect(description?.className).not.toContain('max-h-64')
   })
 
   it('collapses the description again when the drawer switches to another bug', () => {
     const { rerender } = render(<BugDetailDrawer {...defaultProps} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Espandi descrizione' }))
-    expect(screen.getByRole('button', { name: 'Riduci descrizione' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Expand description' }))
+    expect(screen.getByRole('button', { name: 'Collapse description' })).toBeInTheDocument()
 
     rerender(<BugDetailDrawer {...defaultProps} bug={makeBug({ id: 2048 })} />)
 
-    expect(screen.getByRole('button', { name: 'Espandi descrizione' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Expand description' })).toBeInTheDocument()
   })
 
   it('renders images from the HTML description', async () => {
@@ -263,7 +263,7 @@ describe('BugDetailDrawer', () => {
     await waitFor(() => {
       expect(screen.getByRole('img', { name: 'Only screenshot' })).toBeInTheDocument()
     })
-    expect(screen.queryByText('Nessuna descrizione disponibile')).not.toBeInTheDocument()
+    expect(screen.queryByText('No description available')).not.toBeInTheDocument()
   })
 
   it('does not show ADO image alt text while the authenticated image is being resolved', () => {

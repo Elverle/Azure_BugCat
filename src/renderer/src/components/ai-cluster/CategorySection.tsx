@@ -36,14 +36,14 @@ export function CategorySection({
           <h3 className="font-semibold text-gray-800">{category}</h3>
           {!error && (
             <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-              {groups.length} {groups.length === 1 ? 'gruppo' : 'gruppi'}
+              {groups.length} {groups.length === 1 ? 'group' : 'groups'}
             </span>
           )}
         </div>
         {error && (
           <span className="flex items-center gap-1 text-xs text-red-500">
             <AlertCircle className="w-3.5 h-3.5" />
-            Errore
+            Error
           </span>
         )}
       </button>
@@ -58,7 +58,7 @@ export function CategorySection({
             </div>
           ) : groups.length === 0 ? (
             <p className="text-sm text-gray-400 italic">
-              Nessun bug simile rilevato in questa categoria
+              No similar bugs found in this category
             </p>
           ) : (
             <div className="space-y-3">

@@ -36,7 +36,7 @@ export function Topbar() {
             }
           >
             <Archive className="w-4 h-4" />
-            Storico Chiusi
+            Closed history
           </NavLink>
           <NavLink
             to="/settings"

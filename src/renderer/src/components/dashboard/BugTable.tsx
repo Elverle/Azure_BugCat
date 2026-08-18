@@ -20,13 +20,13 @@ interface ColumnDef {
 
 const COLUMNS: ColumnDef[] = [
   { key: 'id', label: 'ID', className: 'w-20' },
-  { key: 'title', label: 'Titolo', className: 'max-w-xs' },
-  { key: 'priority', label: 'Priorità', className: 'w-16 text-center' },
-  { key: 'state', label: 'Stato', className: 'w-24' },
-  { key: 'assignee', label: 'Assegnatario', className: 'w-32' },
+  { key: 'title', label: 'Title', className: 'max-w-xs' },
+  { key: 'priority', label: 'Priority', className: 'w-16 text-center' },
+  { key: 'state', label: 'State', className: 'w-24' },
+  { key: 'assignee', label: 'Assignee', className: 'w-32' },
   { key: 'areaPath', label: 'Area Path', className: 'w-40' },
-  { key: 'macroCategory', label: 'Macro-cat', className: 'w-28' },
-  { key: 'technicalLayer', label: 'Sotto-cat', className: 'w-28' }
+  { key: 'macroCategory', label: 'Category', className: 'w-28' },
+  { key: 'technicalLayer', label: 'Layer', className: 'w-28' }
 ]
 
 function SortIcon({

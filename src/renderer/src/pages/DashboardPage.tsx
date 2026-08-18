@@ -272,9 +272,9 @@ export function DashboardPage(): JSX.Element {
           />
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <Bug className="w-12 h-12 text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-600">Nessun bug caricato</h3>
+            <h3 className="text-lg font-medium text-gray-600">No bugs loaded</h3>
             <p className="text-sm text-gray-400 mt-1">
-              Usa il pulsante &quot;Fetch Bugs&quot; per caricare i bug da Azure DevOps
+              Use the &quot;Fetch Bugs&quot; button to load bugs from Azure DevOps
             </p>
           </div>
         </div>
@@ -313,7 +313,7 @@ export function DashboardPage(): JSX.Element {
               )}
             >
               <List className="w-4 h-4 mr-2 inline" />
-              Lista Completa
+              Full list
             </button>
             <button
               onClick={() => setTab('card')}
@@ -337,7 +337,7 @@ export function DashboardPage(): JSX.Element {
               )}
             >
               <Sparkles className="w-4 h-4 mr-2 inline" />
-              Similarità (Beta)
+              Similarity (Beta)
             </button>
           </nav>
         </div>
@@ -364,12 +364,12 @@ export function DashboardPage(): JSX.Element {
           <DashboardSimilaritySection bugs={bugs} onBugClick={handleSimilarityBugClick} />
         ) : filteredBugs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-center">
-            <p className="text-sm text-gray-500">Nessun bug corrisponde ai filtri</p>
+            <p className="text-sm text-gray-500">No bugs match the filters</p>
             <button
               onClick={handleReset}
               className="text-sm text-indigo-600 hover:text-indigo-800 mt-2"
             >
-              Reset Filtri
+              Reset filters
             </button>
           </div>
         ) : groupedBugs ? (
@@ -468,10 +468,9 @@ function DashboardSimilaritySection({
     return (
       <div className="flex flex-col items-center justify-center h-48 text-center rounded-lg border border-dashed border-gray-200 bg-white">
         <Sparkles className="w-10 h-10 text-gray-300 mb-3" />
-        <h3 className="text-base font-medium text-gray-600">Categorizzazione richiesta</h3>
+        <h3 className="text-base font-medium text-gray-600">Categorization required</h3>
         <p className="text-sm text-gray-400 mt-1 max-w-xl px-4">
-          Esegui prima la categorizzazione dalla Dashboard per abilitare l&apos;analisi di
-          similarità.
+          Run categorization from the Dashboard first to enable similarity analysis.
         </p>
       </div>
     )
@@ -482,17 +481,16 @@ function DashboardSimilaritySection({
       <div className="space-y-6">
         <div className="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Similarità</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Similarity</h2>
             <p className="text-sm text-gray-500 mt-1">
-              Trova bug potenzialmente duplicati o correlati all&apos;interno della stessa
-              macro-categoria.
+              Finds potentially duplicate or related bugs within the same category.
             </p>
           </div>
 
           <div className="flex items-center gap-4">
             {results && !analyzing && (
               <p className="text-xs text-gray-400">
-                Ultima analisi: {new Date(results.analyzedAt).toLocaleString('it-IT')}
+                Last analysis: {new Date(results.analyzedAt).toLocaleString('it-IT')}
               </p>
             )}
 
@@ -508,9 +506,9 @@ function DashboardSimilaritySection({
               )}
               {analyzing
                 ? isCancelling
-                  ? 'Annullamento...'
-                  : 'Annulla analisi'
-                : 'Analizza Similarità'}
+                  ? 'Cancelling…'
+                  : 'Cancel analysis'
+                : 'Analyze similarity'}
             </button>
           </div>
         </div>
@@ -519,8 +517,7 @@ function DashboardSimilaritySection({
           <div className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             <AlertTriangle className="w-4 h-4 shrink-0" />
             <span>
-              I risultati potrebbero essere obsoleti: la categorizzazione è stata aggiornata dopo
-              l&apos;ultima analisi.
+              These results may be stale: categorization was updated after the last analysis.
             </span>
           </div>
         )}
@@ -528,7 +525,7 @@ function DashboardSimilaritySection({
         {analyzing && progress && (
           <div>
             <div className="flex justify-between text-xs text-gray-500 mb-1">
-              <span>Analisi gruppo: {progress.currentGroup}</span>
+              <span>Analyzing group: {progress.currentGroup}</span>
               <span>
                 {progress.completed}/{progress.total}
               </span>
@@ -547,7 +544,7 @@ function DashboardSimilaritySection({
             <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
               <span className="font-medium">
                 {results.categories.reduce((sum, category) => sum + category.groups.length, 0)}{' '}
-                gruppi trovati
+                groups found
               </span>
               <span>·</span>
               <span>
@@ -558,10 +555,10 @@ function DashboardSimilaritySection({
                     )
                   ).size
                 }{' '}
-                bug coinvolti
+                bugs involved
               </span>
               <span>·</span>
-              <span>{results.categories.length} categorie analizzate</span>
+              <span>{results.categories.length} categories analyzed</span>
             </div>
 
             <div className="space-y-4">
@@ -580,10 +577,9 @@ function DashboardSimilaritySection({
         ) : !analyzing ? (
           <div className="flex flex-col items-center justify-center h-48 text-center rounded-lg border border-dashed border-gray-200 bg-white">
             <Sparkles className="w-10 h-10 text-gray-300 mb-3" />
-            <h3 className="text-base font-medium text-gray-600">Nessuna analisi eseguita</h3>
+            <h3 className="text-base font-medium text-gray-600">No analysis run yet</h3>
             <p className="text-sm text-gray-400 mt-1 max-w-xl px-4">
-              Avvia l&apos;analisi per trovare bug simili che possono essere lavorati insieme o che
-              potrebbero descrivere lo stesso problema.
+              Start the analysis to find similar bugs that can be worked on together or that may describe the same problem.
             </p>
           </div>
         ) : null}
