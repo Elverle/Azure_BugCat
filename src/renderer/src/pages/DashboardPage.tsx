@@ -26,7 +26,7 @@ import {
   type SortKey,
   type GroupBy
 } from '@renderer/lib/dashboard-utils'
-import { sentinelLabel } from '@renderer/lib/labels'
+import { errorLabel, sentinelLabel } from '@renderer/lib/labels'
 import { cn } from '@renderer/lib/utils'
 import type { AppSettings, CategorizedBug } from '@shared/types'
 import { UNASSIGNED } from '@shared/categorization'
@@ -237,18 +237,18 @@ export function DashboardPage(): JSX.Element {
     <>
       <ConfirmDialog
         open={categorizeError !== null}
-        title="Errore categorizzazione"
-        description={categorizeError ?? ''}
-        confirmLabel="Chiudi"
+        title={categorizeError ? errorLabel(categorizeError.code) : ''}
+        description={categorizeError?.message ?? ''}
+        confirmLabel="Close"
         onConfirm={clearCategorizeError}
         onCancel={clearCategorizeError}
       />
 
       <ConfirmDialog
         open={fetchError !== null}
-        title="Errore durante il fetch"
-        description={fetchError ?? ''}
-        confirmLabel="Chiudi"
+        title={fetchError ? errorLabel(fetchError.code) : ''}
+        description={fetchError?.message ?? ''}
+        confirmLabel="Close"
         onConfirm={clearFetchError}
         onCancel={clearFetchError}
       />
@@ -595,9 +595,9 @@ function DashboardSimilaritySection({
           categorizeError/fetchError above (FIX 4). */}
       <ConfirmDialog
         open={error !== null && !analyzing}
-        title="Errore analisi similarità"
-        description={error ?? ''}
-        confirmLabel="Chiudi"
+        title={error ? errorLabel(error.code) : ''}
+        description={error?.message ?? ''}
+        confirmLabel="Close"
         onConfirm={clearError}
         onCancel={clearError}
       />

@@ -6,8 +6,8 @@ import {
   useSyncExternalStore,
   type MutableRefObject
 } from 'react'
-import type { CategorizedBug, ChunkProgress } from '@shared/types'
-import { extractErrorMessage } from '@shared/app-error'
+import type { AppError, CategorizedBug, ChunkProgress } from '@shared/types'
+import { toAppError } from '@shared/app-error'
 import {
   getSessionSnapshot,
   loadSession,
@@ -23,7 +23,7 @@ interface CategorizationUiState {
   isCategorizing: boolean
   isCancelling: boolean
   progress: ChunkProgress | null
-  categorizeError: string | null
+  categorizeError: AppError | null
 }
 
 const INITIAL_CATEGORIZATION_UI_STATE: CategorizationUiState = {
@@ -48,7 +48,7 @@ export function resetDashboardCategorizationUiStateForTests(): void {
 // process), so a stray write from one must not touch the other's UI state.
 interface FetchUiState {
   isFetching: boolean
-  fetchError: string | null
+  fetchError: AppError | null
 }
 
 const INITIAL_FETCH_UI_STATE: FetchUiState = {
@@ -71,8 +71,8 @@ export interface UseDashboardReturn {
   isCategorizing: boolean
   isCancelling: boolean
   progress: ChunkProgress | null
-  categorizeError: string | null
-  fetchError: string | null
+  categorizeError: AppError | null
+  fetchError: AppError | null
   sessionInfo: {
     fetchedAt: string | null
     categorizedAt: string | null
@@ -204,7 +204,7 @@ export function useDashboard(): UseDashboardReturn {
       await window.electronAPI.fetchBugs()
       await refreshSession()
     } catch (error: unknown) {
-      updateFetchUiState({ fetchError: extractErrorMessage(error) })
+      updateFetchUiState({ fetchError: toAppError(error) })
     } finally {
       updateFetchUiState({ isFetching: false })
     }
@@ -236,7 +236,7 @@ export function useDashboard(): UseDashboardReturn {
         return
       }
 
-      updateCategorizationUiState({ categorizeError: extractErrorMessage(error) })
+      updateCategorizationUiState({ categorizeError: toAppError(error) })
     } finally {
       updateCategorizationUiState({
         isCategorizing: false,
@@ -261,7 +261,7 @@ export function useDashboard(): UseDashboardReturn {
     } catch (error: unknown) {
       updateCategorizationUiState({
         isCancelling: false,
-        categorizeError: extractErrorMessage(error)
+        categorizeError: toAppError(error)
       })
     }
   }, [currentCategorizationUiState.isCancelling, currentCategorizationUiState.isCategorizing])

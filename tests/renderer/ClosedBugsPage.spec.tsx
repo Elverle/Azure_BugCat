@@ -81,7 +81,9 @@ describe('ClosedBugsPage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByText('Errore nel caricamento dello storico')).toBeInTheDocument()
+      // A bare Error carries no code: it reaches the page as UNKNOWN_ERROR,
+      // with its own text kept underneath as the diagnostic detail.
+      expect(screen.getByText('Unexpected error')).toBeInTheDocument()
     })
     expect(screen.getByText('Store corrupted')).toBeInTheDocument()
   })

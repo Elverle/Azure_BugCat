@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sentinelLabel } from '@renderer/lib/labels'
+import { errorLabel, sentinelLabel } from '@renderer/lib/labels'
 import {
   UNCATEGORIZED,
   PROCESSING_ERROR,
@@ -30,5 +30,13 @@ describe('sentinelLabel', () => {
       'the title points at a frontend issue'
     )
     expect(sentinelLabel('')).toBe('')
+  })
+})
+
+describe('errorLabel', () => {
+  it('gives every error code a human title', () => {
+    expect(errorLabel('ADO_AUTH_ERROR')).toBe('Azure DevOps authentication failed')
+    expect(errorLabel('LLM_RATE_LIMIT')).toBe('LLM provider rate limit reached')
+    expect(errorLabel('UNKNOWN_ERROR')).toBe('Unexpected error')
   })
 })

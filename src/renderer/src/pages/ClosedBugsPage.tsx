@@ -3,7 +3,7 @@ import { AlertTriangle, Archive, ChevronDown, ChevronUp, Loader2, Search } from 
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { useClosedBugKpis } from '@renderer/hooks/useClosedBugKpis'
-import { sentinelLabel } from '@renderer/lib/labels'
+import { errorLabel, sentinelLabel } from '@renderer/lib/labels'
 
 function formatDateTime(value: string | null): string {
   if (!value) {
@@ -36,8 +36,8 @@ export function ClosedBugsPage(): JSX.Element {
     return (
       <div className="flex flex-col items-center justify-center h-full text-red-500 gap-3">
         <AlertTriangle className="w-12 h-12" />
-        <p className="text-lg font-medium">Errore nel caricamento dello storico</p>
-        <p className="text-sm text-gray-500">{error}</p>
+        <p className="text-lg font-medium">{errorLabel(error.code)}</p>
+        <p className="text-sm text-gray-500">{error.message}</p>
       </div>
     )
   }

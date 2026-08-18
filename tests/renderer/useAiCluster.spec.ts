@@ -184,7 +184,12 @@ describe('useAiCluster', () => {
       await result.current.analyze()
     })
 
-    expect(result.current.error).toBe('Settings not configured')
+    // The rejection carries no code of ours, so it is kept as UNKNOWN_ERROR
+    // with its message intact.
+    expect(result.current.error).toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: 'Settings not configured'
+    })
     expect(result.current.analyzing).toBe(false)
   })
 
@@ -413,7 +418,10 @@ describe('useAiCluster', () => {
     const { result: remounted } = renderHook(() => useAiCluster())
     await waitFor(() => expect(remounted.current.loading).toBe(false))
 
-    expect(remounted.current.error).toBe('LLM provider unavailable')
+    expect(remounted.current.error).toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: 'LLM provider unavailable'
+    })
     expect(remounted.current.analyzing).toBe(false)
   })
 
@@ -497,7 +505,10 @@ describe('useAiCluster', () => {
       await result.current.analyze()
     })
 
-    expect(result.current.error).toBe('Settings not configured')
+    expect(result.current.error).toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: 'Settings not configured'
+    })
 
     act(() => {
       result.current.clearError()
@@ -532,7 +543,10 @@ describe('useAiCluster', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
 
       expect(unhandled).not.toHaveBeenCalled()
-      expect(result.current.error).toBe('IPC channel closed')
+      expect(result.current.error).toEqual({
+        code: 'UNKNOWN_ERROR',
+        message: 'IPC channel closed'
+      })
       expect(result.current.isCancelling).toBe(false)
     } finally {
       process.off('unhandledRejection', unhandled)
