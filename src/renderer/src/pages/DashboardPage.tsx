@@ -26,6 +26,7 @@ import {
   type SortKey,
   type GroupBy
 } from '@renderer/lib/dashboard-utils'
+import { sentinelLabel } from '@renderer/lib/labels'
 import { cn } from '@renderer/lib/utils'
 import type { AppSettings, CategorizedBug } from '@shared/types'
 import { UNASSIGNED } from '@shared/categorization'
@@ -567,7 +568,7 @@ function DashboardSimilaritySection({
               {results.categories.map((category) => (
                 <CategorySection
                   key={category.macroCategory}
-                  category={category.macroCategory}
+                  category={sentinelLabel(category.macroCategory)}
                   groups={category.groups}
                   bugs={bugs}
                   error={category.error}

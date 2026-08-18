@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Search, RotateCcw, Minimize2, Maximize2 } from 'lucide-react'
 import { MultiSelect } from '@renderer/components/ui/multi-select'
 import type { FilterState, GroupBy } from '@renderer/lib/dashboard-utils'
+import { sentinelLabel } from '@renderer/lib/labels'
 import { cn } from '@renderer/lib/utils'
 
 interface FilterBarProps {
@@ -83,6 +84,7 @@ export function FilterBar({
         selected={filterState.assignees}
         onChange={(v) => onFilterChange({ ...filterState, assignees: v })}
         placeholder="Assegnatario"
+        getLabel={sentinelLabel}
         searchable
       />
 
@@ -91,6 +93,7 @@ export function FilterBar({
         selected={filterState.macroCategories}
         onChange={(v) => onFilterChange({ ...filterState, macroCategories: v })}
         placeholder="Macro-Categoria"
+        getLabel={sentinelLabel}
       />
 
       <MultiSelect
@@ -98,6 +101,7 @@ export function FilterBar({
         selected={filterState.technicalLayers}
         onChange={(v) => onFilterChange({ ...filterState, technicalLayers: v })}
         placeholder="Sotto-Categoria"
+        getLabel={sentinelLabel}
       />
 
       <select

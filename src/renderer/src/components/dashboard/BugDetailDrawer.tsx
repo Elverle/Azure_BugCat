@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, Bot, ExternalLink } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
 import { getStatusBadgeClasses } from '@renderer/lib/badge-colors'
+import { sentinelLabel } from '@renderer/lib/labels'
 import {
   resolveAdoAttachmentImages,
   sanitizeBugDescriptionHtml,
@@ -234,20 +235,24 @@ export default function BugDetailDrawer({
                     <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1">
                       Macro-Category
                     </div>
-                    <div className="text-sm font-medium text-gray-900">{bug.macroCategory}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {sentinelLabel(bug.macroCategory)}
+                    </div>
                   </div>
                   <div>
                     <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1">
                       Sub-Category
                     </div>
-                    <div className="text-sm font-medium text-gray-900">{bug.technicalLayer}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {sentinelLabel(bug.technicalLayer)}
+                    </div>
                   </div>
                 </div>
                 <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1 mt-2">
                   Reasoning
                 </div>
                 <p className="text-sm text-gray-700 bg-white p-3 rounded border border-purple-100 shadow-sm leading-relaxed">
-                  {bug.categoryReason}
+                  {sentinelLabel(bug.categoryReason)}
                 </p>
               </div>
             ) : (

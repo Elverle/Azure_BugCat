@@ -3,6 +3,7 @@ import { AlertTriangle, Archive, ChevronDown, ChevronUp, Loader2, Search } from 
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { useClosedBugKpis } from '@renderer/hooks/useClosedBugKpis'
+import { sentinelLabel } from '@renderer/lib/labels'
 
 function formatDateTime(value: string | null): string {
   if (!value) {
@@ -184,6 +185,7 @@ export function ClosedBugsPage(): JSX.Element {
             <div className="space-y-4">
               {visibleCategoryDistribution.map(({ category, count, visibleBugs }) => {
                 const isCollapsed = collapsedCategories[category] ?? false
+                const categoryLabel = sentinelLabel(category)
 
                 return (
                   <div
@@ -195,10 +197,10 @@ export function ClosedBugsPage(): JSX.Element {
                       className="flex w-full items-center gap-3 text-left"
                       onClick={() => toggleCategory(category)}
                       aria-expanded={!isCollapsed}
-                      aria-label={`${isCollapsed ? 'Mostra' : 'Nascondi'} dettagli categoria ${category}`}
+                      aria-label={`${isCollapsed ? 'Mostra' : 'Nascondi'} dettagli categoria ${categoryLabel}`}
                     >
-                      <span className="text-sm text-gray-700 w-40 truncate" title={category}>
-                        {category}
+                      <span className="text-sm text-gray-700 w-40 truncate" title={categoryLabel}>
+                        {categoryLabel}
                       </span>
                       <div className="flex-1 bg-gray-100 rounded-full h-4 overflow-hidden">
                         <div

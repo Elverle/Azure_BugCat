@@ -240,6 +240,24 @@ describe('MultiSelect', () => {
     expect(screen.queryByText('Closed')).not.toBeInTheDocument()
   })
 
+  it('shows the label but keeps selecting by the underlying value', () => {
+    const onChange = vi.fn()
+    render(
+      <MultiSelect
+        options={['__uncategorized__', 'Payments']}
+        selected={[]}
+        onChange={onChange}
+        placeholder="Macro-Categoria"
+        getLabel={(v) => (v === '__uncategorized__' ? 'Uncategorized' : v)}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByText('Uncategorized'))
+
+    expect(onChange).toHaveBeenCalledWith(['__uncategorized__'])
+  })
+
   it('closes on Escape key', () => {
     render(<MultiSelect options={options} selected={[]} onChange={vi.fn()} placeholder="Stato" />)
     fireEvent.click(screen.getByText('Stato'))

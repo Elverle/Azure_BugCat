@@ -1,4 +1,5 @@
 import { ChevronUp, ChevronDown, Layers, Sparkles } from 'lucide-react'
+import { sentinelLabel } from '@renderer/lib/labels'
 import { cn } from '@renderer/lib/utils'
 
 interface GroupAccordionProps {
@@ -16,7 +17,9 @@ export function GroupAccordion({
   onToggle,
   children
 }: GroupAccordionProps): JSX.Element {
+  // The id keys off the raw value: it is a DOM handle, not something the user reads.
   const contentId = `group-content-${groupName.replace(/\s+/g, '-').toLowerCase()}`
+  const groupLabel = sentinelLabel(groupName)
 
   return (
     <div
@@ -47,7 +50,7 @@ export function GroupAccordion({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">
-                {groupName}
+                {groupLabel}
               </h3>
               <span className="px-2 py-0.5 bg-white border border-gray-200 text-gray-600 rounded-full text-[10px] font-bold">
                 {bugCount} Bug
@@ -65,7 +68,7 @@ export function GroupAccordion({
           <ChevronDown className="w-4 h-4 text-gray-400" />
         )}
       </button>
-      {isExpanded && <div id={contentId} role="region" aria-label={groupName}>{children}</div>}
+      {isExpanded && <div id={contentId} role="region" aria-label={groupLabel}>{children}</div>}
     </div>
   )
 }

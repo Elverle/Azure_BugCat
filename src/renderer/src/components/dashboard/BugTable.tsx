@@ -2,6 +2,7 @@ import { ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import type { SortState, SortKey } from '@renderer/lib/dashboard-utils'
 import { getStatusBadgeClasses, getCategoryColor } from '@renderer/lib/badge-colors'
+import { sentinelLabel } from '@renderer/lib/labels'
 import { cn } from '@renderer/lib/utils'
 
 interface BugTableProps {
@@ -88,7 +89,7 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
             macroColor.text
           )}
         >
-          {bug.macroCategory || '—'}
+          {sentinelLabel(bug.macroCategory) || '—'}
         </span>
       )
     }
@@ -103,7 +104,7 @@ function renderCell(bug: CategorizedBug, key: keyof CategorizedBug): JSX.Element
             subColor.text
           )}
         >
-          {bug.technicalLayer || '—'}
+          {sentinelLabel(bug.technicalLayer) || '—'}
         </span>
       )
     }
