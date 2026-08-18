@@ -1,7 +1,7 @@
 import { BugItem, LLMCategorizeResult, LLMResponse } from '../../shared/types'
 import { UNCATEGORIZED, NO_LLM_RESPONSE, NOT_AVAILABLE } from '../../shared/categorization'
 import { parseLlmJson } from './llm-json'
-import { normalizeTechnicalLayer } from './technical-layer'
+import { normalizeTechnicalLayer } from '../../shared/technical-layer'
 
 const RAW_PREVIEW_LENGTH = 1200
 
@@ -127,6 +127,9 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
       macro_category?: unknown
       category?: unknown
       macro?: unknown
+      technicalLayer?: unknown
+      technical_layer?: unknown
+      // Legacy aliases: models still answering with the pre-rename property name
       subCategory?: unknown
       sub_category?: unknown
       subcategory?: unknown
@@ -143,8 +146,12 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
       macroCategory: getStringField(
         result.macroCategory ?? result.macro_category ?? result.category ?? result.macro
       ),
-      subCategory: normalizeTechnicalLayer(
-        result.subCategory ?? result.sub_category ?? result.subcategory
+      technicalLayer: normalizeTechnicalLayer(
+        result.technicalLayer ??
+          result.technical_layer ??
+          result.subCategory ??
+          result.sub_category ??
+          result.subcategory
       ),
       categoryReason: getStringField(
         result.categoryReason ?? result.category_reason ?? result.reason
@@ -163,7 +170,7 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
       results.push({
         bugId: bug.id,
         macroCategory: UNCATEGORIZED,
-        subCategory: NO_LLM_RESPONSE,
+        technicalLayer: NO_LLM_RESPONSE,
         categoryReason: NOT_AVAILABLE
       })
     }
@@ -175,12 +182,12 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
 function buildFallbackResults(
   bugs: BugItem[],
   macroCategory: string,
-  subCategory: string
+  technicalLayer: string
 ): LLMCategorizeResult[] {
   return bugs.map((bug) => ({
     bugId: bug.id,
     macroCategory,
-    subCategory,
+    technicalLayer,
     categoryReason: NOT_AVAILABLE
   }))
 }

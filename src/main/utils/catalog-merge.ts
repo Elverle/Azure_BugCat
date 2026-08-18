@@ -19,7 +19,11 @@ export function computeInputSignature(bug: BugItem): string {
     bug.title.trim().toLowerCase(),
     bug.description.trim().toLowerCase(),
     (bug.tags ?? []).slice().sort().join(';'),
-    String(bug.priority),
+    // A missing ADO priority is represented as null (see ado-service.ts), but legacy
+    // catalog entries persisted before that fix carry priority: 0. Folding null back
+    // to 0 here keeps the signature stable across the fix, so existing catalogs are
+    // not mass-invalidated (and re-categorized by the LLM) on the next fetch.
+    String(bug.priority ?? 0),
     bug.areaPath.trim().toLowerCase()
   ]
   const input = parts.join('\0')
@@ -48,7 +52,7 @@ export function mergeFetchIntoCatalog(
         ...existing,
         ...bug,
         macroCategory: existing.macroCategory,
-        subCategory: existing.subCategory,
+        technicalLayer: existing.technicalLayer,
         categoryReason: existing.categoryReason,
         categorizedAt: existing.categorizedAt,
         lastSeenAt: now,
@@ -59,7 +63,7 @@ export function mergeFetchIntoCatalog(
       sessionBugs.push({
         ...bug,
         macroCategory: existing.macroCategory,
-        subCategory: existing.subCategory,
+        technicalLayer: existing.technicalLayer,
         categoryReason: existing.categoryReason,
         categorizedAt: existing.categorizedAt
       })
@@ -69,7 +73,7 @@ export function mergeFetchIntoCatalog(
         ...existing,
         ...bug,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: '',
         lastSeenAt: now,
@@ -80,7 +84,7 @@ export function mergeFetchIntoCatalog(
       sessionBugs.push({
         ...bug,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: ''
       })
@@ -90,7 +94,7 @@ export function mergeFetchIntoCatalog(
       catalog[bug.id] = {
         ...bug,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: '',
         firstSeenAt: now,
@@ -104,7 +108,7 @@ export function mergeFetchIntoCatalog(
       sessionBugs.push({
         ...bug,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: ''
       })
@@ -145,7 +149,7 @@ export function mergeCategorization(
       return {
         ...bug,
         macroCategory: llmResult.macroCategory,
-        subCategory: llmResult.subCategory,
+        technicalLayer: llmResult.technicalLayer,
         categoryReason: llmResult.categoryReason,
         categorizedAt: isFailedCategorization(llmResult.macroCategory) ? '' : now
       }
@@ -160,7 +164,7 @@ export function mergeCategorization(
       const updatedEntry: CatalogBug = {
         ...entry,
         macroCategory: llmResult.macroCategory,
-        subCategory: llmResult.subCategory,
+        technicalLayer: llmResult.technicalLayer,
         categoryReason: llmResult.categoryReason,
         categorizedAt: isFailedCategorization(llmResult.macroCategory) ? '' : now,
         inputSignature: computeInputSignature(entry)

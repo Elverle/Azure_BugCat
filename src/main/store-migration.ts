@@ -1,6 +1,6 @@
 import { computeInputSignature } from './utils/catalog-merge'
 
-export const CURRENT_SCHEMA_VERSION = 3
+export const CURRENT_SCHEMA_VERSION = 4
 
 export type Migration = {
   version: number
@@ -90,6 +90,42 @@ export const migrations: Migration[] = [
       }
 
       data.bugCatalog = catalog
+      return data
+    }
+  },
+  {
+    version: 4,
+    up: (data) => {
+      // Rename subCategory -> technicalLayer everywhere the field was persisted.
+      //
+      // NOTE (Fase 2): this same `up` will be EXTENDED with the italian -> english
+      // sentinel conversion. Confirmed on 2026-08-12 that it stays v4 and does not
+      // become a v5. Two consequences follow, neither of them enforced by code:
+      //
+      //   1. No release between Fase 1 and Fase 2. `migrateStore` returns early on
+      //      schemaVersion >= CURRENT_SCHEMA_VERSION, so a store that reached 4
+      //      under the rename-only `up` never runs the extended one.
+      //
+      //   2. The developer's own machine is not exempt. Any store that opened the
+      //      app between this commit and Fase 2 has to have its schemaVersion
+      //      lowered, or its config reset, once the sentinel conversion lands —
+      //      otherwise it keeps the italian sentinels forever.
+      const renameLayer = (bug: Record<string, unknown>): Record<string, unknown> => {
+        if ('subCategory' in bug) {
+          bug.technicalLayer = bug.subCategory
+          delete bug.subCategory
+        }
+        return bug
+      }
+
+      const session = data.session as { bugs?: Record<string, unknown>[] } | null
+      if (session?.bugs) session.bugs = session.bugs.map(renameLayer)
+
+      const catalog = data.bugCatalog as Record<string, Record<string, unknown>> | null
+      if (catalog) {
+        for (const key of Object.keys(catalog)) catalog[key] = renameLayer(catalog[key])
+      }
+
       return data
     }
   }

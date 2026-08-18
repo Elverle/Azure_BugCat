@@ -3,7 +3,7 @@ import type { CategorizedBug } from '@shared/types'
 import {
   computeKpis,
   filterBugs,
-  getSubCategoriesForMacros,
+  getTechnicalLayersForMacros,
   getUniqueValues,
   groupBugs,
   sortBugs,
@@ -25,7 +25,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-15',
     tags: ['auth'],
     macroCategory: 'Authentication',
-    subCategory: 'OAuth',
+    technicalLayer: 'OAuth',
     categoryReason: 'OAuth related',
     categorizedAt: '2026-01-15'
   },
@@ -41,7 +41,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-16',
     tags: ['sso'],
     macroCategory: 'Authentication',
-    subCategory: 'SSO',
+    technicalLayer: 'SSO',
     categoryReason: 'SSO related',
     categorizedAt: '2026-01-16'
   },
@@ -57,7 +57,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-17',
     tags: ['cart'],
     macroCategory: 'Cart',
-    subCategory: 'Calculation',
+    technicalLayer: 'Calculation',
     categoryReason: 'Math error',
     categorizedAt: '2026-01-17'
   },
@@ -73,7 +73,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-18',
     tags: ['backend'],
     macroCategory: 'Infrastructure',
-    subCategory: 'API',
+    technicalLayer: 'API',
     categoryReason: 'Server error',
     categorizedAt: '2026-01-18'
   },
@@ -89,7 +89,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-19',
     tags: ['checkout'],
     macroCategory: 'Cart',
-    subCategory: 'Checkout',
+    technicalLayer: 'Checkout',
     categoryReason: 'UX issue',
     categorizedAt: '2026-01-19'
   }
@@ -154,8 +154,8 @@ describe('filterBugs', () => {
     expect(result.every((b) => b.macroCategory === 'Cart')).toBe(true)
   })
 
-  it('should filter by subCategories', () => {
-    const filters: FilterState = { ...EMPTY_FILTER_STATE, subCategories: ['OAuth', 'SSO'] }
+  it('should filter by technicalLayers', () => {
+    const filters: FilterState = { ...EMPTY_FILTER_STATE, technicalLayers: ['OAuth', 'SSO'] }
     const result = filterBugs(mockBugs, filters)
     expect(result).toHaveLength(2)
   })
@@ -186,6 +186,23 @@ describe('sortBugs', () => {
     expect(result[result.length - 1].priority).toBe(1)
   })
 
+  it('should sort bugs without a priority last in both directions', () => {
+    // A missing ADO priority is null, not 0: it must never sort as if it were
+    // the most urgent bug in the list.
+    const withMissing = [
+      { ...mockBugs[0], id: 9001, priority: null },
+      ...mockBugs.map((bug) => ({ ...bug }))
+    ]
+
+    const asc = sortBugs(withMissing, 'priority', 'asc')
+    expect(asc[asc.length - 1].priority).toBeNull()
+    expect(asc[0].priority).toBe(1)
+
+    const desc = sortBugs(withMissing, 'priority', 'desc')
+    expect(desc[desc.length - 1].priority).toBeNull()
+    expect(desc[0].priority).toBe(3)
+  })
+
   it('should return unchanged array when sortKey is null', () => {
     const result = sortBugs(mockBugs, null, 'asc')
     expect(result).toEqual(mockBugs)
@@ -209,16 +226,16 @@ describe('groupBugs', () => {
     expect(result.get('Infrastructure')).toHaveLength(1)
   })
 
-  it('should group by subCategory with empty mapped to "Non categorizzato"', () => {
+  it('should group by technicalLayer with empty mapped to "Non categorizzato"', () => {
     const bugsWithEmpty: CategorizedBug[] = [
       ...mockBugs,
       {
         ...mockBugs[0],
         id: 99,
-        subCategory: ''
+        technicalLayer: ''
       }
     ]
-    const result = groupBugs(bugsWithEmpty, 'subCategory')
+    const result = groupBugs(bugsWithEmpty, 'technicalLayer')
     expect(result.has('Non categorizzato')).toBe(true)
     expect(result.get('Non categorizzato')).toHaveLength(1)
   })
@@ -337,24 +354,24 @@ describe('getUniqueValues', () => {
   })
 })
 
-describe('getSubCategoriesForMacros', () => {
+describe('getTechnicalLayersForMacros', () => {
   it('should return only sub-categories for selected macros', () => {
-    const result = getSubCategoriesForMacros(mockBugs, ['Authentication'])
+    const result = getTechnicalLayersForMacros(mockBugs, ['Authentication'])
     expect(result).toEqual(['OAuth', 'SSO'])
   })
 
   it('should return all sub-categories when no macros selected', () => {
-    const result = getSubCategoriesForMacros(mockBugs, [])
+    const result = getTechnicalLayersForMacros(mockBugs, [])
     expect(result).toEqual(['API', 'Calculation', 'Checkout', 'OAuth', 'SSO'])
   })
 
   it('should return sorted results', () => {
-    const result = getSubCategoriesForMacros(mockBugs, ['Cart'])
+    const result = getTechnicalLayersForMacros(mockBugs, ['Cart'])
     expect(result).toEqual(['Calculation', 'Checkout'])
   })
 
   it('should return empty array for non-matching macro', () => {
-    const result = getSubCategoriesForMacros(mockBugs, ['NonExistent'])
+    const result = getTechnicalLayersForMacros(mockBugs, ['NonExistent'])
     expect(result).toEqual([])
   })
 })

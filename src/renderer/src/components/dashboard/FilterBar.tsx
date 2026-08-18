@@ -11,7 +11,7 @@ interface FilterBarProps {
     statuses: string[]
     assignees: string[]
     macroCategories: string[]
-    subCategories: string[]
+    technicalLayers: string[]
   }
   groupBy: GroupBy
   onGroupByChange: (groupBy: GroupBy) => void
@@ -94,9 +94,9 @@ export function FilterBar({
       />
 
       <MultiSelect
-        options={filterOptions.subCategories}
-        selected={filterState.subCategories}
-        onChange={(v) => onFilterChange({ ...filterState, subCategories: v })}
+        options={filterOptions.technicalLayers}
+        selected={filterState.technicalLayers}
+        onChange={(v) => onFilterChange({ ...filterState, technicalLayers: v })}
         placeholder="Sotto-Categoria"
       />
 
@@ -107,7 +107,7 @@ export function FilterBar({
       >
         <option value="none">Nessuno</option>
         <option value="macroCategory">Per Macro-Categoria</option>
-        <option value="subCategory">Per Sotto-Categoria</option>
+        <option value="technicalLayer">Per Sotto-Categoria</option>
         <option value="assignee">Per Assegnatario</option>
       </select>
 

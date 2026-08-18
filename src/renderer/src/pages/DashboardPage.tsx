@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
-import { List, Layers, Bug, Sparkles, Play, AlertTriangle, Loader2, XCircle } from 'lucide-react'
+import { List, Layers, Bug, Sparkles, Play, AlertTriangle, Loader2 } from 'lucide-react'
 import { useDashboard } from '@renderer/hooks/useDashboard'
 import { useAiCluster } from '@renderer/hooks/useAiCluster'
 import { useBugDrawer } from '@renderer/hooks/useBugDrawer'
@@ -18,7 +18,7 @@ import {
   groupBugs,
   computeKpis,
   getUniqueValues,
-  getSubCategoriesForMacros,
+  getTechnicalLayersForMacros,
   EMPTY_FILTER_STATE,
   DEFAULT_SORT_STATE,
   type FilterState,
@@ -81,25 +81,25 @@ export function DashboardPage(): JSX.Element {
       statuses: getUniqueValues(bugs, 'state'),
       assignees,
       macroCategories: getUniqueValues(bugs, 'macroCategory'),
-      subCategories: getSubCategoriesForMacros(bugs, selectedFilters.macroCategories)
+      technicalLayers: getTechnicalLayersForMacros(bugs, selectedFilters.macroCategories)
     }
   }, [bugs, selectedFilters.macroCategories])
 
   // Sub-category selections that the current macro-category choice (or the current
   // bug set) no longer offers are dropped here rather than reconciled in an effect.
   const filterState = useMemo<FilterState>(() => {
-    if (selectedFilters.subCategories.length === 0) {
+    if (selectedFilters.technicalLayers.length === 0) {
       return selectedFilters
     }
 
-    const reconciled = selectedFilters.subCategories.filter((sub) =>
-      filterOptions.subCategories.includes(sub)
+    const reconciled = selectedFilters.technicalLayers.filter((sub) =>
+      filterOptions.technicalLayers.includes(sub)
     )
 
-    return reconciled.length === selectedFilters.subCategories.length
+    return reconciled.length === selectedFilters.technicalLayers.length
       ? selectedFilters
-      : { ...selectedFilters, subCategories: reconciled }
-  }, [selectedFilters, filterOptions.subCategories])
+      : { ...selectedFilters, technicalLayers: reconciled }
+  }, [selectedFilters, filterOptions.technicalLayers])
 
   // Computed values
   const filteredBugs = useMemo(
@@ -440,8 +440,19 @@ function DashboardSimilaritySection({
   bugs,
   onBugClick
 }: DashboardSimilaritySectionProps): JSX.Element {
-  const { results, loading, analyzing, progress, canAnalyze, isStale, error, analyze, cancel } =
-    useAiCluster()
+  const {
+    results,
+    loading,
+    analyzing,
+    isCancelling,
+    progress,
+    canAnalyze,
+    isStale,
+    error,
+    analyze,
+    cancel,
+    clearError
+  } = useAiCluster()
 
   if (loading) {
     return (
@@ -485,6 +496,7 @@ function DashboardSimilaritySection({
 
             <button
               onClick={analyzing ? cancel : analyze}
+              disabled={analyzing && isCancelling}
               className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-indigo-700 hover:to-purple-700 shadow-sm transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {analyzing ? (
@@ -492,7 +504,11 @@ function DashboardSimilaritySection({
               ) : (
                 <Play className="w-4 h-4" />
               )}
-              {analyzing ? 'Annulla analisi' : 'Analizza Similarità'}
+              {analyzing
+                ? isCancelling
+                  ? 'Annullamento...'
+                  : 'Annulla analisi'
+                : 'Analizza Similarità'}
             </button>
           </div>
         </div>
@@ -504,13 +520,6 @@ function DashboardSimilaritySection({
               I risultati potrebbero essere obsoleti: la categorizzazione è stata aggiornata dopo
               l&apos;ultima analisi.
             </span>
-          </div>
-        )}
-
-        {error && !analyzing && (
-          <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-            <XCircle className="w-4 h-4 shrink-0" />
-            <span>{error}</span>
           </div>
         )}
 
@@ -577,6 +586,19 @@ function DashboardSimilaritySection({
           </div>
         ) : null}
       </div>
+
+      {/* Module-scope `error` (see useAiCluster) survives a tab switch or a
+          route navigation, so it needs an explicit dismiss affordance — a
+          successful analyze() is not the only way out of it. Consistent with
+          categorizeError/fetchError above (FIX 4). */}
+      <ConfirmDialog
+        open={error !== null && !analyzing}
+        title="Errore analisi similarità"
+        description={error ?? ''}
+        confirmLabel="Chiudi"
+        onConfirm={clearError}
+        onCancel={clearError}
+      />
     </>
   )
 }

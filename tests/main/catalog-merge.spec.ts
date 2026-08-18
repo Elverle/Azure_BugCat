@@ -34,7 +34,7 @@ function makeCatalogBug(overrides: Partial<CatalogBug> = {}): CatalogBug {
   return {
     ...makeBugItem(),
     macroCategory: 'Cat',
-    subCategory: 'Sub',
+    technicalLayer: 'Sub',
     categoryReason: 'Reason',
     categorizedAt: '2024-01-01T00:00:00Z',
     firstSeenAt: '2024-01-01T00:00:00Z',
@@ -51,7 +51,7 @@ function makeCategorizedBug(overrides: Partial<CategorizedBug> = {}): Categorize
   return {
     ...makeBugItem(),
     macroCategory: '',
-    subCategory: '',
+    technicalLayer: '',
     categoryReason: '',
     categorizedAt: '',
     ...overrides
@@ -93,6 +93,16 @@ describe('computeInputSignature', () => {
     const sig = computeInputSignature(makeBugItem())
     expect(sig).toMatch(/^[0-9a-f]{16}$/)
   })
+
+  it('computes the same input signature for priority 0 (legacy) and null (new) — review 3.4', () => {
+    // A bug catalogued before this fix has priority: 0 (the old "missing priority"
+    // sentinel). The same bug re-fetched today has priority: null. If the signature
+    // changed here, every such entry in every user's catalog would look "modified"
+    // and get bulk re-categorized by the LLM for no reason.
+    const legacy = makeBugItem({ priority: 0 })
+    const current = makeBugItem({ priority: null })
+    expect(computeInputSignature(current)).toBe(computeInputSignature(legacy))
+  })
 })
 
 describe('mergeFetchIntoCatalog', () => {
@@ -113,7 +123,7 @@ describe('mergeFetchIntoCatalog', () => {
 
     for (const sb of sessionBugs) {
       expect(sb.macroCategory).toBe('')
-      expect(sb.subCategory).toBe('')
+      expect(sb.technicalLayer).toBe('')
       expect(sb.categoryReason).toBe('')
       expect(sb.categorizedAt).toBe('')
     }
@@ -149,7 +159,7 @@ describe('mergeFetchIntoCatalog', () => {
     )
 
     expect(sessionBugs[0].macroCategory).toBe('Cat')
-    expect(sessionBugs[0].subCategory).toBe('Sub')
+    expect(sessionBugs[0].technicalLayer).toBe('Sub')
     expect(sessionBugs[0].categorizedAt).toBe('2024-01-01T00:00:00Z')
     expect(updatedCatalog[10].lastSeenAt).toBe(now)
     expect(mergeFetchIntoCatalog([bug], catalog, now, new Set([bug.id])).newBugCount).toBe(0)
@@ -293,13 +303,13 @@ describe('mergeCategorization', () => {
   it('LLM results merged correctly into session bugs and catalog entries', () => {
     const bug = makeBugItem({ id: 1 })
     const sessionBugs: CategorizedBug[] = [
-      { ...bug, macroCategory: '', subCategory: '', categoryReason: '', categorizedAt: '' }
+      { ...bug, macroCategory: '', technicalLayer: '', categoryReason: '', categorizedAt: '' }
     ]
     const llmResults: CategorizedBug[] = [
       {
         ...bug,
         macroCategory: 'Performance',
-        subCategory: 'Memory Leak',
+        technicalLayer: 'Memory Leak',
         categoryReason: 'Uses too much RAM',
         categorizedAt: ''
       }
@@ -308,7 +318,7 @@ describe('mergeCategorization', () => {
       1: makeCatalogBug({
         id: 1,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categorizedAt: '',
         inputSignature: computeInputSignature(bug)
       })
@@ -322,21 +332,21 @@ describe('mergeCategorization', () => {
     )
 
     expect(updatedSessionBugs[0].macroCategory).toBe('Performance')
-    expect(updatedSessionBugs[0].subCategory).toBe('Memory Leak')
+    expect(updatedSessionBugs[0].technicalLayer).toBe('Memory Leak')
     expect(updatedSessionBugs[0].categoryReason).toBe('Uses too much RAM')
     expect(updatedCatalog[1].macroCategory).toBe('Performance')
-    expect(updatedCatalog[1].subCategory).toBe('Memory Leak')
+    expect(updatedCatalog[1].technicalLayer).toBe('Memory Leak')
   })
 
   it('only processed bugs updated, others untouched', () => {
     const bug1 = makeBugItem({ id: 1 })
     const bug2 = makeBugItem({ id: 2, title: 'Other bug' })
     const sessionBugs: CategorizedBug[] = [
-      { ...bug1, macroCategory: '', subCategory: '', categoryReason: '', categorizedAt: '' },
+      { ...bug1, macroCategory: '', technicalLayer: '', categoryReason: '', categorizedAt: '' },
       {
         ...bug2,
         macroCategory: 'Existing',
-        subCategory: 'ExSub',
+        technicalLayer: 'ExSub',
         categoryReason: 'ExReason',
         categorizedAt: '2024-01-01T00:00:00Z'
       }
@@ -345,7 +355,7 @@ describe('mergeCategorization', () => {
       {
         ...bug1,
         macroCategory: 'NewCat',
-        subCategory: 'NewSub',
+        technicalLayer: 'NewSub',
         categoryReason: 'NewReason',
         categorizedAt: ''
       }
@@ -383,13 +393,13 @@ describe('mergeCategorization', () => {
   it('categorizedAt set to now for categorized bugs', () => {
     const bug = makeBugItem({ id: 5 })
     const sessionBugs: CategorizedBug[] = [
-      { ...bug, macroCategory: '', subCategory: '', categoryReason: '', categorizedAt: '' }
+      { ...bug, macroCategory: '', technicalLayer: '', categoryReason: '', categorizedAt: '' }
     ]
     const llmResults: CategorizedBug[] = [
       {
         ...bug,
         macroCategory: 'UI',
-        subCategory: 'Layout',
+        technicalLayer: 'Layout',
         categoryReason: 'Broken',
         categorizedAt: ''
       }
@@ -418,13 +428,13 @@ describe('mergeCategorization', () => {
     const bug = makeBugItem({ id: 7 })
     const expectedSig = computeInputSignature(bug)
     const sessionBugs: CategorizedBug[] = [
-      { ...bug, macroCategory: '', subCategory: '', categoryReason: '', categorizedAt: '' }
+      { ...bug, macroCategory: '', technicalLayer: '', categoryReason: '', categorizedAt: '' }
     ]
     const llmResults: CategorizedBug[] = [
       {
         ...bug,
         macroCategory: 'Security',
-        subCategory: 'XSS',
+        technicalLayer: 'XSS',
         categoryReason: 'Unsafe',
         categorizedAt: ''
       }
@@ -446,7 +456,7 @@ describe('mergeCategorization with failed results', () => {
     const failed = {
       ...bug,
       macroCategory: UNCATEGORIZED,
-      subCategory: 'Errore elaborazione',
+      technicalLayer: 'Errore elaborazione',
       categoryReason: 'N/D',
       categorizedAt: '2026-01-01T00:00:00Z'
     }
@@ -476,7 +486,7 @@ describe('mergeCategorization with failed results', () => {
       60: makeCatalogBug({
         id: 60,
         macroCategory: UNCATEGORIZED,
-        subCategory: 'Errore elaborazione',
+        technicalLayer: 'Errore elaborazione',
         categoryReason: 'N/D',
         categorizedAt: '',
         inputSignature: signature

@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import type { AppSettings } from '@shared/types'
 import { extractErrorMessage } from '@shared/app-error'
-import { validateSettings, isSettingsValid } from '@renderer/lib/validation'
+import { validateSettings, isSettingsValid } from '@shared/validation'
 
 const DEFAULT_SETTINGS: AppSettings = {
   orgUrl: '',
@@ -42,7 +42,14 @@ export interface UseSettingsReturn {
   textToCategories: (text: string) => string[]
 }
 
-const CONNECTION_TIMEOUT = 5000
+/**
+ * The main process bounds the connection tests itself (30s for ADO, 60s for the
+ * LLM), so this race is only a safety net against a reply that never comes: it
+ * must outlast those timeouts, or a slow-but-successful test is reported as a
+ * failure the user cannot explain.
+ */
+const TEST_CONNECTION_TIMEOUT_MS = 65000
+const RESULT_AUTO_DISMISS_MS = 5000
 
 export function useSettings(): UseSettingsReturn {
   const [settings, setSettings] = useState<AppSettings>(DEFAULT_SETTINGS)
@@ -135,12 +142,19 @@ export function useSettings(): UseSettingsReturn {
   const testAdoConnection = useCallback(async () => {
     setTestAdoLoading(true)
     setTestAdoResult(null)
+    // Captured so the race timer can be cancelled once the real response wins —
+    // otherwise it stays scheduled for the rest of its 65s and later rejects a
+    // promise nobody is awaiting (FIX 6).
+    let raceTimeout: ReturnType<typeof setTimeout> | undefined
     try {
       const response = (await Promise.race([
         window.electronAPI.testAdoConnection(settings),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Connection test timed out')), CONNECTION_TIMEOUT)
-        )
+        new Promise<never>((_, reject) => {
+          raceTimeout = setTimeout(
+            () => reject(new Error('Connection test timed out')),
+            TEST_CONNECTION_TIMEOUT_MS
+          )
+        })
       ])) as { success: boolean; message: string }
       setTestAdoResult({
         type: response.success ? 'success' : 'error',
@@ -150,6 +164,7 @@ export function useSettings(): UseSettingsReturn {
       const message = err instanceof Error ? err.message : 'Connection test failed.'
       setTestAdoResult({ type: 'error', message })
     } finally {
+      clearTimeout(raceTimeout)
       setTestAdoLoading(false)
     }
   }, [settings])
@@ -157,12 +172,18 @@ export function useSettings(): UseSettingsReturn {
   const testLlmConnection = useCallback(async () => {
     setTestLlmLoading(true)
     setTestLlmResult(null)
+    // See testAdoConnection above: cancelled once the real response wins so it
+    // does not linger for the rest of its 65s (FIX 6).
+    let raceTimeout: ReturnType<typeof setTimeout> | undefined
     try {
       const response = (await Promise.race([
         window.electronAPI.testLlmConnection(settings),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Connection test timed out')), CONNECTION_TIMEOUT)
-        )
+        new Promise<never>((_, reject) => {
+          raceTimeout = setTimeout(
+            () => reject(new Error('Connection test timed out')),
+            TEST_CONNECTION_TIMEOUT_MS
+          )
+        })
       ])) as { success: boolean; message: string }
 
       setTestLlmResult({
@@ -173,6 +194,7 @@ export function useSettings(): UseSettingsReturn {
       const message = err instanceof Error ? err.message : 'Connection test failed.'
       setTestLlmResult({ type: 'error', message })
     } finally {
+      clearTimeout(raceTimeout)
       setTestLlmLoading(false)
     }
   }, [settings])
@@ -180,14 +202,14 @@ export function useSettings(): UseSettingsReturn {
   // Auto-dismiss test connection results after 5 seconds
   useEffect(() => {
     if (testAdoResult) {
-      const timer = setTimeout(() => setTestAdoResult(null), CONNECTION_TIMEOUT)
+      const timer = setTimeout(() => setTestAdoResult(null), RESULT_AUTO_DISMISS_MS)
       return () => clearTimeout(timer)
     }
   }, [testAdoResult])
 
   useEffect(() => {
     if (testLlmResult) {
-      const timer = setTimeout(() => setTestLlmResult(null), CONNECTION_TIMEOUT)
+      const timer = setTimeout(() => setTestLlmResult(null), RESULT_AUTO_DISMISS_MS)
       return () => clearTimeout(timer)
     }
   }, [testLlmResult])

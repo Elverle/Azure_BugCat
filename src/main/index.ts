@@ -4,6 +4,7 @@ import { is } from '@electron-toolkit/utils'
 import { registerIPCHandlers } from './ipc-handlers'
 import { store } from './store'
 import { migrateStore } from './store-migration'
+import { attachNavigationGuard } from './window-security'
 
 function createWindow(): void {
   const mainWindow = new BrowserWindow({
@@ -19,6 +20,8 @@ function createWindow(): void {
       preload: join(__dirname, '../preload/index.js')
     }
   })
+
+  attachNavigationGuard(mainWindow.webContents)
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()

@@ -41,7 +41,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-15',
     tags: ['auth'],
     macroCategory: 'Authentication',
-    subCategory: 'OAuth',
+    technicalLayer: 'OAuth',
     categoryReason: 'OAuth related',
     categorizedAt: '2026-01-15'
   },
@@ -57,7 +57,7 @@ const mockBugs: CategorizedBug[] = [
     updatedDate: '2026-01-16',
     tags: [],
     macroCategory: 'Authentication',
-    subCategory: 'SSO',
+    technicalLayer: 'SSO',
     categoryReason: 'SSO issue',
     categorizedAt: '2026-01-16'
   }
@@ -69,7 +69,7 @@ const defaultFilterState: FilterState = {
   statuses: [],
   assignees: [],
   macroCategories: [],
-  subCategories: [],
+  technicalLayers: [],
   searchText: ''
 }
 
@@ -159,6 +159,13 @@ describe('BugTable', () => {
     const rows = screen.getAllByRole('row')
     // 1 header row + 2 data rows
     expect(rows).toHaveLength(3)
+  })
+
+  it('shows a dash in the priority cell when the bug has no priority', () => {
+    const withoutPriority = [{ ...mockBugs[0], priority: null }]
+    render(<BugTable bugs={withoutPriority} sortState={defaultSortState} onSort={vi.fn()} />)
+
+    expect(screen.getByText('—')).toBeInTheDocument()
   })
 })
 
@@ -251,7 +258,7 @@ describe('FilterBar', () => {
     statuses: ['Active', 'Resolved'],
     assignees: ['Laura K.', 'Marco R.'],
     macroCategories: ['Authentication', 'UI'],
-    subCategories: ['OAuth', 'SSO']
+    technicalLayers: ['OAuth', 'SSO']
   }
 
   function renderFilterBar(overrides = {}): ReturnType<typeof render> {

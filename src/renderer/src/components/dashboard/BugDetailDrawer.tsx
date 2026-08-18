@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, ChevronLeft, ChevronRight, Bot, ExternalLink } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
@@ -50,8 +50,16 @@ export default function BugDetailDrawer({
     html: string
   } | null>(null)
 
-  const sanitizedDescriptionHtml = sanitizeBugDescriptionHtml(bug?.descriptionHtml)
-  const pendingDescriptionHtml = stripAdoAttachmentImages(sanitizedDescriptionHtml)
+  // Parsing the description is the expensive part of a render: keep it tied to the
+  // html itself, so resizing the drawer (a per-pixel prop change) does not redo it.
+  const sanitizedDescriptionHtml = useMemo(
+    () => sanitizeBugDescriptionHtml(bug?.descriptionHtml),
+    [bug?.descriptionHtml]
+  )
+  const pendingDescriptionHtml = useMemo(
+    () => stripAdoAttachmentImages(sanitizedDescriptionHtml),
+    [sanitizedDescriptionHtml]
+  )
   const hasAdoAttachmentImages = sanitizedDescriptionHtml !== pendingDescriptionHtml
   const descriptionExpanded = bug != null && expandedForBugId === bug.id
   const resolvedHtml =
@@ -232,7 +240,7 @@ export default function BugDetailDrawer({
                     <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1">
                       Sub-Category
                     </div>
-                    <div className="text-sm font-medium text-gray-900">{bug.subCategory}</div>
+                    <div className="text-sm font-medium text-gray-900">{bug.technicalLayer}</div>
                   </div>
                 </div>
                 <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1 mt-2">
@@ -264,7 +272,7 @@ export default function BugDetailDrawer({
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Priority</div>
-                  <div className="text-sm text-gray-900">{bug.priority}</div>
+                  <div className="text-sm text-gray-900">{bug.priority ?? '—'}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Created</div>

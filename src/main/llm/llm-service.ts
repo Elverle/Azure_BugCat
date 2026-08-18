@@ -241,7 +241,7 @@ export async function categorizeBugs(
       chunkResults = chunk.map((bug) => ({
         bugId: bug.id,
         macroCategory: UNCATEGORIZED,
-        subCategory: PROCESSING_ERROR,
+        technicalLayer: PROCESSING_ERROR,
         categoryReason: NOT_AVAILABLE
       }))
     }
@@ -277,7 +277,7 @@ function applyCategorization(bugs: BugItem[], results: LLMCategorizeResult[]): C
     return {
       ...bug,
       macroCategory,
-      subCategory: result?.subCategory ?? NO_LLM_RESPONSE,
+      technicalLayer: result?.technicalLayer ?? NO_LLM_RESPONSE,
       categoryReason: result?.categoryReason ?? NOT_AVAILABLE,
       categorizedAt: isFailedCategorization(macroCategory) ? '' : now
     }

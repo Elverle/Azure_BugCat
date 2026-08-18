@@ -121,6 +121,37 @@ describe('registerIPCHandlers', () => {
     )
   })
 
+  describe('SETTINGS_SET — main-process validation (review 2.4)', () => {
+    it('rejects malformed settings payloads instead of persisting them', async () => {
+      await expect(
+        handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, { ...baseSettings, orgUrl: 123 })
+      ).rejects.toThrow(/^STORE_ERROR::/)
+      expect(storeSet).not.toHaveBeenCalled()
+    })
+
+    it('rejects a non-object payload instead of persisting it', async () => {
+      await expect(handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, null)).rejects.toThrow(
+        /^STORE_ERROR::/
+      )
+      expect(storeSet).not.toHaveBeenCalled()
+    })
+
+    // review B5: an emptied Top N/Chunk Size field now sends NaN rather than 0.
+    // typeof NaN === 'number', so a bare primitive-type check would let it through —
+    // only validateIntRange (via validateSettings/isSettingsValid) actually rejects it.
+    it('rejects NaN numeric fields instead of persisting them', async () => {
+      await expect(
+        handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, { ...baseSettings, topN: Number.NaN })
+      ).rejects.toThrow(/^STORE_ERROR::/)
+      expect(storeSet).not.toHaveBeenCalled()
+    })
+
+    it('persists valid settings', async () => {
+      await handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, baseSettings)
+      expect(storeSet).toHaveBeenCalledWith('settings', baseSettings)
+    })
+  })
+
   it('fetches ADO attachments through the main process using persisted settings', async () => {
     storeGet.mockReturnValueOnce(baseSettings)
     fetchAdoAttachmentDataUrl.mockResolvedValue('data:image/png;base64,AAA=')
@@ -201,7 +232,7 @@ describe('registerIPCHandlers', () => {
           expect.objectContaining({
             id: 1,
             macroCategory: '',
-            subCategory: '',
+            technicalLayer: '',
             categoryReason: '',
             categorizedAt: ''
           })
@@ -212,7 +243,7 @@ describe('registerIPCHandlers', () => {
       expect.objectContaining({
         id: 1,
         macroCategory: '',
-        subCategory: '',
+        technicalLayer: '',
         categoryReason: '',
         categorizedAt: ''
       })
@@ -232,7 +263,7 @@ describe('registerIPCHandlers', () => {
         {
           id: 42,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'test',
           categorizedAt: '2026-05-01T00:00:00.000Z'
         }
@@ -369,7 +400,7 @@ describe('registerIPCHandlers', () => {
         1: {
           ...bug1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'test reason',
           categorizedAt: '2024-06-01T00:00:00Z',
           firstSeenAt: '2024-05-01T00:00:00Z',
@@ -396,7 +427,7 @@ describe('registerIPCHandlers', () => {
         expect.objectContaining({
           id: 1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'test reason',
           categorizedAt: '2024-06-01T00:00:00Z'
         })
@@ -416,7 +447,7 @@ describe('registerIPCHandlers', () => {
         1: {
           ...bug1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'reason',
           categorizedAt: '2024-06-01T00:00:00Z',
           firstSeenAt: '2024-05-01T00:00:00Z',
@@ -458,7 +489,7 @@ describe('registerIPCHandlers', () => {
         1: {
           ...bug1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'reason',
           categorizedAt: '2024-06-01T00:00:00Z',
           firstSeenAt: '2024-05-01T00:00:00Z',
@@ -498,7 +529,7 @@ describe('registerIPCHandlers', () => {
         1: {
           ...bug1,
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'reason',
           categorizedAt: '2024-06-01T00:00:00Z',
           firstSeenAt: '2024-05-01T00:00:00Z',
@@ -555,6 +586,33 @@ describe('registerIPCHandlers', () => {
 
       await expect(fetchHandler?.(event)).rejects.toThrow(/already in progress/i)
     })
+
+    // FIX 8: the `finally` block only ever had its *rejection* of a second
+    // concurrent call (while the first is still pending) covered — never that a
+    // FAILED (not just a successful) run actually releases its in-flight token
+    // afterwards, so a later, non-concurrent call is accepted rather than
+    // rejected as "already in progress".
+    it('releases the in-flight token after a rejecting fetch, so a later call on the same webContents is accepted', async () => {
+      storeGet.mockImplementation((key: string) => {
+        if (key === 'settings') return baseSettings
+        if (key === 'bugCatalog') return null
+        return null
+      })
+
+      fetchBugsFromQuery.mockRejectedValueOnce({
+        code: 'ADO_TIMEOUT',
+        message: 'Network error: socket hang up'
+      })
+
+      const fetchHandler = handlers.get(IPC_CHANNELS.ADO_FETCH_BUGS)
+      const event = { sender: { id: 66, send: vi.fn() } }
+
+      await expect(fetchHandler?.(event)).rejects.toThrow('ADO_TIMEOUT::Network error')
+
+      fetchBugsFromQuery.mockResolvedValueOnce({ bugs: [], allQueryIds: [] })
+
+      await expect(fetchHandler?.(event)).resolves.toEqual([])
+    })
   })
 
   describe('LLM_CATEGORIZE — selective categorization', () => {
@@ -570,7 +628,7 @@ describe('registerIPCHandlers', () => {
       updatedDate: '2024-01-01T00:00:00Z',
       tags: [],
       macroCategory: categorizedAt ? 'UI' : '',
-      subCategory: categorizedAt ? 'Layout' : '',
+      technicalLayer: categorizedAt ? 'Layout' : '',
       categoryReason: categorizedAt ? 'reason' : '',
       categorizedAt
     })
@@ -665,7 +723,7 @@ describe('registerIPCHandlers', () => {
         {
           ...bug2,
           macroCategory: 'Performance',
-          subCategory: 'Memory',
+          technicalLayer: 'Memory',
           categoryReason: 'reason',
           categorizedAt: '2024-06-02T00:00:00Z'
         }
@@ -703,7 +761,7 @@ describe('registerIPCHandlers', () => {
       updatedDate: '2024-01-01T00:00:00Z',
       tags: [],
       macroCategory: '',
-      subCategory: '',
+      technicalLayer: '',
       categoryReason: '',
       categorizedAt: ''
     })
@@ -711,7 +769,7 @@ describe('registerIPCHandlers', () => {
     const categorized = (id: number, macroCategory: string): unknown => ({
       ...(uncategorized(id) as Record<string, unknown>),
       macroCategory,
-      subCategory: 'Layout',
+      technicalLayer: 'Layout',
       categoryReason: 'Looks like a UI bug',
       categorizedAt: '2026-06-01T00:00:01.000Z'
     })
@@ -837,7 +895,7 @@ describe('registerIPCHandlers', () => {
       updatedDate: '2024-01-01T00:00:00Z',
       tags: [],
       macroCategory: '',
-      subCategory: '',
+      technicalLayer: '',
       categoryReason: '',
       categorizedAt: ''
     })
@@ -852,7 +910,7 @@ describe('registerIPCHandlers', () => {
         {
           ...(uncategorizedBug(1) as Record<string, unknown>),
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'reason',
           categorizedAt: NOW
         }
@@ -900,7 +958,7 @@ describe('registerIPCHandlers', () => {
           {
             id: 1,
             macroCategory: 'UI',
-            subCategory: 'Layout',
+            technicalLayer: 'Layout',
             categoryReason: 'r',
             categorizedAt: '2024-06-01'
           }
@@ -973,7 +1031,7 @@ describe('registerIPCHandlers', () => {
       updatedDate: '2024-01-01T00:00:00Z',
       tags: [],
       macroCategory,
-      subCategory: 'Layout',
+      technicalLayer: 'Layout',
       categoryReason: 'Looks like a UI bug',
       categorizedAt: '2026-06-01T00:00:01.000Z'
     })
@@ -1113,7 +1171,7 @@ describe('registerIPCHandlers', () => {
           updatedDate: '2024-01-01',
           tags: [],
           macroCategory: 'UI',
-          subCategory: 'Layout',
+          technicalLayer: 'Layout',
           categoryReason: 'r',
           categorizedAt: '2024-06-01',
           firstSeenAt: '2024-05-01',
@@ -1135,7 +1193,7 @@ describe('registerIPCHandlers', () => {
           updatedDate: '2024-01-01',
           tags: [],
           macroCategory: 'Performance',
-          subCategory: 'Memory',
+          technicalLayer: 'Memory',
           categoryReason: 'r',
           categorizedAt: '2024-06-01',
           firstSeenAt: '2024-05-01',
@@ -1180,7 +1238,7 @@ describe('registerIPCHandlers', () => {
           updatedDate: '2024-01-01',
           tags: [],
           macroCategory: '',
-          subCategory: '',
+          technicalLayer: '',
           categoryReason: '',
           categorizedAt: '',
           firstSeenAt: '2024-05-01',

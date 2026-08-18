@@ -45,7 +45,7 @@ function mapWorkItemToBug(item: WorkItemRaw): BugItem {
     areaPath: (fields['System.AreaPath'] as string) ?? '',
     description: htmlToText(descriptionHtml),
     descriptionHtml,
-    priority: (fields['Microsoft.VSTS.Common.Priority'] as number) ?? 0,
+    priority: (fields['Microsoft.VSTS.Common.Priority'] as number | undefined) ?? null,
     createdDate: (fields['System.CreatedDate'] as string) ?? '',
     updatedDate: (fields['System.ChangedDate'] as string) ?? '',
     tags

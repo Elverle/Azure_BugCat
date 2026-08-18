@@ -54,15 +54,15 @@ describe('llm-service', () => {
         .mockResolvedValueOnce(
           JSON.stringify({
             results: [
-              { bugId: 1, macroCategory: 'UI', subCategory: 'Layout', categoryReason: 'Visual' },
-              { bugId: 2, macroCategory: 'Backend', subCategory: 'API', categoryReason: 'Server' }
+              { bugId: 1, macroCategory: 'UI', technicalLayer: 'Layout', categoryReason: 'Visual' },
+              { bugId: 2, macroCategory: 'Backend', technicalLayer: 'API', categoryReason: 'Server' }
             ]
           })
         )
         .mockResolvedValueOnce(
           JSON.stringify({
             results: [
-              { bugId: 3, macroCategory: 'UI', subCategory: 'Form', categoryReason: 'Input' }
+              { bugId: 3, macroCategory: 'UI', technicalLayer: 'Form', categoryReason: 'Input' }
             ]
           })
         )
@@ -85,7 +85,7 @@ describe('llm-service', () => {
       const rateLimitError = { code: 'LLM_RATE_LIMIT', message: 'Rate limited' }
       mockChat.mockRejectedValueOnce(rateLimitError).mockResolvedValueOnce(
         JSON.stringify({
-          results: [{ bugId: 1, macroCategory: 'UI', subCategory: 'X', categoryReason: 'Y' }]
+          results: [{ bugId: 1, macroCategory: 'UI', technicalLayer: 'X', categoryReason: 'Y' }]
         })
       )
 
@@ -102,7 +102,7 @@ describe('llm-service', () => {
       const genericError = { code: 'UNKNOWN_ERROR', message: 'Something went wrong' }
       mockChat.mockRejectedValueOnce(genericError).mockResolvedValueOnce(
         JSON.stringify({
-          results: [{ bugId: 3, macroCategory: 'OK', subCategory: 'Fine', categoryReason: 'Good' }]
+          results: [{ bugId: 3, macroCategory: 'OK', technicalLayer: 'Fine', categoryReason: 'Good' }]
         })
       )
 
@@ -194,7 +194,7 @@ describe('llm-service', () => {
       mockChat.mockImplementationOnce(async () => {
         controller.abort()
         return JSON.stringify({
-          results: [{ bugId: 1, macroCategory: 'UI', subCategory: 'X', categoryReason: 'Y' }]
+          results: [{ bugId: 1, macroCategory: 'UI', technicalLayer: 'X', categoryReason: 'Y' }]
         })
       })
 

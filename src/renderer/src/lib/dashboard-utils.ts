@@ -8,7 +8,7 @@ export interface FilterState {
   statuses: string[]
   assignees: string[]
   macroCategories: string[]
-  subCategories: string[]
+  technicalLayers: string[]
   searchText: string
 }
 
@@ -20,7 +20,7 @@ export interface SortState {
   direction: SortDirection
 }
 
-export type GroupBy = 'none' | 'macroCategory' | 'subCategory' | 'assignee'
+export type GroupBy = 'none' | 'macroCategory' | 'technicalLayer' | 'assignee'
 
 export interface KpiData {
   total: number
@@ -43,7 +43,7 @@ export const EMPTY_FILTER_STATE: FilterState = {
   statuses: [],
   assignees: [],
   macroCategories: [],
-  subCategories: [],
+  technicalLayers: [],
   searchText: ''
 }
 
@@ -71,7 +71,10 @@ export function filterBugs(bugs: CategorizedBug[], filters: FilterState): Catego
       return false
     }
 
-    if (filters.subCategories.length > 0 && !filters.subCategories.includes(bug.subCategory)) {
+    if (
+      filters.technicalLayers.length > 0 &&
+      !filters.technicalLayers.includes(bug.technicalLayer)
+    ) {
       return false
     }
 
@@ -153,8 +156,8 @@ export function groupBugs(bugs: CategorizedBug[], groupBy: GroupBy): Map<string,
       case 'macroCategory':
         key = bug.macroCategory || 'Non categorizzato'
         break
-      case 'subCategory':
-        key = bug.subCategory || 'Non categorizzato'
+      case 'technicalLayer':
+        key = bug.technicalLayer || 'Non categorizzato'
         break
       case 'assignee':
         key = bug.assignee ?? 'Non assegnato'
@@ -258,25 +261,25 @@ export function getUniqueValues(bugs: CategorizedBug[], field: keyof Categorized
   return [...values].sort((a, b) => a.localeCompare(b))
 }
 
-export function getSubCategoriesForMacros(
+export function getTechnicalLayersForMacros(
   bugs: CategorizedBug[],
   selectedMacros: string[]
 ): string[] {
-  const subCategories = new Set<string>()
+  const technicalLayers = new Set<string>()
 
   if (selectedMacros.length === 0) {
     for (const bug of bugs) {
-      if (bug.subCategory) {
-        subCategories.add(bug.subCategory)
+      if (bug.technicalLayer) {
+        technicalLayers.add(bug.technicalLayer)
       }
     }
   } else {
     for (const bug of bugs) {
-      if (selectedMacros.includes(bug.macroCategory) && bug.subCategory) {
-        subCategories.add(bug.subCategory)
+      if (selectedMacros.includes(bug.macroCategory) && bug.technicalLayer) {
+        technicalLayers.add(bug.technicalLayer)
       }
     }
   }
 
-  return [...subCategories].sort((a, b) => a.localeCompare(b))
+  return [...technicalLayers].sort((a, b) => a.localeCompare(b))
 }

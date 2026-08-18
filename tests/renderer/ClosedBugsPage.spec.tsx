@@ -19,7 +19,7 @@ function makeCatalogBug(overrides: Partial<CatalogBug> = {}): CatalogBug {
     updatedDate: '2024-01-01T00:00:00Z',
     tags: [],
     macroCategory: 'UI',
-    subCategory: 'Layout',
+    technicalLayer: 'Layout',
     categoryReason: 'reason',
     categorizedAt: '2024-06-01T00:00:00Z',
     firstSeenAt: '2024-05-01T00:00:00Z',

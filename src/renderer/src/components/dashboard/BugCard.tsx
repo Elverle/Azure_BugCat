@@ -2,7 +2,7 @@ import type { CategorizedBug } from '@shared/types'
 import {
   getStatusBadgeClasses,
   getCategoryColor,
-  getSubCategoryBgTint
+  getTechnicalLayerBgTint
 } from '@renderer/lib/badge-colors'
 import { cn } from '@renderer/lib/utils'
 
@@ -13,13 +13,13 @@ interface BugCardProps {
 
 export default function BugCard({ bug, onClick }: BugCardProps): JSX.Element {
   const macroColor = getCategoryColor(bug.macroCategory)
-  const subColor = getCategoryColor(bug.subCategory)
+  const subColor = getCategoryColor(bug.technicalLayer)
 
   return (
     <div
       className={cn(
         'rounded-lg border border-gray-200 p-4 shadow-sm cursor-pointer hover:shadow-md transition',
-        getSubCategoryBgTint(bug.subCategory)
+        getTechnicalLayerBgTint(bug.technicalLayer)
       )}
       data-bug-click=""
       tabIndex={0}
@@ -61,7 +61,7 @@ export default function BugCard({ bug, onClick }: BugCardProps): JSX.Element {
             {bug.macroCategory}
           </span>
         )}
-        {bug.subCategory && (
+        {bug.technicalLayer && (
           <span
             className={cn(
               'text-xs font-medium px-2 py-0.5 rounded-full',
@@ -69,10 +69,12 @@ export default function BugCard({ bug, onClick }: BugCardProps): JSX.Element {
               subColor.text
             )}
           >
-            {bug.subCategory}
+            {bug.technicalLayer}
           </span>
         )}
-        <span className="text-xs text-gray-500">P{bug.priority}</span>
+        <span className="text-xs text-gray-500">
+          {bug.priority == null ? '—' : `P${bug.priority}`}
+        </span>
         {bug.assignee ? (
           <span className="text-sm text-gray-600">{bug.assignee}</span>
         ) : (

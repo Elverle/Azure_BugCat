@@ -5,7 +5,7 @@ import {
   buildSimilarBugsSystemPrompt,
   buildSimilarBugsUserMessage
 } from '@main/llm/prompts'
-import { TECHNICAL_LAYER_VALUES } from '@main/llm/technical-layer'
+import { TECHNICAL_LAYER_VALUES } from '@shared/technical-layer'
 
 describe('prompts', () => {
   describe('buildSystemPrompt', () => {
@@ -61,7 +61,7 @@ describe('prompts', () => {
       expect(message).toContain('Analyze each bug below and assign the most appropriate category')
       expect(message).toContain('Use tag and title as the primary signals')
       expect(message).toContain(
-        `Set subCategory to exactly one technical layer: ${TECHNICAL_LAYER_VALUES.join(', ')}`
+        `Set technicalLayer to exactly one technical layer: ${TECHNICAL_LAYER_VALUES.join(', ')}`
       )
       const json = message.replace(/^[^\[]*/, '')
       const parsed = JSON.parse(json)

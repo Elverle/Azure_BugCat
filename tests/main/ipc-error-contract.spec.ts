@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { IPC_CHANNELS } from '@shared/ipc-channels'
-import type { AppError } from '@shared/types'
+import type { AppError, AppSettings } from '@shared/types'
 
 const { handlers, exposedApis, ipcMainHandle, storeGet, storeSet, ipcRendererInvoke } = vi.hoisted(
   () => {
@@ -53,6 +53,22 @@ const preloadApi = exposedApis.get('electronAPI') as {
 }
 
 const STORE_FAILURE: AppError = { code: 'STORE_ERROR', message: 'Store non disponibile' }
+
+// Valid settings payload: this suite exercises the store-unavailable path (store.set
+// throwing), not main-process settings validation (review 2.4) — a malformed payload
+// like `{}` would be rejected by assertValidSettings before store.set is ever reached,
+// which would test the wrong failure mode.
+const VALID_SETTINGS: AppSettings = {
+  orgUrl: 'https://dev.azure.com/gversino',
+  projectName: 'BugCat',
+  queryId: '123e4567-e89b-12d3-a456-426614174000',
+  topN: 20,
+  chunkSize: 15,
+  llmProvider: 'openai',
+  apiKey: 'sk-test',
+  pat: 'pat-token',
+  categories: []
+}
 
 const ATTACHMENT_URL =
   'https://dev.azure.com/gversino/BugCat/_apis/wit/attachments/id?fileName=image.png'
@@ -119,7 +135,7 @@ const FAILABLE_CHANNELS: ReadonlyArray<{
   },
   {
     channel: IPC_CHANNELS.SETTINGS_SET,
-    args: [{}],
+    args: [VALID_SETTINGS],
     expectedWireMessage: 'STORE_ERROR::Store non disponibile'
   },
   {

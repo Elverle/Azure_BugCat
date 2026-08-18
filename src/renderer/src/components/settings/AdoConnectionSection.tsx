@@ -87,8 +87,14 @@ export function AdoConnectionSection({
               type="number"
               min={1}
               max={200}
-              value={settings.topN}
-              onChange={(e) => onFieldChange('topN', parseInt(e.target.value) || 0)}
+              value={Number.isNaN(settings.topN) ? '' : settings.topN}
+              onChange={(e) => {
+                const raw = e.target.value
+                // Number(), not parseInt(): parseInt silently truncates legal
+                // <input type="number"> values ("1.9" -> 1, "1e5" -> 1) instead of
+                // letting validateIntRange reject them with a visible message.
+                onFieldChange('topN', raw.trim() === '' ? Number.NaN : Number(raw))
+              }}
             />
             {touched.topN && errors.topN && (
               <p className="text-xs text-red-500 mt-1">{errors.topN}</p>

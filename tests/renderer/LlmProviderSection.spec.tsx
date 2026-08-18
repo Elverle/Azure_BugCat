@@ -92,4 +92,77 @@ describe('LlmProviderSection', () => {
 
     expect(screen.getByLabelText('Model')).toHaveAttribute('placeholder', 'claude-sonnet-4.6')
   })
+
+  it('reports a cleared Chunk Size as NaN instead of coercing it to zero', () => {
+    const onFieldChange = vi.fn()
+    render(
+      <LlmProviderSection
+        settings={baseSettings}
+        errors={{}}
+        touched={{}}
+        onFieldChange={onFieldChange}
+        onTestConnection={vi.fn().mockResolvedValue(undefined)}
+        testResult={null}
+        testLoading={false}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('Chunk Size'), { target: { value: '' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('chunkSize', Number.NaN)
+  })
+
+  it('leaves the Chunk Size field empty when the value is not a number', () => {
+    render(
+      <LlmProviderSection
+        settings={{ ...baseSettings, chunkSize: Number.NaN }}
+        errors={{}}
+        touched={{}}
+        onFieldChange={vi.fn()}
+        onTestConnection={vi.fn().mockResolvedValue(undefined)}
+        testResult={null}
+        testLoading={false}
+      />
+    )
+
+    expect(screen.getByLabelText('Chunk Size')).toHaveValue(null)
+  })
+
+  it('reports a fractional Chunk Size as-is instead of silently truncating it (FIX 7)', () => {
+    const onFieldChange = vi.fn()
+    render(
+      <LlmProviderSection
+        settings={baseSettings}
+        errors={{}}
+        touched={{}}
+        onFieldChange={onFieldChange}
+        onTestConnection={vi.fn().mockResolvedValue(undefined)}
+        testResult={null}
+        testLoading={false}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('Chunk Size'), { target: { value: '1.9' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('chunkSize', 1.9)
+  })
+
+  it('reports an exponent-notation Chunk Size at its real value instead of parseInt truncating it to 1 (FIX 7)', () => {
+    const onFieldChange = vi.fn()
+    render(
+      <LlmProviderSection
+        settings={baseSettings}
+        errors={{}}
+        touched={{}}
+        onFieldChange={onFieldChange}
+        onTestConnection={vi.fn().mockResolvedValue(undefined)}
+        testResult={null}
+        testLoading={false}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('Chunk Size'), { target: { value: '1e5' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('chunkSize', 100000)
+  })
 })

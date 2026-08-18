@@ -1,4 +1,4 @@
-import { TECHNICAL_LAYER_VALUES } from './technical-layer'
+import { TECHNICAL_LAYER_VALUES } from '../../shared/technical-layer'
 
 export const CATEGORIZATION_SCHEMA = {
   type: 'object',
@@ -10,10 +10,10 @@ export const CATEGORIZATION_SCHEMA = {
         properties: {
           bugId: { type: 'number' },
           macroCategory: { type: 'string' },
-          subCategory: { type: 'string', enum: TECHNICAL_LAYER_VALUES },
+          technicalLayer: { type: 'string', enum: TECHNICAL_LAYER_VALUES },
           categoryReason: { type: 'string' }
         },
-        required: ['bugId', 'macroCategory', 'subCategory', 'categoryReason'],
+        required: ['bugId', 'macroCategory', 'technicalLayer', 'categoryReason'],
         additionalProperties: false
       }
     }

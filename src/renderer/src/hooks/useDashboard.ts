@@ -14,6 +14,7 @@ import {
   refreshSession,
   subscribeToSession
 } from '@renderer/state/session-store'
+import { createUiStore } from '@renderer/state/create-ui-store'
 import { isCancellationError } from '@renderer/lib/cancellation'
 
 const NO_BUGS: CategorizedBug[] = []
@@ -32,41 +33,13 @@ const INITIAL_CATEGORIZATION_UI_STATE: CategorizationUiState = {
   categorizeError: null
 }
 
-let categorizationUiState: CategorizationUiState = INITIAL_CATEGORIZATION_UI_STATE
-const categorizationUiStateListeners = new Set<() => void>()
-
-function emitCategorizationUiStateChange(): void {
-  for (const listener of categorizationUiStateListeners) {
-    listener()
-  }
-}
-
-function getCategorizationUiState(): CategorizationUiState {
-  return categorizationUiState
-}
-
-function subscribeToCategorizationUiState(listener: () => void): () => void {
-  categorizationUiStateListeners.add(listener)
-  return () => {
-    categorizationUiStateListeners.delete(listener)
-  }
-}
-
-function updateCategorizationUiState(
-  updater:
-    | Partial<CategorizationUiState>
-    | ((state: CategorizationUiState) => CategorizationUiState)
-): void {
-  categorizationUiState =
-    typeof updater === 'function'
-      ? updater(categorizationUiState)
-      : { ...categorizationUiState, ...updater }
-  emitCategorizationUiStateChange()
-}
+const categorizationUiStore = createUiStore(INITIAL_CATEGORIZATION_UI_STATE)
+const getCategorizationUiState = categorizationUiStore.getSnapshot
+const subscribeToCategorizationUiState = categorizationUiStore.subscribe
+const updateCategorizationUiState = categorizationUiStore.update
 
 export function resetDashboardCategorizationUiStateForTests(): void {
-  categorizationUiState = INITIAL_CATEGORIZATION_UI_STATE
-  emitCategorizationUiStateChange()
+  categorizationUiStore.reset()
 }
 
 // Fetch state is kept out of categorizationUiState on purpose: fetch and
@@ -83,37 +56,13 @@ const INITIAL_FETCH_UI_STATE: FetchUiState = {
   fetchError: null
 }
 
-let fetchUiState: FetchUiState = INITIAL_FETCH_UI_STATE
-const fetchUiStateListeners = new Set<() => void>()
-
-function emitFetchUiStateChange(): void {
-  for (const listener of fetchUiStateListeners) {
-    listener()
-  }
-}
-
-function getFetchUiState(): FetchUiState {
-  return fetchUiState
-}
-
-function subscribeToFetchUiState(listener: () => void): () => void {
-  fetchUiStateListeners.add(listener)
-  return () => {
-    fetchUiStateListeners.delete(listener)
-  }
-}
-
-function updateFetchUiState(
-  updater: Partial<FetchUiState> | ((state: FetchUiState) => FetchUiState)
-): void {
-  fetchUiState =
-    typeof updater === 'function' ? updater(fetchUiState) : { ...fetchUiState, ...updater }
-  emitFetchUiStateChange()
-}
+const fetchUiStore = createUiStore(INITIAL_FETCH_UI_STATE)
+const getFetchUiState = fetchUiStore.getSnapshot
+const subscribeToFetchUiState = fetchUiStore.subscribe
+const updateFetchUiState = fetchUiStore.update
 
 export function resetDashboardFetchUiStateForTests(): void {
-  fetchUiState = INITIAL_FETCH_UI_STATE
-  emitFetchUiStateChange()
+  fetchUiStore.reset()
 }
 
 export interface UseDashboardReturn {

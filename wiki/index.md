@@ -6,7 +6,6 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 | Directory   | Descrizione                                             |
 | ----------- | ------------------------------------------------------- |
-| `raw/`      | Documenti sorgente (PRD, design mockup, specs)          |
 | `entities/` | Servizi, componenti, API, librerie                      |
 | `concepts/` | Pattern, architetture, metodologie                      |
 | `topics/`   | Argomenti tematici (pipeline di categorizzazione, ecc.) |
@@ -15,11 +14,7 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 
 ### Documenti Sorgente
 
-| File                             | Descrizione                    |
-| -------------------------------- | ------------------------------ |
-| `content/bug-categorizer-prd.md` | Product Requirements Document  |
-| `content/design.html`            | Design mockup dell'interfaccia |
-| `content/prompt.md`              | Prompt definition              |
+I documenti di prodotto originali (PRD, mockup di design, definizione dei prompt) **non fanno parte del repository**: sono stati rimossi e non sono stati sostituiti da file tracciati. I punti di ingresso odierni sono il [`README.md`](../README.md) alla radice e [`feature-index.md`](../feature-index.md) per il tracciamento delle consegne, mentre le pagine `sources/` qui sotto documentano ogni feature come è stata effettivamente consegnata.
 
 ### Features
 
@@ -35,11 +30,13 @@ L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **El
 | 8   | FT-08 | GenericProvider OpenAI-compatible e rimozione Copilot     | Done   |
 | 9   | FT-09 | Structured output JSON Schema per tutti i provider LLM    | Done   |
 | 10  | FT-10 | AI Cluster - Similar Bug Detection                        | Done   |
-| 11  | FT-11 | OpenRouter SDK Provider                                   | Done   |
+| 11  | FT-11 | OpenRouter Provider (via SDK, poi sostituito — vedi nota) | Done   |
 | 12  | FT-12 | Incremental Session Cache e Re-Categorizzazione Selettiva | Done   |
 | 13  | FT-13 | Storico Chiusi - KPI storici per bug closed/done          | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
+
+> **Nota su FT-11** — la feature è viva, la sua implementazione no. L'SDK ufficiale OpenRouter è stato rimosso durante l'hardening production-ready: `OpenRouterProvider` è oggi una configurazione sottile sopra il core condiviso `openAiCompatibleChat()` di `provider-shared.ts`, e il rilevamento del routing-mismatch legge direttamente il body della risposta invece di appoggiarsi agli errori di validazione dell'SDK. **Le pagine `sources/ft-11-openrouter-provider` ed `entities/openrouter-provider` descrivono ancora l'adapter SDK e vanno riscansionate.**
 
 ## Sources
 
@@ -53,7 +50,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/sources/ft-08-generic-provider]] — FT-08 generic provider: OpenAI-compatible fetch client, Generic settings UI, HTTPS base URL validation, and schema v2 migration from Copilot (2026-05-01)
 - [[wiki/sources/ft-09-structured-output]] — FT-09 structured output: shared JSON Schemas, provider-native schema enforcement, simplified prompts, and temperature 0.1 standardization (2026-05-01)
 - [[wiki/sources/ft-10-ai-cluster-similarity]] — FT-10 AI Cluster: macroCategory-scoped similar-bug detection with progress IPC, session persistence, and drawer drill-down (2026-05-01)
-- [[wiki/sources/ft-11-openrouter-provider]] — FT-11 OpenRouter provider: official SDK adapter, json_schema structured output, routing-mismatch blocking error handling, and dashboard modal feedback (2026-05-03)
+- [[wiki/sources/ft-11-openrouter-provider]] — FT-11 OpenRouter provider: official SDK adapter, json_schema structured output, routing-mismatch blocking error handling, and dashboard modal feedback (2026-05-03 — historical: the SDK was removed, see the FT-11 note above)
 - [[wiki/sources/ft-12-incremental-session-cache]] — FT-12 incremental persistence: bugCatalog history, signature-based fetch merge, selective categorization, migration v3 backfill, and dual cleanup controls (2026-05-13)
 - [[wiki/sources/ft-13-closed-bugs-history]] — FT-13 closed-history analytics: filtered catalog IPC, cleanup-baseline metadata, bug-level category detail, local row filtering, and resilient renderer states (2026-05-13)
 
@@ -86,14 +83,14 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/html-to-text]] — HTML→plain text conversion utility (FT-03)
 - [[wiki/entities/llm-provider-interface]] — LLMProvider interface and config types (FT-04)
 - [[wiki/entities/llm-schemas]] — Shared JSON Schema registry for categorization and similar-bugs structured output (FT-09)
-- [[wiki/entities/provider-shared-utilities]] — Shared helper module for provider config guards, timeout handling, schema metadata, and test probes (2026-05-03)
+- [[wiki/entities/provider-shared-utilities]] — Shared provider module: config guards, timeout handling, schema metadata, test probes, and the `openAiCompatibleChat()` fetch core behind both the OpenRouter and generic providers (2026-05-03)
 - [[wiki/entities/llm-error-policy]] — Shared classification of blocking vs recoverable LLM workflow failures (2026-05-03)
 - [[wiki/entities/llm-json-utilities]] — Shared tolerant JSON extraction/parsing helpers for LLM outputs (2026-05-03)
 - [[wiki/entities/openai-provider]] — OpenAI SDK provider (gpt-4o) (FT-04)
 - [[wiki/entities/anthropic-provider]] — Anthropic SDK provider (claude-sonnet-4-20250514) (FT-04)
 - [[wiki/entities/generic-provider]] — Generic OpenAI-compatible fetch provider with configurable base URL and model (FT-08)
 - [[wiki/entities/gemini-provider]] — Google GenAI provider (gemini-2.5-flash) (FT-04)
-- [[wiki/entities/openrouter-provider]] — OpenRouter SDK provider with json_schema structured output and native timeout handling (FT-11)
+- [[wiki/entities/openrouter-provider]] — OpenRouter provider: thin configuration over the shared OpenAI-compatible core, with the `require_parameters` routing guard and structured-output routing-mismatch detection (FT-11 — page still describes the removed SDK adapter)
 - [[wiki/entities/llm-provider-factory]] — Factory function for LLM provider instantiation (FT-04)
 - [[wiki/entities/llm-service]] — Bug categorization orchestrator with retry and progress (FT-04)
 - [[wiki/entities/similarity-service]] — Macro-category similarity orchestrator with per-category progress and partial failures (FT-10)

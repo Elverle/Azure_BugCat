@@ -13,15 +13,16 @@ describe('store-migration', () => {
   })
 
   describe('exports', () => {
-    it('should export CURRENT_SCHEMA_VERSION as 3', () => {
-      expect(CURRENT_SCHEMA_VERSION).toBe(3)
+    it('should export CURRENT_SCHEMA_VERSION as 4', () => {
+      expect(CURRENT_SCHEMA_VERSION).toBe(4)
     })
 
-    it('should export migrations array with three entries', () => {
-      expect(migrations).toHaveLength(3)
+    it('should export migrations array with four entries', () => {
+      expect(migrations).toHaveLength(4)
       expect(migrations[0].version).toBe(1)
       expect(migrations[1].version).toBe(2)
       expect(migrations[2].version).toBe(3)
+      expect(migrations[3].version).toBe(4)
     })
   })
 
@@ -273,7 +274,120 @@ describe('store-migration', () => {
       expect(catalog[20].lastSimilarityGroupAt).toBeNull()
     })
 
-    it('runs all migrations from v0 to v3 cleanly', () => {
+    it('migration v4 renames subCategory to technicalLayer in session and catalog', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 3
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session')
+          return {
+            bugs: [{ id: 1, subCategory: 'FE', macroCategory: 'Costi' }],
+            fetchedAt: '2024-06-01T00:00:00Z'
+          }
+        if (key === 'bugCatalog') return { 1: { id: 1, subCategory: 'BE', macroCategory: 'Costi' } }
+        return undefined
+      })
+
+      migrateStore(store)
+
+      const sessionCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'session'
+      )
+      const session = sessionCall![1] as { bugs: Record<string, unknown>[] }
+      expect(session.bugs[0].technicalLayer).toBe('FE')
+      expect(session.bugs[0]).not.toHaveProperty('subCategory')
+      expect(session.bugs[0].macroCategory).toBe('Costi')
+
+      const catalogCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'bugCatalog'
+      )
+      const catalog = catalogCall![1] as Record<number, Record<string, unknown>>
+      expect(catalog[1].technicalLayer).toBe('BE')
+      expect(catalog[1]).not.toHaveProperty('subCategory')
+      expect(store.set).toHaveBeenCalledWith('schemaVersion', 4)
+    })
+
+    it('migration v4 leaves bugs without subCategory untouched', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 3
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session')
+          return {
+            bugs: [{ id: 1, technicalLayer: 'FE', macroCategory: 'Costi' }],
+            fetchedAt: '2024-06-01T00:00:00Z'
+          }
+        if (key === 'bugCatalog') return null
+        return undefined
+      })
+
+      migrateStore(store)
+
+      const sessionCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'session'
+      )
+      const session = sessionCall![1] as { bugs: Record<string, unknown>[] }
+      expect(session.bugs[0].technicalLayer).toBe('FE')
+      expect(session.bugs[0]).not.toHaveProperty('subCategory')
+    })
+
+    it('migration v4 tolerates a null session and a null catalog', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 3
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session') return null
+        if (key === 'bugCatalog') return null
+        return undefined
+      })
+
+      expect(() => migrateStore(store)).not.toThrow()
+      expect(store.set).toHaveBeenCalledWith('schemaVersion', 4)
+    })
+
+    it('migration v3 + v4 chain renames the subCategory carried into the fresh catalog', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 2
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session')
+          return {
+            bugs: [
+              {
+                id: 7,
+                title: 'Bug Seven',
+                state: 'Active',
+                assignee: null,
+                areaPath: 'Project\\Area',
+                description: 'Seventh bug',
+                priority: 2,
+                createdDate: '2024-01-01T00:00:00Z',
+                updatedDate: '2024-01-01T00:00:00Z',
+                tags: [],
+                macroCategory: 'UI',
+                subCategory: 'FE',
+                categoryReason: 'reason',
+                categorizedAt: '2024-06-01T00:00:00Z'
+              }
+            ],
+            fetchedAt: '2024-06-01T00:00:00Z'
+          }
+        if (key === 'bugCatalog') return undefined
+        return undefined
+      })
+
+      migrateStore(store)
+
+      const catalogCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'bugCatalog'
+      )
+      const catalog = catalogCall![1] as Record<number, Record<string, unknown>>
+      expect(catalog[7].technicalLayer).toBe('FE')
+      expect(catalog[7]).not.toHaveProperty('subCategory')
+      expect(catalog[7].inputSignature).toEqual(expect.any(String))
+    })
+
+    it('runs all migrations from v0 to v4 cleanly', () => {
       store.has.mockReturnValue(false)
       store.get.mockImplementation((key: string) => {
         if (key === 'settings')
@@ -290,7 +404,7 @@ describe('store-migration', () => {
         expect.objectContaining({ llmProvider: 'openai' })
       )
       expect(store.set).toHaveBeenCalledWith('bugCatalog', null)
-      expect(store.set).toHaveBeenCalledWith('schemaVersion', 3)
+      expect(store.set).toHaveBeenCalledWith('schemaVersion', 4)
     })
 
     it('migrateStore persists bugCatalog key during migration', () => {

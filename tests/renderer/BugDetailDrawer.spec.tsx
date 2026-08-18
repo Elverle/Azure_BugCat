@@ -5,6 +5,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug } from '@shared/types'
 import BugDetailDrawer from '@renderer/components/dashboard/BugDetailDrawer'
 
+const { sanitizeCalls, stripCalls } = vi.hoisted(() => ({
+  sanitizeCalls: vi.fn(),
+  stripCalls: vi.fn()
+}))
+
+// Counts the real work without replacing it: the drawer must keep rendering the
+// same markup, it just must not redo the parse on every unrelated re-render.
+vi.mock('@renderer/lib/sanitize-bug-description-html', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@renderer/lib/sanitize-bug-description-html')>()
+  return {
+    ...actual,
+    sanitizeBugDescriptionHtml: (html?: string): string => {
+      sanitizeCalls(html)
+      return actual.sanitizeBugDescriptionHtml(html)
+    },
+    stripAdoAttachmentImages: (html: string): string => {
+      stripCalls(html)
+      return actual.stripAdoAttachmentImages(html)
+    }
+  }
+})
+
 Object.defineProperty(window, 'electronAPI', {
   configurable: true,
   writable: true,
@@ -28,7 +51,7 @@ function makeBug(overrides: Partial<CategorizedBug> = {}): CategorizedBug {
     updatedDate: '2026-01-20T14:30:00Z',
     tags: ['OAuth', 'Safari'],
     macroCategory: 'Authentication',
-    subCategory: 'OAuth',
+    technicalLayer: 'OAuth',
     categoryReason: 'The description mentions MSAL token exchange failure and Safari ITP.',
     categorizedAt: '2026-01-20T15:00:00Z',
     ...overrides
@@ -74,7 +97,7 @@ describe('BugDetailDrawer', () => {
   })
 
   it('shows "Non ancora categorizzato" for uncategorized bug', () => {
-    const uncategorized = makeBug({ macroCategory: '', subCategory: '', categoryReason: '' })
+    const uncategorized = makeBug({ macroCategory: '', technicalLayer: '', categoryReason: '' })
     render(<BugDetailDrawer {...defaultProps} bug={uncategorized} />)
 
     expect(screen.getByText('Non ancora categorizzato')).toBeInTheDocument()
@@ -301,5 +324,49 @@ describe('BugDetailDrawer', () => {
     const { container } = render(<BugDetailDrawer {...defaultProps} width={520} />)
     const drawer = container.firstElementChild as HTMLElement
     expect(drawer.style.width).toBe('520px')
+  })
+
+  it('shows a dash in the Priority field when the bug has no priority', () => {
+    render(<BugDetailDrawer {...defaultProps} bug={makeBug({ priority: null })} />)
+
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
+  it('does not re-sanitize the description when only the width changes', () => {
+    sanitizeCalls.mockClear()
+    const { rerender } = render(<BugDetailDrawer {...defaultProps} width={400} />)
+    const afterMount = sanitizeCalls.mock.calls.length
+
+    rerender(<BugDetailDrawer {...defaultProps} width={500} />)
+    rerender(<BugDetailDrawer {...defaultProps} width={600} />)
+
+    expect(sanitizeCalls.mock.calls.length).toBe(afterMount)
+  })
+
+  it('does not re-strip attachment images when only the width changes', () => {
+    stripCalls.mockClear()
+    const { rerender } = render(<BugDetailDrawer {...defaultProps} width={400} />)
+    const afterMount = stripCalls.mock.calls.length
+
+    rerender(<BugDetailDrawer {...defaultProps} width={500} />)
+    rerender(<BugDetailDrawer {...defaultProps} width={600} />)
+
+    expect(stripCalls.mock.calls.length).toBe(afterMount)
+  })
+
+  it('re-sanitizes when the drawer switches to a bug with different html', () => {
+    sanitizeCalls.mockClear()
+    const { rerender } = render(<BugDetailDrawer {...defaultProps} />)
+    const afterMount = sanitizeCalls.mock.calls.length
+
+    rerender(
+      <BugDetailDrawer
+        {...defaultProps}
+        bug={makeBug({ id: 2048, descriptionHtml: '<p>A different description</p>' })}
+      />
+    )
+
+    expect(sanitizeCalls.mock.calls.length).toBeGreaterThan(afterMount)
+    expect(screen.getByText('A different description')).toBeInTheDocument()
   })
 })

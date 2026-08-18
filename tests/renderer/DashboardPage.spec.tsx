@@ -7,6 +7,7 @@ import {
   resetDashboardCategorizationUiStateForTests,
   resetDashboardFetchUiStateForTests
 } from '@renderer/hooks/useDashboard'
+import { resetAiClusterUiStateForTests } from '@renderer/hooks/useAiCluster'
 import { resetSessionStoreForTests } from '@renderer/state/session-store'
 import type { SessionData } from '@shared/types'
 
@@ -27,7 +28,7 @@ const mockSession: SessionData = {
       updatedDate: '2026-01-01T10:00:00Z',
       tags: ['costi', 'modale'],
       macroCategory: 'Costi',
-      subCategory: 'FE',
+      technicalLayer: 'FE',
       categoryReason: 'Problema UI sulla modale costo',
       categorizedAt: '2026-01-01T10:00:00Z'
     },
@@ -43,7 +44,7 @@ const mockSession: SessionData = {
       updatedDate: '2026-01-01T10:05:00Z',
       tags: ['costi'],
       macroCategory: 'Costi',
-      subCategory: 'FE',
+      technicalLayer: 'FE',
       categoryReason: 'Problema di visualizzazione costo',
       categorizedAt: '2026-01-01T10:00:00Z'
     }
@@ -86,6 +87,7 @@ describe('DashboardPage', () => {
   beforeEach(() => {
     resetDashboardCategorizationUiStateForTests()
     resetDashboardFetchUiStateForTests()
+    resetAiClusterUiStateForTests()
     resetSessionStoreForTests()
     vi.restoreAllMocks()
     vi.clearAllMocks()
@@ -301,5 +303,66 @@ describe('DashboardPage', () => {
 
     expect(await screen.findByRole('button', { name: /^cancel$/i })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /categorize/i })).not.toBeInTheDocument()
+  })
+
+  it('shows a dismissible popup when the similarity analysis fails (FIX 4)', async () => {
+    mockElectronAPI.findSimilarBugs.mockRejectedValue({
+      code: 'LLM_TIMEOUT',
+      message: 'Request to OpenAI timed out'
+    })
+
+    render(<DashboardPage />)
+
+    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    fireEvent.click(similarityTab)
+
+    const analyzeButton = await screen.findByRole('button', { name: /Analizza Similarità/i })
+    fireEvent.click(analyzeButton)
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Errore analisi similarità' })
+    ).toBeInTheDocument()
+    expect(screen.getByText('Request to OpenAI timed out')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Chiudi' }))
+
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('dialog', { name: 'Errore analisi similarità' })
+      ).not.toBeInTheDocument()
+    )
+  })
+
+  it('disables the similarity cancel button while cancelling and re-enables it once settled (Task 18b item 4)', async () => {
+    let resolveCancel: ((value: { cancelled: boolean }) => void) | undefined
+    mockElectronAPI.findSimilarBugs.mockImplementation(() => new Promise(() => {}))
+    mockElectronAPI.cancelFindSimilar.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveCancel = resolve
+        })
+    )
+
+    render(<DashboardPage />)
+
+    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    fireEvent.click(similarityTab)
+
+    const analyzeButton = await screen.findByRole('button', { name: /Analizza Similarità/i })
+    fireEvent.click(analyzeButton)
+
+    const cancelButton = await screen.findByRole('button', { name: /Annulla analisi/i })
+    fireEvent.click(cancelButton)
+
+    expect(await screen.findByRole('button', { name: /Annullamento/i })).toBeDisabled()
+
+    await act(async () => {
+      resolveCancel?.({ cancelled: false })
+      await Promise.resolve()
+    })
+
+    // The run is still active (main process reported cancelled: false), so the
+    // button reverts to the enabled "cancel" state rather than staying stuck.
+    expect(await screen.findByRole('button', { name: /^Annulla analisi$/i })).not.toBeDisabled()
   })
 })

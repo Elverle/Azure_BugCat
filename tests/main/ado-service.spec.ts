@@ -207,6 +207,31 @@ describe('ado-service', () => {
     })
   })
 
+  it('maps a missing priority to null (not 0)', async () => {
+    fetchWiqlQuery.mockResolvedValue({ workItems: [{ id: 1, url: 'u1' }] })
+    fetchWorkItemsBatch.mockResolvedValue([
+      {
+        id: 1,
+        fields: {
+          'System.Id': 1,
+          'System.Title': 'Bug without priority',
+          'System.State': 'Active',
+          'System.AssignedTo': null,
+          'System.AreaPath': 'BugCat\\UI',
+          'System.Description': '',
+          // 'Microsoft.VSTS.Common.Priority' intentionally absent
+          'System.CreatedDate': '2026-04-30T09:00:00Z',
+          'System.ChangedDate': '2026-04-30T10:00:00Z',
+          'System.Tags': ''
+        }
+      }
+    ])
+
+    const { bugs } = await fetchBugsFromQuery({ ...baseSettings, topN: 1 })
+
+    expect(bugs[0].priority).toBeNull()
+  })
+
   it('returns success and error messages from testAdoConnection', async () => {
     fetchWiqlQuery.mockResolvedValueOnce({
       workItems: [
