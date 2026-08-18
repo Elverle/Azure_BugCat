@@ -61,7 +61,7 @@ export function LlmProviderSection({
           >
             <option value="openai">OpenAI</option>
             <option value="anthropic">Anthropic Claude</option>
-            <option value="generic">Generico</option>
+            <option value="generic">Generic</option>
             <option value="gemini">Gemini</option>
             <option value="openrouter">OpenRouter</option>
           </Select>

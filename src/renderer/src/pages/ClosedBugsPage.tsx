@@ -7,7 +7,7 @@ import { errorLabel, sentinelLabel } from '@renderer/lib/labels'
 
 function formatDateTime(value: string | null): string {
   if (!value) {
-    return 'N/D'
+    return 'N/A'
   }
 
   return new Date(value).toLocaleString('it-IT', {
@@ -46,9 +46,9 @@ export function ClosedBugsPage(): JSX.Element {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
         <Archive className="w-12 h-12" />
-        <p className="text-lg font-medium">Nessun bug storico chiuso/done trovato</p>
+        <p className="text-lg font-medium">No closed or done bug history found</p>
         <p className="text-sm">
-          I bug che escono dalla query ADO verranno tracciati qui automaticamente.
+          Bugs that leave the ADO query are tracked here automatically.
         </p>
       </div>
     )
@@ -103,25 +103,25 @@ export function ClosedBugsPage(): JSX.Element {
     <div className="px-6 py-6 space-y-6 overflow-y-auto h-full">
       <div className="flex items-center gap-2">
         <Archive className="w-5 h-5 text-gray-700" />
-        <h1 className="text-xl font-bold text-gray-900">Storico Bug Chiusi</h1>
+        <h1 className="text-xl font-bold text-gray-900">Closed bug history</h1>
       </div>
 
       <div className="grid grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-500 mb-1">Bug Chiusi Totali</div>
+          <div className="text-sm text-gray-500 mb-1">Total closed bugs</div>
           <div className="text-2xl font-bold text-gray-900">{kpis.totalClosed}</div>
           <div className="text-xs text-gray-400 mt-2">
-            Ultima pulizia storico: {formatDateTime(kpis.lastClearedAt)}
+            Last history clear: {formatDateTime(kpis.lastClearedAt)}
           </div>
         </div>
 
         <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-500 mb-1">Chiusi Ultimo Aggiornamento</div>
+          <div className="text-sm text-gray-500 mb-1">Closed in last update</div>
           <div className="text-2xl font-bold text-indigo-600">{kpis.recentlyClosedCount}</div>
         </div>
 
         <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-500 mb-1">In Gruppo Similarità</div>
+          <div className="text-sm text-gray-500 mb-1">In similarity group</div>
           <div className="text-2xl font-bold text-purple-600">
             {kpis.similarityGroupCount}
             <span className="text-sm font-normal text-gray-500 ml-1">
@@ -131,7 +131,7 @@ export function ClosedBugsPage(): JSX.Element {
         </div>
 
         <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-500 mb-1">Ultimo Aggiornamento</div>
+          <div className="text-sm text-gray-500 mb-1">Last update</div>
           <div className="text-lg font-semibold text-gray-900">
             {formatDateTime(kpis.lastUpdateAt)}
           </div>
@@ -142,14 +142,14 @@ export function ClosedBugsPage(): JSX.Element {
         <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
           <div className="flex flex-col gap-4 mb-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <div className="text-sm text-gray-500">Distribuzione per Macro-Categoria</div>
+              <div className="text-sm text-gray-500">Distribution by category</div>
               <div className="text-xs text-gray-400 mt-1">
-                {visibleBugCount} bug visibili in {visibleCategoryDistribution.length} categorie
+                {visibleBugCount} bugs visible in {visibleCategoryDistribution.length} categories
               </div>
             </div>
             <div className="w-full md:max-w-sm">
               <label htmlFor="closed-bugs-detail-filter" className="sr-only">
-                Filtra dettaglio bug chiusi
+                Filter closed bug details
               </label>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
@@ -158,7 +158,7 @@ export function ClosedBugsPage(): JSX.Element {
                   value={detailQuery}
                   onChange={(event) => setDetailQuery(event.target.value)}
                   className="pl-9 bg-white"
-                  placeholder="Filtra dettaglio per ID o titolo"
+                  placeholder="Filter by ID or title"
                 />
               </div>
             </div>
@@ -172,14 +172,14 @@ export function ClosedBugsPage(): JSX.Element {
                 size="sm"
                 onClick={toggleAllVisibleCategories}
               >
-                {allVisibleCollapsed ? 'Espandi tutte le categorie' : 'Collassa tutte le categorie'}
+                {allVisibleCollapsed ? 'Expand all categories' : 'Collapse all categories'}
               </Button>
             </div>
           ) : null}
 
           {visibleCategoryDistribution.length === 0 ? (
             <div className="rounded-lg border border-dashed border-gray-200 bg-gray-50 px-4 py-6 text-sm text-gray-500">
-              Nessun bug corrisponde al filtro corrente.
+              No bugs match the current filter.
             </div>
           ) : (
             <div className="space-y-4">
@@ -197,7 +197,7 @@ export function ClosedBugsPage(): JSX.Element {
                       className="flex w-full items-center gap-3 text-left"
                       onClick={() => toggleCategory(category)}
                       aria-expanded={!isCollapsed}
-                      aria-label={`${isCollapsed ? 'Mostra' : 'Nascondi'} dettagli categoria ${categoryLabel}`}
+                      aria-label={`${isCollapsed ? 'Show' : 'Hide'} category details ${categoryLabel}`}
                     >
                       <span className="text-sm text-gray-700 w-40 truncate" title={categoryLabel}>
                         {categoryLabel}
@@ -212,7 +212,7 @@ export function ClosedBugsPage(): JSX.Element {
                         {count}
                         {normalizedDetailQuery ? (
                           <span className="ml-1 text-xs font-normal text-gray-500">
-                            ({visibleBugs.length} visibili)
+                            ({visibleBugs.length} visible)
                           </span>
                         ) : null}
                       </span>
@@ -227,8 +227,8 @@ export function ClosedBugsPage(): JSX.Element {
                       <div className="mt-3 overflow-hidden rounded-md border border-gray-200 bg-white">
                         <div className="grid grid-cols-[96px_minmax(0,1fr)_180px] gap-3 border-b border-gray-200 px-3 py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
                           <span>ID</span>
-                          <span>Titolo</span>
-                          <span>Storico similarità</span>
+                          <span>Title</span>
+                          <span>Similarity history</span>
                         </div>
                         <div className="divide-y divide-gray-100">
                           {visibleBugs.map((bug) => (
@@ -242,13 +242,13 @@ export function ClosedBugsPage(): JSX.Element {
                                   {bug.title}
                                 </div>
                                 <div className="text-xs text-gray-400">
-                                  Chiuso: {formatDateTime(bug.closedAt)}
+                                  Closed: {formatDateTime(bug.closedAt)}
                                 </div>
                               </div>
                               <div className="text-xs text-gray-500">
                                 {bug.everInSimilarityGroup
-                                  ? `Presente in similarità${bug.lastSimilarityGroupAt ? ` il ${formatDateTime(bug.lastSimilarityGroupAt)}` : ''}`
-                                  : 'Nessun gruppo salvato'}
+                                  ? `Seen in similarity${bug.lastSimilarityGroupAt ? ` on ${formatDateTime(bug.lastSimilarityGroupAt)}` : ''}`
+                                  : 'No saved group'}
                               </div>
                             </div>
                           ))}
@@ -264,8 +264,8 @@ export function ClosedBugsPage(): JSX.Element {
       )}
 
       <p className="text-xs text-gray-400">
-        Bug non più presenti nella query ADO attiva. Lo stato &quot;chiuso&quot; indica
-        l&apos;assenza dalla query, non necessariamente la chiusura in Azure DevOps.
+        Bugs no longer present in the active ADO query. The &quot;closed&quot; state means absence
+        from the query, not necessarily closure in Azure DevOps.
       </p>
     </div>
   )

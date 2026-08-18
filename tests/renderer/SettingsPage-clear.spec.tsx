@@ -60,29 +60,29 @@ describe('SettingsPage — clear session', () => {
     mockElectronAPI.clearCatalog.mockResolvedValue(undefined)
   })
 
-  it('renders the "Pulisci dati sessione" button', async () => {
+  it('renders the "Clear session data" button', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Pulisci dati sessione' })
+    const button = await screen.findByRole('button', { name: 'Clear session data' })
     expect(button).toBeInTheDocument()
   })
 
   it('opens a confirmation dialog when clicking the button', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Pulisci dati sessione' })
+    const button = await screen.findByRole('button', { name: 'Clear session data' })
 
     fireEvent.click(button)
 
     const dialog = await screen.findByRole('dialog')
     expect(dialog).toBeInTheDocument()
-    expect(screen.getByText('Conferma pulizia sessione corrente')).toBeInTheDocument()
+    expect(screen.getByText('Clear the current session?')).toBeInTheDocument()
   })
 
   it('calls clearSession when confirming the dialog', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Pulisci dati sessione' })
+    const button = await screen.findByRole('button', { name: 'Clear session data' })
     fireEvent.click(button)
 
-    const confirmButton = await screen.findByRole('button', { name: 'Pulisci sessione' })
+    const confirmButton = await screen.findByRole('button', { name: 'Clear session' })
     fireEvent.click(confirmButton)
 
     await waitFor(() => {
@@ -92,12 +92,12 @@ describe('SettingsPage — clear session', () => {
 
   it('hides the dialog without calling clearSession when canceling', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Pulisci dati sessione' })
+    const button = await screen.findByRole('button', { name: 'Clear session data' })
     fireEvent.click(button)
 
     await screen.findByRole('dialog')
 
-    const cancelButton = screen.getByRole('button', { name: 'Annulla' })
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' })
     fireEvent.click(cancelButton)
 
     await waitFor(() => {
@@ -129,29 +129,29 @@ describe('SettingsPage — clear catalog', () => {
     mockElectronAPI.clearCatalog.mockResolvedValue(undefined)
   })
 
-  it('renders the "Cancella storico bug" button', async () => {
+  it('renders the "Clear bug history" button', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    const button = await screen.findByRole('button', { name: 'Clear bug history' })
     expect(button).toBeInTheDocument()
   })
 
   it('opens catalog confirmation dialog when clicking the button', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    const button = await screen.findByRole('button', { name: 'Clear bug history' })
 
     fireEvent.click(button)
 
     const dialog = await screen.findByRole('dialog')
     expect(dialog).toBeInTheDocument()
-    expect(screen.getByText('Conferma cancellazione storico')).toBeInTheDocument()
+    expect(screen.getByText('Clear the bug history?')).toBeInTheDocument()
   })
 
   it('calls clearCatalog when confirming the dialog', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    const button = await screen.findByRole('button', { name: 'Clear bug history' })
     fireEvent.click(button)
 
-    const confirmButton = await screen.findByRole('button', { name: 'Cancella storico' })
+    const confirmButton = await screen.findByRole('button', { name: 'Clear history' })
     fireEvent.click(confirmButton)
 
     await waitFor(() => {
@@ -161,13 +161,13 @@ describe('SettingsPage — clear catalog', () => {
 
   it('does not call clearCatalog when canceling', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    const button = await screen.findByRole('button', { name: 'Clear bug history' })
     fireEvent.click(button)
 
     await screen.findByRole('dialog')
 
-    const cancelButtons = screen.getAllByRole('button', { name: 'Annulla' })
-    // Click the last "Annulla" button which belongs to the catalog dialog
+    const cancelButtons = screen.getAllByRole('button', { name: 'Cancel' })
+    // Click the last "Cancel" button which belongs to the catalog dialog
     fireEvent.click(cancelButtons[cancelButtons.length - 1])
 
     await waitFor(() => {
@@ -178,10 +178,10 @@ describe('SettingsPage — clear catalog', () => {
 
   it('does not call clearSession when clearing catalog', async () => {
     renderSettingsPage()
-    const button = await screen.findByRole('button', { name: 'Cancella storico bug' })
+    const button = await screen.findByRole('button', { name: 'Clear bug history' })
     fireEvent.click(button)
 
-    const confirmButton = await screen.findByRole('button', { name: 'Cancella storico' })
+    const confirmButton = await screen.findByRole('button', { name: 'Clear history' })
     fireEvent.click(confirmButton)
 
     await waitFor(() => {

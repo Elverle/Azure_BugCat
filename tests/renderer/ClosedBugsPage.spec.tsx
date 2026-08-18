@@ -66,7 +66,7 @@ describe('ClosedBugsPage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByText('Nessun bug storico chiuso/done trovato')).toBeInTheDocument()
+      expect(screen.getByText('No closed or done bug history found')).toBeInTheDocument()
     })
   })
 
@@ -120,19 +120,19 @@ describe('ClosedBugsPage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByText('Storico Bug Chiusi')).toBeInTheDocument()
+      expect(screen.getByText('Closed bug history')).toBeInTheDocument()
     })
 
     // KPI labels
-    expect(screen.getByText('Bug Chiusi Totali')).toBeInTheDocument()
-    expect(screen.getByText('Chiusi Ultimo Aggiornamento')).toBeInTheDocument()
-    expect(screen.getByText('In Gruppo Similarità')).toBeInTheDocument()
-    expect(screen.getByText(/Ultima pulizia storico:/)).toBeInTheDocument()
+    expect(screen.getByText('Total closed bugs')).toBeInTheDocument()
+    expect(screen.getByText('Closed in last update')).toBeInTheDocument()
+    expect(screen.getByText('In similarity group')).toBeInTheDocument()
+    expect(screen.getByText(/Last history clear:/)).toBeInTheDocument()
 
     // Category distribution
     expect(screen.getByText('UI')).toBeInTheDocument()
     expect(screen.getByText('Performance')).toBeInTheDocument()
-    expect(screen.getByText('Distribuzione per Macro-Categoria')).toBeInTheDocument()
+    expect(screen.getByText('Distribution by category')).toBeInTheDocument()
     expect(screen.getByText('#1')).toBeInTheDocument()
     expect(screen.getByText('Errore nel drawer')).toBeInTheDocument()
     expect(screen.getByText('#3')).toBeInTheDocument()
@@ -148,7 +148,7 @@ describe('ClosedBugsPage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByText('Storico Bug Chiusi')).toBeInTheDocument()
+      expect(screen.getByText('Closed bug history')).toBeInTheDocument()
     })
   })
 
@@ -165,14 +165,14 @@ describe('ClosedBugsPage', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('Filtra dettaglio per ID o titolo')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Filter by ID or title')).toBeInTheDocument()
     })
 
-    fireEvent.change(screen.getByPlaceholderText('Filtra dettaglio per ID o titolo'), {
+    fireEvent.change(screen.getByPlaceholderText('Filter by ID or title'), {
       target: { value: '21' }
     })
 
-    expect(screen.getByText('Bug Chiusi Totali')).toBeInTheDocument()
+    expect(screen.getByText('Total closed bugs')).toBeInTheDocument()
     expect(screen.getByText('#21')).toBeInTheDocument()
     expect(screen.getByText('Leak memoria export')).toBeInTheDocument()
     expect(screen.queryByText('#11')).not.toBeInTheDocument()
@@ -195,15 +195,15 @@ describe('ClosedBugsPage', () => {
     })
 
     const toggleButton = screen.getByRole('button', {
-      name: 'Nascondi dettagli categoria UI'
+      name: 'Hide category details UI'
     })
 
     fireEvent.click(toggleButton)
 
     expect(screen.queryByText('Errore nel drawer')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Mostra dettagli categoria UI' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show category details UI' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Mostra dettagli categoria UI' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Show category details UI' }))
 
     expect(screen.getByText('Errore nel drawer')).toBeInTheDocument()
   })
@@ -224,13 +224,13 @@ describe('ClosedBugsPage', () => {
       expect(screen.getByText('Leak memoria export')).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Collassa tutte le categorie' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse all categories' }))
 
     expect(screen.queryByText('Errore nel drawer')).not.toBeInTheDocument()
     expect(screen.queryByText('Leak memoria export')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Espandi tutte le categorie' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Expand all categories' })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Espandi tutte le categorie' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Expand all categories' }))
 
     expect(screen.getByText('Errore nel drawer')).toBeInTheDocument()
     expect(screen.getByText('Leak memoria export')).toBeInTheDocument()
