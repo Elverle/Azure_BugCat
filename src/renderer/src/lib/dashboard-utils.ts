@@ -161,7 +161,7 @@ export function groupBugs(bugs: CategorizedBug[], groupBy: GroupBy): Map<string,
         key = bug.technicalLayer || UNCATEGORIZED
         break
       case 'assignee':
-        key = bug.assignee ?? 'Non assegnato'
+        key = bug.assignee ?? UNASSIGNED
         break
     }
 

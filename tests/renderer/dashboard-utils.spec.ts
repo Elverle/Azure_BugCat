@@ -11,6 +11,7 @@ import {
   EMPTY_FILTER_STATE
 } from '../../src/renderer/src/lib/dashboard-utils'
 import { getCategoryColor, getStatusBadgeClasses } from '../../src/renderer/src/lib/badge-colors'
+import { UNASSIGNED } from '@shared/categorization'
 
 const mockBugs: CategorizedBug[] = [
   {
@@ -240,12 +241,19 @@ describe('groupBugs', () => {
     expect(result.get('Non categorizzato')).toHaveLength(1)
   })
 
-  it('should group by assignee with null mapped to "Non assegnato"', () => {
+  it('should group by assignee with null mapped to the unassigned sentinel', () => {
     const result = groupBugs(mockBugs, 'assignee')
-    expect(result.has('Non assegnato')).toBe(true)
-    expect(result.get('Non assegnato')).toHaveLength(1)
+    expect(result.has(UNASSIGNED)).toBe(true)
+    expect(result.get(UNASSIGNED)).toHaveLength(1)
     expect(result.get('Laura K.')).toHaveLength(2)
     expect(result.get('Marco R.')).toHaveLength(2)
+  })
+
+  it('groups null assignees under the same key the assignee filter matches on', () => {
+    const grouped = groupBugs(mockBugs, 'assignee')
+    const filtered = filterBugs(mockBugs, { ...EMPTY_FILTER_STATE, assignees: [UNASSIGNED] })
+
+    expect(grouped.get(UNASSIGNED)).toEqual(filtered)
   })
 
   it('should return empty Map for empty dataset', () => {
