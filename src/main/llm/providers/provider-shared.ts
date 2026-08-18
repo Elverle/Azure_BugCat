@@ -96,15 +96,15 @@ export function getStructuredOutputMetadata(responseSchema: ChatOptions['respons
   if (responseSchema === 'categorization') {
     return {
       schemaName: 'bug_categorization',
-      anthropicToolName: 'salva_risultati_triage',
-      anthropicToolDescription: 'Salva i bug categorizzati'
+      anthropicToolName: 'save_triage_results',
+      anthropicToolDescription: 'Save the categorized bugs'
     }
   }
 
   return {
     schemaName: 'similar_bugs_detection',
-    anthropicToolName: 'salva_bug_simili',
-    anthropicToolDescription: 'Salva i gruppi di bug simili'
+    anthropicToolName: 'save_similar_bugs',
+    anthropicToolDescription: 'Save the groups of similar bugs'
   }
 }
 

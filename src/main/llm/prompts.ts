@@ -66,7 +66,7 @@ export function buildUserMessage(
   const payload = bugs.map((b) => ({
     id: b.id,
     title: b.title,
-    description: b.description || '(nessuna descrizione)',
+    description: b.description || '(no description)',
     tags: b.tags && b.tags.length > 0 ? b.tags : []
   }))
   return (
@@ -117,8 +117,8 @@ export function buildSimilarBugsUserMessage(
   const payload = bugs.map((b) => ({
     id: b.id,
     title: b.title,
-    description: b.description || '(nessuna descrizione)',
-    category: b.macroCategory || '(non categorizzato)'
+    description: b.description || '(no description)',
+    category: b.macroCategory || '(uncategorized)'
   }))
   return (
     'Find groups of similar or potentially duplicate bugs in the following list:\n\n' +
