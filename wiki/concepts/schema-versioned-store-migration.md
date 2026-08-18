@@ -2,7 +2,7 @@
 title: 'Schema-Versioned Store Migration'
 type: concept
 created: 2026-05-01
-updated: 2026-05-13
+updated: 2026-08-18
 sources:
   [
     '[[wiki/sources/ft-07-session-persistence]]',
@@ -25,6 +25,7 @@ Persistence schema changes are managed through an explicit `schemaVersion` key a
 - The migration layer reads existing `settings` and `session` payloads, applies pending migration steps in ascending version order, and writes the final data back.
 - FT-08 demonstrates a compatibility migration that rewrites deprecated provider state (`github-copilot` → `openai`) and drops removed keys (`copilotAuthStatus`).
 - FT-12 extends the pipeline with schema v3, which derives `bugCatalog` from legacy `session.bugs`, normalizes old bug fields before hashing, and preserves similarity-history metadata where possible.
+- Schema v4 renames the persisted `subCategory` field to `technicalLayer` and, in the same migration, converts previously-persisted Italian sentinel text (`'Non categorizzato'`, `'Errore elaborazione'`, `'Nessuna risposta LLM'`, `'Errore parsing'`, `'Non determinabile'`, and `'N/D'` in `categoryReason`) into the machine-value sentinels described in [[wiki/concepts/sentinel-value-label-separation]], on three surfaces: session bugs, catalog entries, and the category names inside persisted similarity results. That `up()` shipped in two states under the same version number — rename-only first, then extended with the sentinel conversion without becoming v5 — so a store that reached schema 4 under the rename-only build never runs the extended conversion and keeps Italian sentinels forever; recovering it needs its `schemaVersion` lowered or its config reset.
 - The final payload is persisted before the schema version bump is written, so version metadata cannot get ahead of actual migrated data.
 - If a migration throws, the app prefers recoverability over perfect session retention by clearing `session` and forcing the current schema version.
 
@@ -42,11 +43,14 @@ Persistence schema changes are managed through an explicit `schemaVersion` key a
 - **Con:** A failed migration currently discards session state rather than attempting partial recovery.
 - **Con:** The migration interface is intentionally generic (`Record<string, unknown>`), so type guarantees inside each migration remain manual.
 - **Con:** FT-12's v3 backfill cannot distinguish a bug that disappeared because it was closed from one that merely left the saved query scope; both begin with `closedAt = null` until future fetches resolve the state.
+- **Con:** v4's exact-match sentinel conversion cannot recover a `macroCategory` that already held the literal string `'N/D'` before the migration existed — that value is indistinguishable from a user category of the same name, so it is left as-is; see [[wiki/concepts/sentinel-value-label-separation]].
 
 ## See also
 
 - [[wiki/entities/store-migration]]
 - [[wiki/entities/electron-store]]
 - [[wiki/concepts/settings-persistence-flow]]
+- [[wiki/concepts/sentinel-value-label-separation]]
+- [[wiki/entities/categorization-sentinels]]
 - [[wiki/topics/session-persistence-lifecycle]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

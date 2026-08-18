@@ -2,7 +2,7 @@
 title: 'LLM Provider Abstraction'
 type: concept
 created: 2026-04-30
-updated: 2026-05-03
+updated: 2026-08-18
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
@@ -53,7 +53,7 @@ LLMProviderType (settings) -> createLLMProvider() -> LLMProvider instance
                                       +-> OpenRouterProvider
 ```
 
-FT-08 proved the abstraction works across SDK and raw-HTTP adapters. FT-09 extends that same abstraction with schema-aware output intent without leaking vendor syntax into `llm-service.ts`. FT-11 adds OpenRouter as another SDK-backed adapter with a nested request envelope and native timeout handling, without changing the orchestration contract. The later cleanup pass extracted shared provider utilities, shared blocking-error policy, and shared tolerant JSON parsing without replacing the current strategy+factory structure.
+FT-08 proved the abstraction works across SDK and raw-HTTP adapters. FT-09 extends that same abstraction with schema-aware output intent without leaking vendor syntax into `llm-service.ts`. FT-11 originally added OpenRouter as another SDK-backed adapter with a nested request envelope and native timeout handling, without changing the orchestration contract. The later cleanup pass extracted shared provider utilities, shared blocking-error policy, and shared tolerant JSON parsing without replacing the current strategy+factory structure; a further hardening pass (2026-08-11) then removed the OpenRouter SDK dependency altogether, rewriting `OpenRouterProvider` as a thin configuration over the same `openAiCompatibleChat()` fetch core [[wiki/entities/generic-provider]] already used — so OpenRouter and Generic are now both raw-HTTP adapters, and only OpenAI, Anthropic, and Gemini remain SDK-backed.
 
 ## Trade-offs
 

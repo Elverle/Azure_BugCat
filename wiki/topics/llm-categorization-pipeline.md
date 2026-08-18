@@ -2,7 +2,7 @@
 title: 'LLM Categorization Pipeline'
 type: topic
 created: 2026-04-30
-updated: 2026-05-13
+updated: 2026-08-18
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
@@ -98,9 +98,9 @@ IPC (llm:test-connection)
 
 ## FT-11 Extension
 
-OpenRouter becomes the fifth runtime-selectable backend in this pipeline. The surrounding flow is unchanged, but the concrete adapter now demonstrates that the abstraction can also absorb SDKs that require a nested `chatRequest` payload and provider-native timeout configuration.
+OpenRouter becomes the fifth runtime-selectable backend in this pipeline. As delivered, the concrete adapter demonstrated that the abstraction can also absorb SDKs that require a nested `chatRequest` payload and provider-native timeout configuration; since the 2026-08-11 hardening pass it instead demonstrates the opposite case — a fifth backend implemented as a thin configuration over the same shared `openAiCompatibleChat()` fetch core the Generic provider uses, with no SDK involved. Either way the orchestration contract in this pipeline never changed.
 
-The same FT-11 slice also adds a new blocking failure mode: if OpenRouter routes a `json_schema` request to an upstream provider/model that downgrades structured output support, categorization now stops immediately and the renderer surfaces a modal error instead of silently marking the chunk as `Non categorizzato`.
+The same FT-11 slice also adds a new blocking failure mode: if OpenRouter routes a `json_schema` request to an upstream provider/model that downgrades structured output support, categorization now stops immediately and the renderer surfaces a modal error instead of silently marking the chunk as uncategorized. See [[wiki/entities/openrouter-provider]] for how that detection is implemented today.
 
 ## FT-12 Extension
 
