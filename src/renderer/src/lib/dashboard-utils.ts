@@ -1,4 +1,5 @@
 import type { CategorizedBug } from '@shared/types'
+import { UNASSIGNED, UNCATEGORIZED } from '@shared/categorization'
 
 // ============================================
 // Types
@@ -58,7 +59,7 @@ export function filterBugs(bugs: CategorizedBug[], filters: FilterState): Catego
     }
 
     if (filters.assignees.length > 0) {
-      const assigneeValue = bug.assignee ?? 'Unassigned'
+      const assigneeValue = bug.assignee ?? UNASSIGNED
       if (!filters.assignees.includes(assigneeValue)) {
         return false
       }
@@ -154,10 +155,10 @@ export function groupBugs(bugs: CategorizedBug[], groupBy: GroupBy): Map<string,
 
     switch (groupBy) {
       case 'macroCategory':
-        key = bug.macroCategory || 'Non categorizzato'
+        key = bug.macroCategory || UNCATEGORIZED
         break
       case 'technicalLayer':
-        key = bug.technicalLayer || 'Non categorizzato'
+        key = bug.technicalLayer || UNCATEGORIZED
         break
       case 'assignee':
         key = bug.assignee ?? 'Non assegnato'

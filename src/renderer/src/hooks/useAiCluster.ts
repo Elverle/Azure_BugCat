@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef, useSyncExternalStore } from 'react'
 import type { SimilarityResult, SimilarityProgress, CategorizedBug } from '@shared/types'
 import { extractErrorMessage } from '@shared/app-error'
+import { UNCATEGORIZED } from '@shared/categorization'
 import { isCancellationError } from '@renderer/lib/cancellation'
 import {
   getSessionSnapshot,
@@ -172,7 +173,7 @@ export function useAiCluster(): UseAiClusterReturn {
   const results = session?.similarityResults ?? null
 
   const canAnalyze = Boolean(
-    categorizedAt && bugs.some((b) => b.macroCategory && b.macroCategory !== 'Non categorizzato')
+    categorizedAt && bugs.some((b) => b.macroCategory && b.macroCategory !== UNCATEGORIZED)
   )
 
   const isStale = Boolean(results && categorizedAt && results.analyzedAt < categorizedAt)

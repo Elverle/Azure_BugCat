@@ -28,6 +28,7 @@ import {
 } from '@renderer/lib/dashboard-utils'
 import { cn } from '@renderer/lib/utils'
 import type { AppSettings, CategorizedBug } from '@shared/types'
+import { UNASSIGNED } from '@shared/categorization'
 
 type ViewMode = 'table' | 'card' | 'similarity'
 
@@ -72,8 +73,8 @@ export function DashboardPage(): JSX.Element {
   const filterOptions = useMemo(() => {
     const assignees = getUniqueValues(bugs, 'assignee')
     const hasUnassigned = bugs.some((b) => b.assignee == null)
-    if (hasUnassigned && !assignees.includes('Unassigned')) {
-      assignees.push('Unassigned')
+    if (hasUnassigned && !assignees.includes(UNASSIGNED)) {
+      assignees.push(UNASSIGNED)
       assignees.sort((a, b) => a.localeCompare(b))
     }
 

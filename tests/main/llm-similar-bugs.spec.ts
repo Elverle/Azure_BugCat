@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppSettings, CategorizedBug } from '@shared/types'
+import { UNCATEGORIZED } from '@shared/categorization'
 
 const mockChat = vi.fn()
 const mockTestConnection = vi.fn()
@@ -110,6 +111,15 @@ describe('findSimilarBugs', () => {
     expect(result.categories).toHaveLength(1)
     expect(result.categories[0].macroCategory).toBe('Costi')
     expect(mockChat).toHaveBeenCalledTimes(1)
+  })
+
+  it('excludes bugs carrying the uncategorized sentinel from the analysis', async () => {
+    const bugs = [makeCategorizedBug(1, UNCATEGORIZED), makeCategorizedBug(2, UNCATEGORIZED)]
+
+    const result = await findSimilarBugs(baseSettings, bugs)
+
+    expect(result.categories).toHaveLength(0)
+    expect(mockChat).not.toHaveBeenCalled()
   })
 
   it('records error per category without aborting others', async () => {

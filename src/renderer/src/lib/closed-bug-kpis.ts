@@ -1,4 +1,5 @@
 import type { CatalogBug } from '@shared/types'
+import { UNCATEGORIZED } from '@shared/categorization'
 
 export interface ClosedBugListItem {
   id: number
@@ -36,7 +37,7 @@ export function computeClosedBugKpis(
 
   const categoryMap = new Map<string, ClosedBugCategoryBreakdown>()
   for (const bug of closedBugs) {
-    const category = bug.macroCategory || 'Non categorizzato'
+    const category = bug.macroCategory || UNCATEGORIZED
     const existing = categoryMap.get(category)
     const bugItem: ClosedBugListItem = {
       id: bug.id,
