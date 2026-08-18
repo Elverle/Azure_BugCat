@@ -11,7 +11,7 @@ import {
   EMPTY_FILTER_STATE
 } from '../../src/renderer/src/lib/dashboard-utils'
 import { getCategoryColor, getStatusBadgeClasses } from '../../src/renderer/src/lib/badge-colors'
-import { UNASSIGNED } from '@shared/categorization'
+import { UNASSIGNED, UNCATEGORIZED } from '@shared/categorization'
 
 const mockBugs: CategorizedBug[] = [
   {
@@ -140,8 +140,8 @@ describe('filterBugs', () => {
     expect(result[0].id).toBe(1)
   })
 
-  it('should match "Unassigned" filter to null assignees', () => {
-    const filters: FilterState = { ...EMPTY_FILTER_STATE, assignees: ['Unassigned'] }
+  it('should match the unassigned sentinel filter to null assignees', () => {
+    const filters: FilterState = { ...EMPTY_FILTER_STATE, assignees: [UNASSIGNED] }
     const result = filterBugs(mockBugs, filters)
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe(2)
@@ -227,7 +227,7 @@ describe('groupBugs', () => {
     expect(result.get('Infrastructure')).toHaveLength(1)
   })
 
-  it('should group by technicalLayer with empty mapped to "Non categorizzato"', () => {
+  it('should group by technicalLayer with empty mapped to the uncategorized sentinel', () => {
     const bugsWithEmpty: CategorizedBug[] = [
       ...mockBugs,
       {
@@ -237,8 +237,8 @@ describe('groupBugs', () => {
       }
     ]
     const result = groupBugs(bugsWithEmpty, 'technicalLayer')
-    expect(result.has('Non categorizzato')).toBe(true)
-    expect(result.get('Non categorizzato')).toHaveLength(1)
+    expect(result.has(UNCATEGORIZED)).toBe(true)
+    expect(result.get(UNCATEGORIZED)).toHaveLength(1)
   })
 
   it('should group by assignee with null mapped to the unassigned sentinel', () => {

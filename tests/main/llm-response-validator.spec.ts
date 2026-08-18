@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { validateLLMResponse } from '@main/llm/response-validator'
 import type { BugItem } from '@shared/types'
+import {
+  UNCATEGORIZED,
+  NO_LLM_RESPONSE,
+  NOT_AVAILABLE,
+  PARSE_ERROR
+} from '@shared/categorization'
 
 function makeBug(id: number): BugItem {
   return {
@@ -46,17 +52,17 @@ describe('response-validator', () => {
     const bugs = [makeBug(1), makeBug(2)]
     const results = validateLLMResponse('not valid json', bugs)
     expect(results).toHaveLength(2)
-    expect(results[0].macroCategory).toBe('Non categorizzato')
-    expect(results[0].technicalLayer).toBe('Errore parsing')
-    expect(results[1].macroCategory).toBe('Non categorizzato')
+    expect(results[0].macroCategory).toBe(UNCATEGORIZED)
+    expect(results[0].technicalLayer).toBe(PARSE_ERROR)
+    expect(results[1].macroCategory).toBe(UNCATEGORIZED)
   })
 
   it('returns fallback when results array is missing', () => {
     const bugs = [makeBug(1)]
     const results = validateLLMResponse(JSON.stringify({ data: [] }), bugs)
     expect(results).toHaveLength(1)
-    expect(results[0].macroCategory).toBe('Non categorizzato')
-    expect(results[0].technicalLayer).toBe('Errore parsing')
+    expect(results[0].macroCategory).toBe(UNCATEGORIZED)
+    expect(results[0].technicalLayer).toBe(PARSE_ERROR)
   })
 
   it('fills missing bugs with fallback entry', () => {
@@ -67,19 +73,19 @@ describe('response-validator', () => {
     const results = validateLLMResponse(raw, bugs)
     expect(results).toHaveLength(2)
     expect(results[0].macroCategory).toBe('UI')
-    expect(results[1].macroCategory).toBe('Non categorizzato')
-    expect(results[1].technicalLayer).toBe('Nessuna risposta LLM')
+    expect(results[1].macroCategory).toBe(UNCATEGORIZED)
+    expect(results[1].technicalLayer).toBe(NO_LLM_RESPONSE)
   })
 
-  it('replaces empty strings with N/D', () => {
+  it('replaces empty strings with the not-available sentinel', () => {
     const raw = JSON.stringify({
       results: [{ bugId: 1, macroCategory: '', technicalLayer: '  ', categoryReason: '' }]
     })
     const bugs = [makeBug(1)]
     const results = validateLLMResponse(raw, bugs)
-    expect(results[0].macroCategory).toBe('N/D')
+    expect(results[0].macroCategory).toBe(NOT_AVAILABLE)
     expect(results[0].technicalLayer).toBe('Undetermined')
-    expect(results[0].categoryReason).toBe('N/D')
+    expect(results[0].categoryReason).toBe(NOT_AVAILABLE)
   })
 
   it('skips entries without valid bugId', () => {

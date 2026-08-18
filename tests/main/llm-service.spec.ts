@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppSettings, BugItem } from '@shared/types'
+import { UNCATEGORIZED } from '@shared/categorization'
 
 const mockChat = vi.fn()
 const mockTestConnection = vi.fn()
@@ -111,8 +112,8 @@ describe('llm-service', () => {
       const result = await categorizeBugs(settings, bugs)
 
       expect(result).toHaveLength(3)
-      expect(result[0].macroCategory).toBe('Non categorizzato')
-      expect(result[1].macroCategory).toBe('Non categorizzato')
+      expect(result[0].macroCategory).toBe(UNCATEGORIZED)
+      expect(result[1].macroCategory).toBe(UNCATEGORIZED)
       expect(result[2].macroCategory).toBe('OK')
 
       // Fallback results must stay eligible for retry — no categorizedAt — while a

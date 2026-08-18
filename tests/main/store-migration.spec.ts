@@ -361,6 +361,141 @@ describe('store-migration', () => {
       expect(catalog[2].technicalLayer).toBe('Undetermined')
     })
 
+    it('migration v4 converts the italian sentinels in both session and catalog', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 3
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session')
+          return {
+            bugs: [
+              {
+                id: 1,
+                subCategory: 'Errore elaborazione',
+                macroCategory: 'Non categorizzato',
+                categoryReason: 'N/D'
+              },
+              {
+                id: 2,
+                subCategory: 'Nessuna risposta LLM',
+                macroCategory: 'Non categorizzato',
+                categoryReason: 'N/D'
+              },
+              {
+                id: 3,
+                subCategory: 'Errore parsing',
+                macroCategory: 'Non categorizzato',
+                categoryReason: 'N/D'
+              }
+            ],
+            fetchedAt: '2024-06-01T00:00:00Z'
+          }
+        if (key === 'bugCatalog')
+          return {
+            4: {
+              id: 4,
+              subCategory: 'Errore elaborazione',
+              macroCategory: 'Non categorizzato',
+              categoryReason: 'N/D'
+            }
+          }
+        return undefined
+      })
+
+      migrateStore(store)
+
+      const sessionCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'session'
+      )
+      const session = sessionCall![1] as { bugs: Record<string, unknown>[] }
+      expect(session.bugs[0].technicalLayer).toBe('__processing_error__')
+      expect(session.bugs[1].technicalLayer).toBe('__no_llm_response__')
+      expect(session.bugs[2].technicalLayer).toBe('__parse_error__')
+      for (const bug of session.bugs) {
+        expect(bug.macroCategory).toBe('__uncategorized__')
+        expect(bug.categoryReason).toBe('__not_available__')
+      }
+
+      const catalogCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'bugCatalog'
+      )
+      const catalog = catalogCall![1] as Record<number, Record<string, unknown>>
+      expect(catalog[4].macroCategory).toBe('__uncategorized__')
+      expect(catalog[4].technicalLayer).toBe('__processing_error__')
+      expect(catalog[4].categoryReason).toBe('__not_available__')
+    })
+
+    it('migration v4 converts the category name inside persisted similarity results', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 3
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session')
+          return {
+            bugs: [{ id: 1, subCategory: 'FE', macroCategory: 'Payments' }],
+            fetchedAt: '2024-06-01T00:00:00Z',
+            similarityResults: {
+              categories: [
+                {
+                  macroCategory: 'Non categorizzato',
+                  groups: [{ similarityScore: 0.9, reason: 'same crash', bugIds: [1] }]
+                },
+                {
+                  macroCategory: 'Payments',
+                  groups: [{ similarityScore: 0.7, reason: 'same flow', bugIds: [1] }]
+                }
+              ],
+              analyzedAt: '2024-06-15T00:00:00Z'
+            }
+          }
+        if (key === 'bugCatalog') return null
+        return undefined
+      })
+
+      migrateStore(store)
+
+      const sessionCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'session'
+      )
+      const session = sessionCall![1] as {
+        similarityResults: { categories: { macroCategory: string }[] }
+      }
+      expect(session.similarityResults.categories[0].macroCategory).toBe('__uncategorized__')
+      expect(session.similarityResults.categories[1].macroCategory).toBe('Payments')
+    })
+
+    it('migration v4 leaves a user category and a free-form reason untouched', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 3
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session')
+          return {
+            bugs: [
+              {
+                id: 1,
+                macroCategory: 'Payments',
+                subCategory: '',
+                categoryReason: 'the title points at a checkout failure'
+              }
+            ],
+            fetchedAt: '2024-06-01T00:00:00Z'
+          }
+        if (key === 'bugCatalog') return null
+        return undefined
+      })
+
+      migrateStore(store)
+
+      const sessionCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'session'
+      )
+      const session = sessionCall![1] as { bugs: Record<string, unknown>[] }
+      expect(session.bugs[0].macroCategory).toBe('Payments')
+      expect(session.bugs[0].technicalLayer).toBe('')
+      expect(session.bugs[0].categoryReason).toBe('the title points at a checkout failure')
+    })
+
     it('migration v4 leaves an empty technical layer untouched', () => {
       store.has.mockReturnValue(true)
       store.get.mockImplementation((key: string) => {

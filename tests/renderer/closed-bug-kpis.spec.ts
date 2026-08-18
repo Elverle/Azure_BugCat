@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CatalogBug } from '@shared/types'
 import { computeClosedBugKpis } from '@renderer/lib/closed-bug-kpis'
+import { UNCATEGORIZED } from '@shared/categorization'
 
 function makeCatalogBug(overrides: Partial<CatalogBug> = {}): CatalogBug {
   return {
@@ -107,7 +108,7 @@ describe('computeClosedBugKpis', () => {
     ])
   })
 
-  it('uses "Non categorizzato" for bugs without macroCategory', () => {
+  it('uses the uncategorized sentinel for bugs without macroCategory', () => {
     const bugs = [
       makeCatalogBug({ id: 1, macroCategory: 'UI' }),
       makeCatalogBug({ id: 2, macroCategory: '' }),
@@ -116,7 +117,7 @@ describe('computeClosedBugKpis', () => {
     const result = computeClosedBugKpis(bugs, null, null)
 
     expect(result.categoryDistribution[0]).toEqual(
-      expect.objectContaining({ category: 'Non categorizzato', count: 2 })
+      expect.objectContaining({ category: UNCATEGORIZED, count: 2 })
     )
     expect(result.categoryDistribution[1]).toEqual(
       expect.objectContaining({ category: 'UI', count: 1 })

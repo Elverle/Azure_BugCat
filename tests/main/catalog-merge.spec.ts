@@ -12,7 +12,7 @@ import type {
   BugCatalog,
   SimilarityResult
 } from '@shared/types'
-import { UNCATEGORIZED } from '@shared/categorization'
+import { NOT_AVAILABLE, PROCESSING_ERROR, UNCATEGORIZED } from '@shared/categorization'
 
 function makeBugItem(overrides: Partial<BugItem> = {}): BugItem {
   return {
@@ -450,14 +450,14 @@ describe('mergeCategorization', () => {
 })
 
 describe('mergeCategorization with failed results', () => {
-  it('does not set categorizedAt for fallback "Non categorizzato" results', () => {
+  it('does not set categorizedAt for fallback uncategorized results', () => {
     const bug = makeCategorizedBug({ id: 1, macroCategory: '', categorizedAt: '' })
     const catalog = { 1: makeCatalogBug({ id: 1, categorizedAt: '' }) }
     const failed = {
       ...bug,
       macroCategory: UNCATEGORIZED,
-      technicalLayer: 'Errore elaborazione',
-      categoryReason: 'N/D',
+      technicalLayer: PROCESSING_ERROR,
+      categoryReason: NOT_AVAILABLE,
       categorizedAt: '2026-01-01T00:00:00Z'
     }
 
@@ -479,15 +479,15 @@ describe('mergeCategorization with failed results', () => {
     // changed since (same inputSignature). mergeFetchIntoCatalog must still take the
     // reset branch (categorizedAt falsy) rather than the carry-over branch, so the bug
     // is sent back to the LLM on the next categorization run instead of being treated
-    // as "already categorized as Non categorizzato".
+    // as "already categorized as uncategorized".
     const bug = makeBugItem({ id: 60 })
     const signature = computeInputSignature(bug)
     const catalog: BugCatalog = {
       60: makeCatalogBug({
         id: 60,
         macroCategory: UNCATEGORIZED,
-        technicalLayer: 'Errore elaborazione',
-        categoryReason: 'N/D',
+        technicalLayer: PROCESSING_ERROR,
+        categoryReason: NOT_AVAILABLE,
         categorizedAt: '',
         inputSignature: signature
       })

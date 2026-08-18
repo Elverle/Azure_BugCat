@@ -96,12 +96,12 @@ describe('findSimilarBugs', () => {
     expect(mockChat).not.toHaveBeenCalled()
   })
 
-  it('skips bugs with empty macroCategory or Non categorizzato', async () => {
+  it('skips bugs with empty macroCategory or the uncategorized sentinel', async () => {
     mockChat.mockResolvedValueOnce(JSON.stringify({ groups: [] }))
 
     const bugs = [
       makeCategorizedBug(1, ''),
-      makeCategorizedBug(2, 'Non categorizzato'),
+      makeCategorizedBug(2, UNCATEGORIZED),
       makeCategorizedBug(3, 'Costi'),
       makeCategorizedBug(4, 'Costi')
     ]

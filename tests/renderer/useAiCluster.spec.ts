@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug, SessionData, SimilarityResult } from '@shared/types'
 import { resetAiClusterUiStateForTests, useAiCluster } from '@renderer/hooks/useAiCluster'
 import { resetSessionStoreForTests } from '@renderer/state/session-store'
+import { UNCATEGORIZED } from '@shared/categorization'
 
 const mockBug: CategorizedBug = {
   id: 1,
@@ -110,13 +111,13 @@ describe('useAiCluster', () => {
     expect(result.current.canAnalyze).toBe(false)
   })
 
-  it('sets canAnalyze to false when all bugs are Non categorizzato', async () => {
+  it('sets canAnalyze to false when all bugs carry the uncategorized sentinel', async () => {
     installElectronApiMock({
       getSession: vi.fn().mockResolvedValue({
         ...mockSession,
         bugs: [
-          { ...mockBug, macroCategory: 'Non categorizzato' },
-          { ...mockBug, id: 2, macroCategory: 'Non categorizzato' }
+          { ...mockBug, macroCategory: UNCATEGORIZED },
+          { ...mockBug, id: 2, macroCategory: UNCATEGORIZED }
         ]
       })
     })
