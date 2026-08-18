@@ -137,7 +137,7 @@ export function useAiCluster(): UseAiClusterReturn {
         // No run is active on the main process, yet the module-scope store
         // still says otherwise — a leftover from a run that finished while
         // nothing was subscribed to observe it. Clear it instead of leaving
-        // the button reading "Annulla analisi" forever, and pull in whatever
+        // the button reading "Cancel analysis" forever, and pull in whatever
         // the main process persisted while we were not looking.
         updateAiClusterUiState({ analyzing: false, isCancelling: false, progress: null })
         void refreshSession()
