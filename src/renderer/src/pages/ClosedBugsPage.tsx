@@ -3,6 +3,7 @@ import { AlertTriangle, Archive, ChevronDown, ChevronUp, Loader2, Search } from 
 import { Button } from '@renderer/components/ui/button'
 import { Input } from '@renderer/components/ui/input'
 import { useClosedBugKpis } from '@renderer/hooks/useClosedBugKpis'
+import { formatDate } from '@renderer/lib/date-utils'
 import { errorLabel, sentinelLabel } from '@renderer/lib/labels'
 
 function formatDateTime(value: string | null): string {
@@ -10,13 +11,7 @@ function formatDateTime(value: string | null): string {
     return 'N/A'
   }
 
-  return new Date(value).toLocaleString('it-IT', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  return formatDate(value)
 }
 
 export function ClosedBugsPage(): JSX.Element {

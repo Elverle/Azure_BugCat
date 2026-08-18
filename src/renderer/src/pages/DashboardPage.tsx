@@ -27,6 +27,7 @@ import {
   type GroupBy
 } from '@renderer/lib/dashboard-utils'
 import { errorLabel, sentinelLabel } from '@renderer/lib/labels'
+import { formatDate } from '@renderer/lib/date-utils'
 import { cn } from '@renderer/lib/utils'
 import type { AppSettings, CategorizedBug } from '@shared/types'
 import { UNASSIGNED } from '@shared/categorization'
@@ -490,7 +491,7 @@ function DashboardSimilaritySection({
           <div className="flex items-center gap-4">
             {results && !analyzing && (
               <p className="text-xs text-gray-400">
-                Last analysis: {new Date(results.analyzedAt).toLocaleString('it-IT')}
+                Last analysis: {formatDate(results.analyzedAt)}
               </p>
             )}
 

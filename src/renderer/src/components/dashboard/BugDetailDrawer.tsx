@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, Bot, ExternalLink } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
 import { getStatusBadgeClasses } from '@renderer/lib/badge-colors'
+import { formatDateOnly } from '@renderer/lib/date-utils'
 import { sentinelLabel } from '@renderer/lib/labels'
 import {
   resolveAdoAttachmentImages,
@@ -282,13 +283,13 @@ export default function BugDetailDrawer({
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Created</div>
                   <div className="text-sm text-gray-900">
-                    {new Date(bug.createdDate).toLocaleDateString('it-IT')}
+                    {formatDateOnly(bug.createdDate)}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Updated</div>
                   <div className="text-sm text-gray-900">
-                    {new Date(bug.updatedDate).toLocaleDateString('it-IT')}
+                    {formatDateOnly(bug.updatedDate)}
                   </div>
                 </div>
                 <div>
