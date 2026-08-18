@@ -1,4 +1,4 @@
-export const TECHNICAL_LAYER_VALUES = ['FE', 'BE', 'FE/BE', 'Non determinabile'] as const
+export const TECHNICAL_LAYER_VALUES = ['FE', 'BE', 'FE/BE', 'Undetermined'] as const
 
 export type TechnicalLayer = (typeof TECHNICAL_LAYER_VALUES)[number]
 
@@ -59,6 +59,7 @@ const BACKEND_PATTERNS = [
 ]
 
 const UNKNOWN_PATTERNS = [
+  /^undetermined$/i,
   /^non determinabile$/i,
   /^non determinato$/i,
   /^unknown$/i,
@@ -71,7 +72,7 @@ const UNKNOWN_PATTERNS = [
 
 export function normalizeTechnicalLayer(
   value: unknown,
-  fallback: TechnicalLayer = 'Non determinabile'
+  fallback: TechnicalLayer = 'Undetermined'
 ): TechnicalLayer {
   if (typeof value !== 'string') {
     return fallback
@@ -95,7 +96,7 @@ export function normalizeTechnicalLayer(
   }
 
   if (UNKNOWN_PATTERNS.some((pattern) => pattern.test(trimmed))) {
-    return 'Non determinabile'
+    return 'Undetermined'
   }
 
   return fallback

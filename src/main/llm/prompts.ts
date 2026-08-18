@@ -25,7 +25,7 @@ export function buildSystemPrompt(categories: string[]): string {
     '- Use FE for UI, client-side logic, rendering, navigation, browser behavior, or frontend validations.',
     '- Use BE for API, server-side logic, database, integrations, jobs, persistence, or backend validations.',
     '- Use FE/BE only when the evidence clearly points to a boundary issue, contract mismatch, or both layers.',
-    '- Use Non determinabile when the available evidence is not enough to assign FE, BE, or FE/BE confidently.',
+    '- Use Undetermined when the available evidence is not enough to assign FE, BE, or FE/BE confidently.',
     '- The categoryReason must briefly explain both the chosen macro-category and the technical layer, citing concrete signals from title, description, or tags.',
     '',
     'Example:',

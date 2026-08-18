@@ -7,6 +7,32 @@ export type Migration = {
   up: (data: Record<string, unknown>) => Record<string, unknown>
 }
 
+/**
+ * Italian -> machine-value conversions applied by the v4 migration, keyed by
+ * persisted field. Only exact matches are converted: an empty string means
+ * "not categorized yet" (see CategorizedBug in shared/types.ts) and a user's
+ * own category name must survive untouched.
+ *
+ * The values are written out as literals rather than imported from the shared
+ * constants on purpose: a migration describes a historical state of the data,
+ * and has to keep working even if those constants change again later.
+ */
+const SENTINEL_CONVERSIONS: Record<string, Record<string, string>> = {
+  technicalLayer: {
+    'Non determinabile': 'Undetermined'
+  }
+}
+
+function convertSentinels(bug: Record<string, unknown>): Record<string, unknown> {
+  for (const [field, mapping] of Object.entries(SENTINEL_CONVERSIONS)) {
+    const current = bug[field]
+    if (typeof current === 'string' && current in mapping) {
+      bug[field] = mapping[current]
+    }
+  }
+  return bug
+}
+
 export const migrations: Migration[] = [
   {
     version: 1,
@@ -110,20 +136,21 @@ export const migrations: Migration[] = [
       //      app between this commit and Fase 2 has to have its schemaVersion
       //      lowered, or its config reset, once the sentinel conversion lands —
       //      otherwise it keeps the italian sentinels forever.
-      const renameLayer = (bug: Record<string, unknown>): Record<string, unknown> => {
+      // The rename runs first, so convertSentinels already sees `technicalLayer`.
+      const migrateBug = (bug: Record<string, unknown>): Record<string, unknown> => {
         if ('subCategory' in bug) {
           bug.technicalLayer = bug.subCategory
           delete bug.subCategory
         }
-        return bug
+        return convertSentinels(bug)
       }
 
       const session = data.session as { bugs?: Record<string, unknown>[] } | null
-      if (session?.bugs) session.bugs = session.bugs.map(renameLayer)
+      if (session?.bugs) session.bugs = session.bugs.map(migrateBug)
 
       const catalog = data.bugCatalog as Record<string, Record<string, unknown>> | null
       if (catalog) {
-        for (const key of Object.keys(catalog)) catalog[key] = renameLayer(catalog[key])
+        for (const key of Object.keys(catalog)) catalog[key] = migrateBug(catalog[key])
       }
 
       return data

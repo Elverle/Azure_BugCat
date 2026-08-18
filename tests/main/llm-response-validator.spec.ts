@@ -78,7 +78,7 @@ describe('response-validator', () => {
     const bugs = [makeBug(1)]
     const results = validateLLMResponse(raw, bugs)
     expect(results[0].macroCategory).toBe('N/D')
-    expect(results[0].technicalLayer).toBe('Non determinabile')
+    expect(results[0].technicalLayer).toBe('Undetermined')
     expect(results[0].categoryReason).toBe('N/D')
   })
 

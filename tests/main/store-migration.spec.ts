@@ -331,6 +331,59 @@ describe('store-migration', () => {
       expect(session.bugs[0]).not.toHaveProperty('subCategory')
     })
 
+    it('migration v4 converts the italian technical-layer sentinel to Undetermined', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 3
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session')
+          return {
+            bugs: [{ id: 1, subCategory: 'Non determinabile', macroCategory: 'Costi' }],
+            fetchedAt: '2024-06-01T00:00:00Z'
+          }
+        if (key === 'bugCatalog')
+          return { 2: { id: 2, subCategory: 'Non determinabile', macroCategory: 'Costi' } }
+        return undefined
+      })
+
+      migrateStore(store)
+
+      const sessionCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'session'
+      )
+      const session = sessionCall![1] as { bugs: Record<string, unknown>[] }
+      expect(session.bugs[0].technicalLayer).toBe('Undetermined')
+
+      const catalogCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'bugCatalog'
+      )
+      const catalog = catalogCall![1] as Record<number, Record<string, unknown>>
+      expect(catalog[2].technicalLayer).toBe('Undetermined')
+    })
+
+    it('migration v4 leaves an empty technical layer untouched', () => {
+      store.has.mockReturnValue(true)
+      store.get.mockImplementation((key: string) => {
+        if (key === 'schemaVersion') return 3
+        if (key === 'settings') return { llmProvider: 'openai' }
+        if (key === 'session')
+          return {
+            bugs: [{ id: 1, subCategory: '', macroCategory: 'Costi' }],
+            fetchedAt: '2024-06-01T00:00:00Z'
+          }
+        if (key === 'bugCatalog') return null
+        return undefined
+      })
+
+      migrateStore(store)
+
+      const sessionCall = (store.set as ReturnType<typeof vi.fn>).mock.calls.find(
+        (c: unknown[]) => c[0] === 'session'
+      )
+      const session = sessionCall![1] as { bugs: Record<string, unknown>[] }
+      expect(session.bugs[0].technicalLayer).toBe('')
+    })
+
     it('migration v4 tolerates a null session and a null catalog', () => {
       store.has.mockReturnValue(true)
       store.get.mockImplementation((key: string) => {
