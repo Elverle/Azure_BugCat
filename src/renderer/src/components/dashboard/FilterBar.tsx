@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Search, RotateCcw, Minimize2, Maximize2 } from 'lucide-react'
 import { MultiSelect } from '@renderer/components/ui/multi-select'
 import type { FilterState, GroupBy } from '@renderer/lib/dashboard-utils'
+import { sentinelLabel } from '@renderer/lib/labels'
 import { cn } from '@renderer/lib/utils'
 
 interface FilterBarProps {
@@ -75,14 +76,15 @@ export function FilterBar({
         options={filterOptions.statuses}
         selected={filterState.statuses}
         onChange={(v) => onFilterChange({ ...filterState, statuses: v })}
-        placeholder="Stato"
+        placeholder="State"
       />
 
       <MultiSelect
         options={filterOptions.assignees}
         selected={filterState.assignees}
         onChange={(v) => onFilterChange({ ...filterState, assignees: v })}
-        placeholder="Assegnatario"
+        placeholder="Assignee"
+        getLabel={sentinelLabel}
         searchable
       />
 
@@ -90,14 +92,16 @@ export function FilterBar({
         options={filterOptions.macroCategories}
         selected={filterState.macroCategories}
         onChange={(v) => onFilterChange({ ...filterState, macroCategories: v })}
-        placeholder="Macro-Categoria"
+        placeholder="Category"
+        getLabel={sentinelLabel}
       />
 
       <MultiSelect
         options={filterOptions.technicalLayers}
         selected={filterState.technicalLayers}
         onChange={(v) => onFilterChange({ ...filterState, technicalLayers: v })}
-        placeholder="Sotto-Categoria"
+        placeholder="Technical layer"
+        getLabel={sentinelLabel}
       />
 
       <select
@@ -105,10 +109,10 @@ export function FilterBar({
         onChange={(e) => onGroupByChange(e.target.value as GroupBy)}
         className="text-sm border border-gray-300 rounded px-3 py-1.5 bg-gray-50"
       >
-        <option value="none">Nessuno</option>
-        <option value="macroCategory">Per Macro-Categoria</option>
-        <option value="technicalLayer">Per Sotto-Categoria</option>
-        <option value="assignee">Per Assegnatario</option>
+        <option value="none">None</option>
+        <option value="macroCategory">By category</option>
+        <option value="technicalLayer">By technical layer</option>
+        <option value="assignee">By assignee</option>
       </select>
 
       <button
@@ -136,7 +140,7 @@ export function FilterBar({
         ) : (
           <Minimize2 className="w-3.5 h-3.5" />
         )}
-        {allCollapsed ? 'Espandi tutti' : 'Chiudi tutti'}
+        {allCollapsed ? 'Expand all' : 'Collapse all'}
       </button>
     </div>
   )

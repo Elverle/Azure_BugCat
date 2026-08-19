@@ -3,7 +3,7 @@ title: 'LLM Schemas'
 type: entity
 subtype: model
 created: 2026-05-01
-updated: 2026-05-01
+updated: 2026-08-19
 sources:
   ['[[wiki/sources/ft-09-structured-output]]', '[[wiki/sources/ft-10-ai-cluster-similarity]]']
 tags: [llm, json-schema, structured-output, types]
@@ -22,7 +22,7 @@ Shared schema registry for structured LLM outputs. Centralizes the JSON contract
 
 | Export                  | Purpose                                                                                |
 | ----------------------- | -------------------------------------------------------------------------------------- | --------------- |
-| `CATEGORIZATION_SCHEMA` | JSON Schema for `{ results: [{ bugId, macroCategory, subCategory, categoryReason }] }` |
+| `CATEGORIZATION_SCHEMA` | JSON Schema for `{ results: [{ bugId, macroCategory, technicalLayer, categoryReason }] }` |
 | `SIMILAR_BUGS_SCHEMA`   | JSON Schema for `{ groups: [{ similarityScore, reason, bugIds[] }] }`                  |
 | `SchemaType`            | Logical schema selector union: `'categorization'                                       | 'similar-bugs'` |
 | `getSchema(type)`       | Returns the matching schema object for provider adapters                               |

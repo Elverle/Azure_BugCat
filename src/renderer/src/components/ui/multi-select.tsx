@@ -9,6 +9,11 @@ export interface MultiSelectProps {
   placeholder?: string
   searchable?: boolean
   className?: string
+  /**
+   * Maps an option to what the user reads. The option itself stays the
+   * comparison key, so filtering keeps working on machine values.
+   */
+  getLabel?: (value: string) => string
 }
 
 export function MultiSelect({
@@ -17,7 +22,8 @@ export function MultiSelect({
   onChange,
   placeholder = 'Select...',
   searchable = false,
-  className
+  className,
+  getLabel = (value) => value
 }: MultiSelectProps): JSX.Element {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -66,13 +72,14 @@ export function MultiSelect({
     }
   }
 
+  // The search matches what the user sees, not the underlying value.
   const filteredOptions = search
-    ? options.filter((opt) => opt.toLowerCase().includes(search.toLowerCase()))
+    ? options.filter((opt) => getLabel(opt).toLowerCase().includes(search.toLowerCase()))
     : options
 
   const displayLabel = (): string => {
     if (selected.length === 0) return placeholder
-    if (selected.length <= 2) return selected.join(', ')
+    if (selected.length <= 2) return selected.map(getLabel).join(', ')
     return `${selected.length} selected`
   }
 
@@ -130,7 +137,7 @@ export function MultiSelect({
                   >
                     {isSelected && <Check className="h-3 w-3" />}
                   </div>
-                  <span className="truncate">{option}</span>
+                  <span className="truncate">{getLabel(option)}</span>
                 </div>
               )
             })

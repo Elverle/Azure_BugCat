@@ -2,6 +2,8 @@
 
 | Date       | Action                     | Author         | Notes                                                                                                                                                                                                   |
 | ---------- | -------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-19 | docs field-rename sync     | Claude Code    | Closed the documentation debt left by the `subCategory` → `technicalLayer` rename and by the english-UI pass: 17 pages that still named the old field, the removed `getSubCategoryBgTint()`, the pre-rename `GroupBy` union and `FilterState` shape, or quoted italian labels and sentinel text as current behaviour. Pages that name the old field legitimately — the validator's legacy alias and the v4 migration's rename source — were left alone, as were the append-only log and the FT-13 delivery record, which now carries a pointer to the current copy. |
+| 2026-08-18 | docs FT-11 + sentinel labels | Claude Code  | Rewrote the two FT-11 OpenRouter pages against the shared-fetch-core implementation that replaced the SDK (removing the stale-page warning from the index), documented the Phase 2 machine-value/label split (`categorization-sentinels`, `labels-utility`, `sentinel-value-label-separation`) and its schema v4 migration extension, and corrected a handful of other pages left describing the removed SDK. |
 | 2026-08-14 | analysis production-ready  | Claude Code    | Closed the production-ready hardening phase (Fase 0+1, 22 tasks): static checks restored as a permanent gate (lint, typecheck, build), catalog data-lifecycle chain fixed, a single `AppError` contract across every IPC channel, incremental persistence and concurrency guards on both LLM flows, and the OpenRouter SDK replaced by a shared OpenAI-compatible fetch core. Suite from 348 to 568 tests. |
 | 2026-05-14 | update min-07              | GitHub Copilot | Refined Storico Chiusi with a local detail filter by bug ID/title and collapsible macro-category sections, keeping KPI cards stable while making historical rows easier to navigate.                    |
 | 2026-05-13 | update min-06              | GitHub Copilot | Refined Storico Chiusi KPIs with a persisted `lastClearedAt` baseline for history cleanup, richer bug-level detail under each macro-category, and updated docs/tests for the new renderer contract.     |
@@ -28,6 +30,32 @@
 | 2026-05-03 | analysis LLM cleanup       | GitHub Copilot | Documented the shared LLM provider cleanup, added pages for the new helper modules, and updated provider/service docs to reflect aligned timeout, parsing, and blocking-error behavior.                 |
 | 2026-05-03 | analysis cancel flow       | GitHub Copilot | Documented abort-aware categorization cancellation, updated IPC/dashboard/provider pages, and recorded the all-or-nothing persistence rule for cancel.                                                  |
 | 2026-05-03 | analysis dashboard state   | GitHub Copilot | Documented Dashboard remount recovery for active categorization, immediate cancelling feedback, and renderer-safe IPC error normalization.                                                              |
+
+## [2026-08-18] docs | FT-11 rescan and sentinel/label documentation
+
+Closed two rounds of documentation debt. First, rescanned FT-11 after the production-ready hardening phase removed `@openrouter/sdk`: both FT-11 pages now describe the current `openAiCompatibleChat()`-based implementation while keeping the original SDK-backed delivery as an explicit historical record, and the `wiki/index.md` stale-page warning that pointed at them was removed. Second, documented the Phase 2 machine-value/label split that had no page yet — the `__name__`-shaped categorization sentinels, the renderer-only `sentinelLabel()` / `errorLabel()` mapping, and the schema v4 store migration's sentinel conversion (including its known `'N/D'`-in-`macroCategory` gap). A handful of directly-linked pages that still described the removed SDK or the pre-sentinel fallback values were also corrected in passing.
+
+Pages created:
+
+- [[wiki/entities/categorization-sentinels]]
+- [[wiki/entities/labels-utility]]
+- [[wiki/concepts/sentinel-value-label-separation]]
+
+Pages updated:
+
+- [[wiki/index.md]]
+- [[wiki/entities/openrouter-provider]]
+- [[wiki/sources/ft-11-openrouter-provider]]
+- [[wiki/entities/provider-shared-utilities]]
+- [[wiki/entities/llm-provider-factory]]
+- [[wiki/concepts/electron-vite-build]]
+- [[wiki/concepts/llm-provider-abstraction]]
+- [[wiki/topics/llm-categorization-pipeline]]
+- [[wiki/analyses/structured-output-routing-mismatch]]
+- [[wiki/entities/response-validator]]
+- [[wiki/entities/llm-service]]
+- [[wiki/entities/store-migration]]
+- [[wiki/concepts/schema-versioned-store-migration]]
 
 ## [2026-05-03] analysis | Dashboard categorization state recovery
 

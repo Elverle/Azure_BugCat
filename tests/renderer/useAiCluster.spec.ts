@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CategorizedBug, SessionData, SimilarityResult } from '@shared/types'
 import { resetAiClusterUiStateForTests, useAiCluster } from '@renderer/hooks/useAiCluster'
 import { resetSessionStoreForTests } from '@renderer/state/session-store'
+import { UNCATEGORIZED } from '@shared/categorization'
 
 const mockBug: CategorizedBug = {
   id: 1,
@@ -110,13 +111,13 @@ describe('useAiCluster', () => {
     expect(result.current.canAnalyze).toBe(false)
   })
 
-  it('sets canAnalyze to false when all bugs are Non categorizzato', async () => {
+  it('sets canAnalyze to false when all bugs carry the uncategorized sentinel', async () => {
     installElectronApiMock({
       getSession: vi.fn().mockResolvedValue({
         ...mockSession,
         bugs: [
-          { ...mockBug, macroCategory: 'Non categorizzato' },
-          { ...mockBug, id: 2, macroCategory: 'Non categorizzato' }
+          { ...mockBug, macroCategory: UNCATEGORIZED },
+          { ...mockBug, id: 2, macroCategory: UNCATEGORIZED }
         ]
       })
     })
@@ -183,7 +184,12 @@ describe('useAiCluster', () => {
       await result.current.analyze()
     })
 
-    expect(result.current.error).toBe('Settings not configured')
+    // The rejection carries no code of ours, so it is kept as UNKNOWN_ERROR
+    // with its message intact.
+    expect(result.current.error).toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: 'Settings not configured'
+    })
     expect(result.current.analyzing).toBe(false)
   })
 
@@ -412,7 +418,10 @@ describe('useAiCluster', () => {
     const { result: remounted } = renderHook(() => useAiCluster())
     await waitFor(() => expect(remounted.current.loading).toBe(false))
 
-    expect(remounted.current.error).toBe('LLM provider unavailable')
+    expect(remounted.current.error).toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: 'LLM provider unavailable'
+    })
     expect(remounted.current.analyzing).toBe(false)
   })
 
@@ -496,7 +505,10 @@ describe('useAiCluster', () => {
       await result.current.analyze()
     })
 
-    expect(result.current.error).toBe('Settings not configured')
+    expect(result.current.error).toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: 'Settings not configured'
+    })
 
     act(() => {
       result.current.clearError()
@@ -531,7 +543,10 @@ describe('useAiCluster', () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
 
       expect(unhandled).not.toHaveBeenCalled()
-      expect(result.current.error).toBe('IPC channel closed')
+      expect(result.current.error).toEqual({
+        code: 'UNKNOWN_ERROR',
+        message: 'IPC channel closed'
+      })
       expect(result.current.isCancelling).toBe(false)
     } finally {
       process.off('unhandledRejection', unhandled)

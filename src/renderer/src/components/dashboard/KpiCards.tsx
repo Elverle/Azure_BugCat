@@ -13,7 +13,7 @@ export function KpiCards({ kpis }: KpiCardsProps): JSX.Element {
       </div>
 
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <div className="text-sm text-gray-500 mb-2">Stati</div>
+        <div className="text-sm text-gray-500 mb-2">States</div>
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-600">Todo</span>
@@ -31,7 +31,7 @@ export function KpiCards({ kpis }: KpiCardsProps): JSX.Element {
       </div>
 
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-        <div className="text-sm text-gray-500 mb-1">Macro-Categorie</div>
+        <div className="text-sm text-gray-500 mb-1">Categories</div>
         <div className="text-2xl font-bold text-purple-600">{kpis.macroCategories}</div>
       </div>
 
@@ -47,7 +47,7 @@ export function KpiCards({ kpis }: KpiCardsProps): JSX.Element {
             ))}
           </div>
         ) : (
-          <div className="text-sm text-gray-400 italic">Nessun assegnatario</div>
+          <div className="text-sm text-gray-400 italic">No assignees</div>
         )}
       </div>
     </div>

@@ -170,7 +170,10 @@ describe('useDashboard', () => {
       await result.current.fetchBugs()
     })
 
-    expect(result.current.fetchError).toBe('Authentication failed: 401')
+    expect(result.current.fetchError).toEqual({
+      code: 'ADO_AUTH_ERROR',
+      message: 'Authentication failed: 401'
+    })
     expect(result.current.loading).toBe(false)
 
     act(() => {
@@ -195,7 +198,10 @@ describe('useDashboard', () => {
       await result.current.fetchBugs()
     })
 
-    expect(result.current.fetchError).toBe('Azure DevOps connection timed out')
+    expect(result.current.fetchError).toEqual({
+      code: 'ADO_TIMEOUT',
+      message: 'Azure DevOps connection timed out'
+    })
 
     await act(async () => {
       await result.current.fetchBugs()
@@ -238,7 +244,10 @@ describe('useDashboard', () => {
     const { result: remounted } = renderHook(() => useDashboard())
     await waitFor(() => expect(remounted.current.loading).toBe(false))
 
-    expect(remounted.current.fetchError).toBe('Authentication failed: 401')
+    expect(remounted.current.fetchError).toEqual({
+      code: 'ADO_AUTH_ERROR',
+      message: 'Authentication failed: 401'
+    })
   })
 
   it('categorizeBugs calls IPC and reloads session on success', async () => {
@@ -273,7 +282,11 @@ describe('useDashboard', () => {
       await result.current.categorizeBugs()
     })
 
-    expect(result.current.categorizeError).toBe('OpenRouter error')
+    // A bare Error has no code of ours, so it is kept as UNKNOWN_ERROR.
+    expect(result.current.categorizeError).toEqual({
+      code: 'UNKNOWN_ERROR',
+      message: 'OpenRouter error'
+    })
     expect(result.current.progress).toBeNull()
 
     act(() => {
@@ -353,7 +366,10 @@ describe('useDashboard', () => {
       await result.current.categorizeBugs()
     })
 
-    expect(result.current.categorizeError).toBe('Richiesta annullata dal provider')
+    expect(result.current.categorizeError).toEqual({
+      code: 'LLM_TIMEOUT',
+      message: 'Richiesta annullata dal provider'
+    })
   })
 
   it('tracks progress during categorization', async () => {

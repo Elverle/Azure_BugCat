@@ -1,7 +1,21 @@
-export const UNCATEGORIZED = 'Non categorizzato'
-export const PROCESSING_ERROR = 'Errore elaborazione'
-export const NO_LLM_RESPONSE = 'Nessuna risposta LLM'
-export const NOT_AVAILABLE = 'N/D'
+/**
+ * Machine values, never shown as they are: the renderer maps them through
+ * `sentinelLabel()` in lib/labels.ts. The `__name__` shape cannot collide with
+ * a category the user types in Settings, and a path that forgets the label
+ * layer shows `__uncategorized__` on screen instead of failing silently.
+ */
+export const UNCATEGORIZED = '__uncategorized__'
+export const PROCESSING_ERROR = '__processing_error__'
+export const NO_LLM_RESPONSE = '__no_llm_response__'
+export const NOT_AVAILABLE = '__not_available__'
+export const PARSE_ERROR = '__parse_error__'
+
+/**
+ * Stand-in key for bugs with no assignee, used by both the assignee filter and
+ * the assignee grouping. Never persisted — it is computed at render time from
+ * `bug.assignee`, so it has no entry in the store migration.
+ */
+export const UNASSIGNED = '__unassigned__'
 
 /**
  * A categorization result whose macroCategory is the UNCATEGORIZED sentinel

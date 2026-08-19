@@ -3,7 +3,7 @@ title: 'LLM Prompts'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-05-11
+updated: 2026-08-19
 sources: ['[[wiki/sources/ft-04-llm-provider]]', '[[wiki/sources/ft-09-structured-output]]']
 tags: [llm, prompts, categorization, similar-bugs]
 lang: en
@@ -37,8 +37,8 @@ Builder functions for the system prompts and user messages sent to LLM providers
 - Role: bilingual software quality analyst.
 - Decision signals: title and tags first, description as supporting evidence.
 - Category discipline: choose exactly one configured macro-category when a list is provided.
-- Technical layer discipline: `subCategory` is no longer free text; it represents the likely ownership layer and must be one of `FE`, `BE`, `FE/BE`, or `Non determinabile`.
-- Output guidance: return one result per input bug with `bugId`, `macroCategory`, `subCategory`, and `categoryReason`.
+- Technical layer discipline: `technicalLayer` is not free text; it represents the likely ownership layer and must be one of `FE`, `BE`, `FE/BE`, or `Undetermined`.
+- Output guidance: return one result per input bug with `bugId`, `macroCategory`, `technicalLayer`, and `categoryReason`.
 - Example snippets in the system prompt are intentionally domain-neutral so they do not bias the model toward project-specific terminology.
 
 ## Technical Layer Semantics
@@ -46,7 +46,7 @@ Builder functions for the system prompts and user messages sent to LLM providers
 - `FE`: UI, browser behavior, rendering, navigation, client-side validations, or frontend state issues.
 - `BE`: API, server logic, persistence, integrations, backend validations, or data processing issues.
 - `FE/BE`: boundary or contract issues where evidence clearly spans both layers.
-- `Non determinabile`: evidence is insufficient to assign the bug confidently to FE, BE, or FE/BE.
+- `Undetermined`: evidence is insufficient to assign the bug confidently to FE, BE, or FE/BE. It is a member of the typed `TechnicalLayer` union, not a `__name__` sentinel — see [[wiki/concepts/sentinel-value-label-separation]].
 
 ## See also
 

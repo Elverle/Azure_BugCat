@@ -4,6 +4,7 @@ import {
   getCategoryColor,
   getTechnicalLayerBgTint
 } from '@renderer/lib/badge-colors'
+import { sentinelLabel } from '@renderer/lib/labels'
 import { cn } from '@renderer/lib/utils'
 
 interface BugCardProps {
@@ -58,7 +59,7 @@ export default function BugCard({ bug, onClick }: BugCardProps): JSX.Element {
               macroColor.text
             )}
           >
-            {bug.macroCategory}
+            {sentinelLabel(bug.macroCategory)}
           </span>
         )}
         {bug.technicalLayer && (
@@ -69,7 +70,7 @@ export default function BugCard({ bug, onClick }: BugCardProps): JSX.Element {
               subColor.text
             )}
           >
-            {bug.technicalLayer}
+            {sentinelLabel(bug.technicalLayer)}
           </span>
         )}
         <span className="text-xs text-gray-500">

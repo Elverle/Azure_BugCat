@@ -59,6 +59,16 @@ export function extractErrorMessage(error: unknown): string {
 }
 
 /**
+ * Narrows anything thrown across IPC to the app's error shape, so the renderer
+ * can render a title from `code` instead of parsing the message. Anything that
+ * is not already one of ours keeps its text and becomes UNKNOWN_ERROR.
+ */
+export function toAppError(error: unknown): AppError {
+  if (isAppError(error)) return error
+  return { code: 'UNKNOWN_ERROR', message: extractErrorMessage(error) }
+}
+
+/**
  * Main-process side: turn any thrown value into an `Error` whose message
  * survives Electron IPC serialization. Electron keeps only a real `Error`'s
  * `message` when it rejects an `ipcMain.handle` call — custom properties are

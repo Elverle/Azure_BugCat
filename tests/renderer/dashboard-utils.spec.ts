@@ -11,6 +11,7 @@ import {
   EMPTY_FILTER_STATE
 } from '../../src/renderer/src/lib/dashboard-utils'
 import { getCategoryColor, getStatusBadgeClasses } from '../../src/renderer/src/lib/badge-colors'
+import { UNASSIGNED, UNCATEGORIZED } from '@shared/categorization'
 
 const mockBugs: CategorizedBug[] = [
   {
@@ -139,8 +140,8 @@ describe('filterBugs', () => {
     expect(result[0].id).toBe(1)
   })
 
-  it('should match "Unassigned" filter to null assignees', () => {
-    const filters: FilterState = { ...EMPTY_FILTER_STATE, assignees: ['Unassigned'] }
+  it('should match the unassigned sentinel filter to null assignees', () => {
+    const filters: FilterState = { ...EMPTY_FILTER_STATE, assignees: [UNASSIGNED] }
     const result = filterBugs(mockBugs, filters)
     expect(result).toHaveLength(1)
     expect(result[0].id).toBe(2)
@@ -226,7 +227,7 @@ describe('groupBugs', () => {
     expect(result.get('Infrastructure')).toHaveLength(1)
   })
 
-  it('should group by technicalLayer with empty mapped to "Non categorizzato"', () => {
+  it('should group by technicalLayer with empty mapped to the uncategorized sentinel', () => {
     const bugsWithEmpty: CategorizedBug[] = [
       ...mockBugs,
       {
@@ -236,16 +237,23 @@ describe('groupBugs', () => {
       }
     ]
     const result = groupBugs(bugsWithEmpty, 'technicalLayer')
-    expect(result.has('Non categorizzato')).toBe(true)
-    expect(result.get('Non categorizzato')).toHaveLength(1)
+    expect(result.has(UNCATEGORIZED)).toBe(true)
+    expect(result.get(UNCATEGORIZED)).toHaveLength(1)
   })
 
-  it('should group by assignee with null mapped to "Non assegnato"', () => {
+  it('should group by assignee with null mapped to the unassigned sentinel', () => {
     const result = groupBugs(mockBugs, 'assignee')
-    expect(result.has('Non assegnato')).toBe(true)
-    expect(result.get('Non assegnato')).toHaveLength(1)
+    expect(result.has(UNASSIGNED)).toBe(true)
+    expect(result.get(UNASSIGNED)).toHaveLength(1)
     expect(result.get('Laura K.')).toHaveLength(2)
     expect(result.get('Marco R.')).toHaveLength(2)
+  })
+
+  it('groups null assignees under the same key the assignee filter matches on', () => {
+    const grouped = groupBugs(mockBugs, 'assignee')
+    const filtered = filterBugs(mockBugs, { ...EMPTY_FILTER_STATE, assignees: [UNASSIGNED] })
+
+    expect(grouped.get(UNASSIGNED)).toEqual(filtered)
   })
 
   it('should return empty Map for empty dataset', () => {

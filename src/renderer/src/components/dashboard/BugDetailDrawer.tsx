@@ -3,6 +3,8 @@ import { X, ChevronLeft, ChevronRight, Bot, ExternalLink } from 'lucide-react'
 import type { CategorizedBug } from '@shared/types'
 import { cn } from '@renderer/lib/utils'
 import { getStatusBadgeClasses } from '@renderer/lib/badge-colors'
+import { formatDateOnly } from '@renderer/lib/date-utils'
+import { sentinelLabel } from '@renderer/lib/labels'
 import {
   resolveAdoAttachmentImages,
   sanitizeBugDescriptionHtml,
@@ -168,7 +170,7 @@ export default function BugDetailDrawer({
     >
       <div
         role="separator"
-        aria-label="Ridimensiona dettaglio"
+        aria-label="Resize details"
         aria-orientation="vertical"
         aria-valuemin={minWidth}
         aria-valuemax={maxWidth}
@@ -198,7 +200,7 @@ export default function BugDetailDrawer({
               <button
                 onClick={onPrev}
                 disabled={!hasPrev}
-                aria-label="Bug precedente"
+                aria-label="Previous bug"
                 className="text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed p-1"
               >
                 <ChevronLeft size={18} />
@@ -206,14 +208,14 @@ export default function BugDetailDrawer({
               <button
                 onClick={onNext}
                 disabled={!hasNext}
-                aria-label="Bug successivo"
+                aria-label="Next bug"
                 className="text-gray-400 hover:text-gray-600 disabled:opacity-30 disabled:cursor-not-allowed p-1"
               >
                 <ChevronRight size={18} />
               </button>
               <button
                 onClick={onClose}
-                aria-label="Chiudi dettaglio"
+                aria-label="Close details"
                 className="text-gray-400 hover:text-gray-600 p-1 ml-2"
               >
                 <X size={18} />
@@ -234,27 +236,31 @@ export default function BugDetailDrawer({
                     <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1">
                       Macro-Category
                     </div>
-                    <div className="text-sm font-medium text-gray-900">{bug.macroCategory}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {sentinelLabel(bug.macroCategory)}
+                    </div>
                   </div>
                   <div>
                     <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1">
                       Sub-Category
                     </div>
-                    <div className="text-sm font-medium text-gray-900">{bug.technicalLayer}</div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {sentinelLabel(bug.technicalLayer)}
+                    </div>
                   </div>
                 </div>
                 <div className="text-[11px] text-purple-600 uppercase font-bold tracking-wider mb-1 mt-2">
                   Reasoning
                 </div>
                 <p className="text-sm text-gray-700 bg-white p-3 rounded border border-purple-100 shadow-sm leading-relaxed">
-                  {bug.categoryReason}
+                  {sentinelLabel(bug.categoryReason)}
                 </p>
               </div>
             ) : (
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
                 <div className="flex items-center gap-2 text-gray-500 font-semibold text-sm">
                   <Bot size={16} />
-                  <span className="italic">Non ancora categorizzato</span>
+                  <span className="italic">Not categorized yet</span>
                 </div>
               </div>
             )}
@@ -264,7 +270,7 @@ export default function BugDetailDrawer({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Assignee</div>
-                  <div className="text-sm text-gray-900">{bug.assignee || 'Non assegnato'}</div>
+                  <div className="text-sm text-gray-900">{bug.assignee || 'Unassigned'}</div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Area Path</div>
@@ -277,13 +283,13 @@ export default function BugDetailDrawer({
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Created</div>
                   <div className="text-sm text-gray-900">
-                    {new Date(bug.createdDate).toLocaleDateString('it-IT')}
+                    {formatDateOnly(bug.createdDate)}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-gray-500 mb-1">Updated</div>
                   <div className="text-sm text-gray-900">
-                    {new Date(bug.updatedDate).toLocaleDateString('it-IT')}
+                    {formatDateOnly(bug.updatedDate)}
                   </div>
                 </div>
                 <div>
@@ -301,7 +307,7 @@ export default function BugDetailDrawer({
                     onClick={() => setExpandedForBugId(descriptionExpanded ? null : bug.id)}
                     className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
                   >
-                    {descriptionExpanded ? 'Riduci descrizione' : 'Espandi descrizione'}
+                    {descriptionExpanded ? 'Collapse description' : 'Expand description'}
                   </button>
                 </div>
                 {hasDescriptionContent ? (
@@ -318,7 +324,7 @@ export default function BugDetailDrawer({
                   </div>
                 ) : (
                   <div className="text-sm text-gray-400 italic bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    Nessuna descrizione disponibile
+                    No description available
                   </div>
                 )}
               </div>

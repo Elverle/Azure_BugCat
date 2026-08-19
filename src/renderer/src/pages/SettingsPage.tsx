@@ -69,9 +69,9 @@ export function SettingsPage() {
   async function handleClearSession(): Promise<void> {
     try {
       await window.electronAPI.clearSession()
-      setClearResult({ type: 'success', message: 'Dati sessione eliminati con successo.' })
+      setClearResult({ type: 'success', message: 'Session data cleared.' })
     } catch {
-      setClearResult({ type: 'error', message: 'Errore durante la pulizia dei dati sessione.' })
+      setClearResult({ type: 'error', message: 'Could not clear the session data.' })
     } finally {
       setConfirmOpen(false)
     }
@@ -80,11 +80,11 @@ export function SettingsPage() {
   async function handleClearCatalog(): Promise<void> {
     try {
       await window.electronAPI.clearCatalog()
-      setClearCatalogResult({ type: 'success', message: 'Storico bug eliminato con successo.' })
+      setClearCatalogResult({ type: 'success', message: 'Bug history cleared.' })
     } catch {
       setClearCatalogResult({
         type: 'error',
-        message: 'Errore durante la cancellazione dello storico bug.'
+        message: 'Could not clear the bug history.'
       })
     } finally {
       setConfirmCatalogOpen(false)
@@ -135,7 +135,7 @@ export function SettingsPage() {
           {saveResult.type === 'error' && (
             <button
               onClick={clearSaveResult}
-              aria-label="Chiudi messaggio di errore"
+              aria-label="Dismiss error message"
               className="text-red-600 hover:text-red-800"
             >
               <X className="w-4 h-4" />
@@ -200,7 +200,7 @@ export function SettingsPage() {
           {clearResult.type === 'error' && (
             <button
               onClick={() => setClearResult(null)}
-              aria-label="Chiudi messaggio di errore"
+              aria-label="Dismiss error message"
               className="text-red-600 hover:text-red-800"
             >
               <X className="w-4 h-4" />
@@ -213,15 +213,15 @@ export function SettingsPage() {
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="text-base font-semibold text-red-800">Zona pericolosa</h3>
+            <h3 className="text-base font-semibold text-red-800">Danger zone</h3>
             <p className="text-sm text-red-700 mt-1">
-              Questa azione elimina lo snapshot corrente: bug scaricati, categorizzazioni e
-              risultati di similarità. Lo storico dei bug già visti resta disponibile.
-              L&apos;operazione non è reversibile.
+              This clears the current snapshot: downloaded bugs, their categorizations and the
+              similarity results. The history of bugs already seen stays available. This cannot
+              be undone.
             </p>
             <div className="mt-3">
               <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
-                Pulisci dati sessione
+                Clear session data
               </Button>
             </div>
           </div>
@@ -245,7 +245,7 @@ export function SettingsPage() {
           {clearCatalogResult.type === 'error' && (
             <button
               onClick={() => setClearCatalogResult(null)}
-              aria-label="Chiudi messaggio di errore"
+              aria-label="Dismiss error message"
               className="text-red-600 hover:text-red-800"
             >
               <X className="w-4 h-4" />
@@ -258,15 +258,15 @@ export function SettingsPage() {
         <div className="flex items-start gap-3">
           <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
           <div className="flex-1">
-            <h3 className="text-base font-semibold text-red-800">Cancella storico bug</h3>
+            <h3 className="text-base font-semibold text-red-800">Clear bug history</h3>
             <p className="text-sm text-red-700 mt-1">
-              Questa azione elimina permanentemente tutto lo storico dei bug già visti, inclusi
-              metadati di lifecycle e categorizzazioni storiche. Lo snapshot corrente resta
-              disponibile. L&apos;operazione non è reversibile.
+              This permanently deletes the whole history of bugs already seen, including
+              lifecycle metadata and past categorizations. The current snapshot stays
+              available. This cannot be undone.
             </p>
             <div className="mt-3">
               <Button variant="destructive" onClick={() => setConfirmCatalogOpen(true)}>
-                Cancella storico bug
+                Clear bug history
               </Button>
             </div>
           </div>
@@ -274,10 +274,10 @@ export function SettingsPage() {
       </div>
       <ConfirmDialog
         open={confirmOpen}
-        title="Conferma pulizia sessione corrente"
-        description="I bug scaricati, le categorizzazioni correnti e i risultati di similarità verranno eliminati. Lo storico dei bug già visti resta disponibile. L'operazione non è reversibile."
-        confirmLabel="Pulisci sessione"
-        cancelLabel="Annulla"
+        title="Clear the current session?"
+        description="The downloaded bugs, their current categorization and the similarity results will be deleted. The history of bugs already seen stays available. This cannot be undone."
+        confirmLabel="Clear session"
+        cancelLabel="Cancel"
         variant="destructive"
         onConfirm={handleClearSession}
         onCancel={() => setConfirmOpen(false)}
@@ -285,10 +285,10 @@ export function SettingsPage() {
 
       <ConfirmDialog
         open={confirmCatalogOpen}
-        title="Conferma cancellazione storico"
-        description="Tutti i dati storici dei bug verranno eliminati permanentemente, incluse categorizzazioni e metadati di lifecycle. Lo snapshot corrente resta disponibile. Questa operazione non è reversibile. Vuoi procedere?"
-        confirmLabel="Cancella storico"
-        cancelLabel="Annulla"
+        title="Clear the bug history?"
+        description="All historical bug data will be permanently deleted, including categorizations and lifecycle metadata. The current snapshot stays available. This cannot be undone. Do you want to proceed?"
+        confirmLabel="Clear history"
+        cancelLabel="Cancel"
         variant="destructive"
         onConfirm={handleClearCatalog}
         onCancel={() => setConfirmCatalogOpen(false)}

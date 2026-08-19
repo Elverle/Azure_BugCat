@@ -20,7 +20,7 @@ export function ConfirmDialog({
   open,
   title,
   description,
-  confirmLabel = 'Conferma',
+  confirmLabel = 'Confirm',
   cancelLabel,
   variant = 'default',
   onConfirm,

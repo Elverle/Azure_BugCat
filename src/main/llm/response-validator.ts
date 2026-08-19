@@ -1,5 +1,10 @@
 import { BugItem, LLMCategorizeResult, LLMResponse } from '../../shared/types'
-import { UNCATEGORIZED, NO_LLM_RESPONSE, NOT_AVAILABLE } from '../../shared/categorization'
+import {
+  UNCATEGORIZED,
+  NO_LLM_RESPONSE,
+  NOT_AVAILABLE,
+  PARSE_ERROR
+} from '../../shared/categorization'
 import { parseLlmJson } from './llm-json'
 import { normalizeTechnicalLayer } from '../../shared/technical-layer'
 
@@ -104,13 +109,13 @@ export function validateLLMResponse(raw: string, chunkBugs: BugItem[]): LLMCateg
 
   if (parsed === null) {
     logValidationFailure('invalid-json', raw, chunkBugs)
-    return buildFallbackResults(chunkBugs, UNCATEGORIZED, 'Errore parsing')
+    return buildFallbackResults(chunkBugs, UNCATEGORIZED, PARSE_ERROR)
   }
 
   const resultItems = getResultItems(parsed)
   if (!resultItems) {
     logValidationFailure('missing-results-array', raw, chunkBugs)
-    return buildFallbackResults(chunkBugs, UNCATEGORIZED, 'Errore parsing')
+    return buildFallbackResults(chunkBugs, UNCATEGORIZED, PARSE_ERROR)
   }
 
   const resultMap = new Map<number, LLMCategorizeResult>()

@@ -3,7 +3,7 @@ title: 'Similarity Service'
 type: entity
 subtype: service
 created: 2026-05-01
-updated: 2026-05-03
+updated: 2026-08-19
 sources: ['[[wiki/sources/ft-10-ai-cluster-similarity]]', '[[wiki/analyses/llm-provider-cleanup]]']
 tags: [llm, similarity, main-process, orchestration]
 lang: en
@@ -26,7 +26,7 @@ Main-process orchestrator for the AI Cluster feature. It groups categorized bugs
 ## Behavior
 
 1. Creates an `LLMProvider` using the same settings path as categorization.
-2. Filters out bugs without a meaningful `macroCategory` or marked as `Non categorizzato`.
+2. Filters out bugs without a meaningful `macroCategory` or carrying the `UNCATEGORIZED` sentinel. The comparison reads the shared constant, so it survived the sentinel value change untouched — see [[wiki/entities/categorization-sentinels]].
 3. Groups remaining bugs by `macroCategory` and keeps only groups with at least 2 bugs.
 4. For each eligible category, builds the similar-bugs system prompt and category-scoped user payload.
 5. Reuses `chatWithRetry(..., { responseSchema: 'similar-bugs' })` so similarity runs inherit the same rate-limit retry semantics as categorization.

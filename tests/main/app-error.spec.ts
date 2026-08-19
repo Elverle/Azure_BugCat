@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decodeIpcError, encodeIpcError, isAppError } from '@shared/app-error'
+import { decodeIpcError, encodeIpcError, isAppError, toAppError } from '@shared/app-error'
 
 describe('app-error IPC contract', () => {
   it('round-trips an AppError through encode/decode', () => {
@@ -32,5 +32,16 @@ describe('app-error IPC contract', () => {
     expect(isAppError(null)).toBe(false)
     // A provider SDK error often carries its own `code`; it is not an AppError.
     expect(isAppError({ code: 'invalid_api_key', message: 'x' })).toBe(false)
+  })
+
+  it('keeps the code when the value is already an AppError', () => {
+    expect(toAppError({ code: 'ADO_TIMEOUT', message: 'timed out' })).toEqual({
+      code: 'ADO_TIMEOUT',
+      message: 'timed out'
+    })
+  })
+
+  it('wraps anything else as UNKNOWN_ERROR', () => {
+    expect(toAppError(new Error('boom'))).toEqual({ code: 'UNKNOWN_ERROR', message: 'boom' })
   })
 })

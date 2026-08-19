@@ -60,12 +60,12 @@ describe('anthropic-provider', () => {
         messages: [{ role: 'user', content: 'user' }],
         tool_choice: {
           type: 'tool',
-          name: 'salva_risultati_triage'
+          name: 'save_triage_results'
         },
         tools: [
           expect.objectContaining({
-            name: 'salva_risultati_triage',
-            description: 'Salva i bug categorizzati',
+            name: 'save_triage_results',
+            description: 'Save the categorized bugs',
             input_schema: expect.any(Object)
           })
         ]

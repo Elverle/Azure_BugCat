@@ -28,8 +28,8 @@ export function DashboardHeader({
   progress
 }: DashboardHeaderProps): JSX.Element {
   const subtitle = sessionInfo.fetchedAt
-    ? `Dati aggiornati il ${formatDate(sessionInfo.fetchedAt)}${sessionInfo.categorizedAt ? ` • Categorizzati il ${formatDate(sessionInfo.categorizedAt)}` : ''}`
-    : 'Nessun dato caricato'
+    ? `Data updated on ${formatDate(sessionInfo.fetchedAt)}${sessionInfo.categorizedAt ? ` • Categorized on ${formatDate(sessionInfo.categorizedAt)}` : ''}`
+    : 'No data loaded'
 
   return (
     <div className="flex justify-between items-end mb-6">
@@ -53,7 +53,7 @@ export function DashboardHeader({
           </button>
           {sessionInfo.fetchedAt && sessionInfo.lastFetchNewCount !== null ? (
             <p className="mt-1 pl-1 text-xs text-gray-500">
-              Nuovi rispetto allo storico: {sessionInfo.lastFetchNewCount}
+              New compared to history: {sessionInfo.lastFetchNewCount}
             </p>
           ) : null}
         </div>

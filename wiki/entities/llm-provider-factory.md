@@ -3,7 +3,7 @@ title: 'LLM Provider Factory'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-05-02
+updated: 2026-08-18
 sources:
 	[
 		'[[wiki/sources/ft-04-llm-provider]]',
@@ -30,13 +30,13 @@ function createLLMProvider(type: LLMProviderType, config: LLMProviderConfig): LL
 
 ## Supported Providers
 
-| Type string    | Class                | Transport / SDK     |
-| -------------- | -------------------- | ------------------- |
-| `'openai'`     | `OpenAIProvider`     | `openai`            |
-| `'anthropic'`  | `AnthropicProvider`  | `@anthropic-ai/sdk` |
-| `'generic'`    | `GenericProvider`    | native `fetch()`    |
-| `'gemini'`     | `GeminiProvider`     | `@google/genai`     |
-| `'openrouter'` | `OpenRouterProvider` | `@openrouter/sdk`   |
+| Type string    | Class                | Transport / SDK                                |
+| -------------- | -------------------- | ------------------------------------------------ |
+| `'openai'`     | `OpenAIProvider`     | `openai`                                          |
+| `'anthropic'`  | `AnthropicProvider`  | `@anthropic-ai/sdk`                               |
+| `'generic'`    | `GenericProvider`    | native `fetch()` via shared `openAiCompatibleChat()` |
+| `'gemini'`     | `GeminiProvider`     | `@google/genai`                                   |
+| `'openrouter'` | `OpenRouterProvider` | native `fetch()` via shared `openAiCompatibleChat()` |
 
 Throws `UNKNOWN_ERROR` for unsupported provider type.
 

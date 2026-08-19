@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef, useSyncExternalStore } from 'react'
-import type { SimilarityResult, SimilarityProgress, CategorizedBug } from '@shared/types'
-import { extractErrorMessage } from '@shared/app-error'
+import type { AppError, SimilarityResult, SimilarityProgress, CategorizedBug } from '@shared/types'
+import { toAppError } from '@shared/app-error'
+import { UNCATEGORIZED } from '@shared/categorization'
 import { isCancellationError } from '@renderer/lib/cancellation'
 import {
   getSessionSnapshot,
@@ -19,7 +20,7 @@ export interface UseAiClusterReturn {
   progress: SimilarityProgress | null
   canAnalyze: boolean
   isStale: boolean
-  error: string | null
+  error: AppError | null
   analyze: () => Promise<void>
   cancel: () => Promise<void>
   clearError: () => void
@@ -36,7 +37,7 @@ interface AiClusterUiState {
   analyzing: boolean
   isCancelling: boolean
   progress: SimilarityProgress | null
-  error: string | null
+  error: AppError | null
 }
 
 const INITIAL_AI_CLUSTER_UI_STATE: AiClusterUiState = {
@@ -136,7 +137,7 @@ export function useAiCluster(): UseAiClusterReturn {
         // No run is active on the main process, yet the module-scope store
         // still says otherwise — a leftover from a run that finished while
         // nothing was subscribed to observe it. Clear it instead of leaving
-        // the button reading "Annulla analisi" forever, and pull in whatever
+        // the button reading "Cancel analysis" forever, and pull in whatever
         // the main process persisted while we were not looking.
         updateAiClusterUiState({ analyzing: false, isCancelling: false, progress: null })
         void refreshSession()
@@ -172,7 +173,7 @@ export function useAiCluster(): UseAiClusterReturn {
   const results = session?.similarityResults ?? null
 
   const canAnalyze = Boolean(
-    categorizedAt && bugs.some((b) => b.macroCategory && b.macroCategory !== 'Non categorizzato')
+    categorizedAt && bugs.some((b) => b.macroCategory && b.macroCategory !== UNCATEGORIZED)
   )
 
   const isStale = Boolean(results && categorizedAt && results.analyzedAt < categorizedAt)
@@ -203,7 +204,7 @@ export function useAiCluster(): UseAiClusterReturn {
     } catch (err: unknown) {
       // A user-initiated cancellation is not a failure — leave `error` unset.
       if (!isCancellationError(err)) {
-        updateAiClusterUiState({ error: extractErrorMessage(err) })
+        updateAiClusterUiState({ error: toAppError(err) })
       }
     } finally {
       updateAiClusterUiState({ analyzing: false, isCancelling: false, progress: null })
@@ -232,7 +233,7 @@ export function useAiCluster(): UseAiClusterReturn {
     } catch (error: unknown) {
       updateAiClusterUiState({
         isCancelling: false,
-        error: extractErrorMessage(error)
+        error: toAppError(error)
       })
     }
   }, [currentAiClusterUiState.analyzing, currentAiClusterUiState.isCancelling])

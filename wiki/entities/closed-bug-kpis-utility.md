@@ -3,7 +3,7 @@ title: 'Closed Bug KPIs Utility'
 type: entity
 subtype: library
 created: 2026-05-13
-updated: 2026-05-13
+updated: 2026-08-19
 sources: ['[[wiki/sources/ft-13-closed-bugs-history]]']
 tags: [typescript, utility, kpi, catalog, renderer]
 lang: en
@@ -42,7 +42,7 @@ export function computeClosedBugKpis(
 - `totalClosed` is `closedBugs.length`.
 - `lastClearedAt` passes through the persisted history cleanup timestamp so the UI can explain the current counting baseline.
 - `recentlyClosedCount` counts only bugs whose `closedAt` exactly matches `fetchedAt`.
-- `categoryDistribution` groups by `macroCategory`, falls back to `Non categorizzato`, sorts descending by count, and keeps per-category bug rows with `id`, `title`, `closedAt`, and similarity-history flags.
+- `categoryDistribution` groups by `macroCategory`, falls back to the `UNCATEGORIZED` sentinel, sorts descending by count, and keeps per-category bug rows with `id`, `title`, `closedAt`, and similarity-history flags.
 - `similarityGroupCount` counts bugs with `everInSimilarityGroup === true`.
 - `similarityGroupPercentage` is a rounded integer percentage over `totalClosed`, with a zero-safe fallback.
 - `lastUpdateAt` passes through `fetchedAt` unchanged.

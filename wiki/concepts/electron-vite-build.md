@@ -2,7 +2,7 @@
 title: 'electron-vite Build Configuration'
 type: concept
 created: 2026-04-29
-updated: 2026-05-02
+updated: 2026-08-18
 sources: ['[[wiki/sources/ft-01-scaffold]]', '[[wiki/sources/ft-11-openrouter-provider]]']
 tags: [electron-vite, vite, build, configuration]
 lang: en
@@ -19,8 +19,8 @@ File: `electron.vite.config.ts`
 ### Main process
 
 - Uses `build.externalizeDeps.exclude` to bundle ESM/runtime-sensitive dependencies that should not remain external at runtime.
-- Current exclude list: `electron-store`, `@openrouter/sdk`.
-- This FT-11 change is required because the OpenRouter provider runs in the Electron main process and depends on the SDK being packaged consistently with the app bundle.
+- Current exclude list: `electron-store`.
+- FT-11 originally added `@openrouter/sdk` to this list, because the SDK-backed OpenRouter provider ran in the Electron main process and depended on the SDK being packaged consistently with the app bundle. That entry was removed on 2026-08-11 when `@openrouter/sdk` was dropped from `package.json` entirely — see [[wiki/entities/openrouter-provider]].
 
 ### Preload
 

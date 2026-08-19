@@ -6,6 +6,7 @@ import {
   SimilarityProgress,
   SimilarityResult
 } from '../../shared/types'
+import { UNCATEGORIZED } from '../../shared/categorization'
 import { LLMProvider } from './types'
 import { createLLMProvider } from './provider-factory'
 import { buildSimilarBugsSystemPrompt, buildSimilarBugsUserMessage } from './prompts'
@@ -34,7 +35,7 @@ export async function findSimilarBugs(
   // Group bugs by macroCategory (skip empty/non-categorized)
   const groupedByCategory = new Map<string, CategorizedBug[]>()
   for (const bug of bugs) {
-    if (!bug.macroCategory || bug.macroCategory === 'Non categorizzato') continue
+    if (!bug.macroCategory || bug.macroCategory === UNCATEGORIZED) continue
     const existing = groupedByCategory.get(bug.macroCategory) ?? []
     existing.push(bug)
     groupedByCategory.set(bug.macroCategory, existing)

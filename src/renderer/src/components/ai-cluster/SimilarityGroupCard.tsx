@@ -14,9 +14,9 @@ function getScoreBadgeClasses(score: number): string {
 }
 
 function getScoreLabel(score: number): string {
-  if (score >= 0.9) return 'Molto alta'
-  if (score >= 0.7) return 'Alta'
-  return 'Media'
+  if (score >= 0.9) return 'Very high'
+  if (score >= 0.7) return 'High'
+  return 'Medium'
 }
 
 export function SimilarityGroupCard({
@@ -38,18 +38,18 @@ export function SimilarityGroupCard({
             {scorePercent}%
           </span>
           <p className="text-xs text-gray-500">
-            Similarita: {getScoreLabel(group.similarityScore)}
+            Similarity: {getScoreLabel(group.similarityScore)}
           </p>
         </div>
         <span className="text-xs text-gray-400 shrink-0">
-          {group.bugIds.length} {group.bugIds.length === 1 ? 'bug' : 'bug'}
+          {group.bugIds.length} {group.bugIds.length === 1 ? 'bug' : 'bugs'}
         </span>
       </div>
 
       <div className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(220px,0.8fr)]">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">
-            Bug coinvolti
+            Bugs involved
           </p>
           <div className="ml-1 border-l-2 border-indigo-100 pl-3 space-y-1.5">
             {group.bugIds.map((bugId) => {
@@ -64,7 +64,7 @@ export function SimilarityGroupCard({
                     #{bugId}
                   </span>
                   <span className="text-gray-600 ml-2">
-                    {bug ? bug.title : '(bug non trovato)'}
+                    {bug ? bug.title : '(bug not found)'}
                   </span>
                 </button>
               )
@@ -74,7 +74,7 @@ export function SimilarityGroupCard({
 
         <div className="rounded-md border border-indigo-100 bg-indigo-50/60 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700 mb-2">
-            Motivazione
+            Reason
           </p>
           <p className="text-sm text-gray-700 leading-6">{group.reason}</p>
         </div>

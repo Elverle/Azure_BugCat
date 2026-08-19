@@ -7,6 +7,41 @@ export type Migration = {
   up: (data: Record<string, unknown>) => Record<string, unknown>
 }
 
+/**
+ * Italian -> machine-value conversions applied by the v4 migration, keyed by
+ * persisted field. Only exact matches are converted: an empty string means
+ * "not categorized yet" (see CategorizedBug in shared/types.ts) and a user's
+ * own category name must survive untouched.
+ *
+ * The values are written out as literals rather than imported from the shared
+ * constants on purpose: a migration describes a historical state of the data,
+ * and has to keep working even if those constants change again later.
+ */
+const SENTINEL_CONVERSIONS: Record<string, Record<string, string>> = {
+  macroCategory: {
+    'Non categorizzato': '__uncategorized__'
+  },
+  technicalLayer: {
+    'Errore elaborazione': '__processing_error__',
+    'Nessuna risposta LLM': '__no_llm_response__',
+    'Errore parsing': '__parse_error__',
+    'Non determinabile': 'Undetermined'
+  },
+  categoryReason: {
+    'N/D': '__not_available__'
+  }
+}
+
+function convertSentinels(bug: Record<string, unknown>): Record<string, unknown> {
+  for (const [field, mapping] of Object.entries(SENTINEL_CONVERSIONS)) {
+    const current = bug[field]
+    if (typeof current === 'string' && current in mapping) {
+      bug[field] = mapping[current]
+    }
+  }
+  return bug
+}
+
 export const migrations: Migration[] = [
   {
     version: 1,
@@ -96,34 +131,49 @@ export const migrations: Migration[] = [
   {
     version: 4,
     up: (data) => {
-      // Rename subCategory -> technicalLayer everywhere the field was persisted.
+      // Renames subCategory -> technicalLayer everywhere the field was persisted,
+      // and converts the italian sentinels to their machine values, on three
+      // surfaces: session bugs, catalog entries, and similarity results.
       //
-      // NOTE (Fase 2): this same `up` will be EXTENDED with the italian -> english
-      // sentinel conversion. Confirmed on 2026-08-12 that it stays v4 and does not
-      // become a v5. Two consequences follow, neither of them enforced by code:
-      //
-      //   1. No release between Fase 1 and Fase 2. `migrateStore` returns early on
-      //      schemaVersion >= CURRENT_SCHEMA_VERSION, so a store that reached 4
-      //      under the rename-only `up` never runs the extended one.
-      //
-      //   2. The developer's own machine is not exempt. Any store that opened the
-      //      app between this commit and Fase 2 has to have its schemaVersion
-      //      lowered, or its config reset, once the sentinel conversion lands —
-      //      otherwise it keeps the italian sentinels forever.
-      const renameLayer = (bug: Record<string, unknown>): Record<string, unknown> => {
+      // NOTE: this `up` shipped in two states. It first landed rename-only, and
+      // was then EXTENDED here with the sentinel conversion, deliberately staying
+      // v4 instead of becoming a v5. One consequence follows, not enforced by code:
+      // `migrateStore` returns early on schemaVersion >= CURRENT_SCHEMA_VERSION, so
+      // a store that reached 4 under the rename-only version never runs this
+      // extended one and keeps the italian sentinels forever. Any such store — a
+      // developer machine that opened the app in between is the realistic case,
+      // since no release happened — has to have its schemaVersion lowered or its
+      // config reset.
+      // The rename runs first, so convertSentinels already sees `technicalLayer`.
+      const migrateBug = (bug: Record<string, unknown>): Record<string, unknown> => {
         if ('subCategory' in bug) {
           bug.technicalLayer = bug.subCategory
           delete bug.subCategory
         }
-        return bug
+        return convertSentinels(bug)
       }
 
       const session = data.session as { bugs?: Record<string, unknown>[] } | null
-      if (session?.bugs) session.bugs = session.bugs.map(renameLayer)
+      if (session?.bugs) session.bugs = session.bugs.map(migrateBug)
 
       const catalog = data.bugCatalog as Record<string, Record<string, unknown>> | null
       if (catalog) {
-        for (const key of Object.keys(catalog)) catalog[key] = renameLayer(catalog[key])
+        for (const key of Object.keys(catalog)) catalog[key] = migrateBug(catalog[key])
+      }
+
+      // Third surface, absent from the rename-only version: similarity results
+      // persist a category name too, and if it stays italian the results stop
+      // matching the bugs that were just migrated.
+      const similarity = (data.session as { similarityResults?: unknown } | null)
+        ?.similarityResults as { categories?: Record<string, unknown>[] } | undefined
+
+      if (similarity?.categories) {
+        for (const category of similarity.categories) {
+          const name = category.macroCategory
+          if (typeof name === 'string' && name in SENTINEL_CONVERSIONS.macroCategory) {
+            category.macroCategory = SENTINEL_CONVERSIONS.macroCategory[name]
+          }
+        }
       }
 
       return data

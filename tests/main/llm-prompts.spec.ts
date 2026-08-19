@@ -77,7 +77,7 @@ describe('prompts', () => {
 
     it('handles empty description with fallback', () => {
       const message = buildUserMessage([{ id: 1, title: 'Bug 1', description: '' }])
-      expect(message).toContain('(nessuna descrizione)')
+      expect(message).toContain('(no description)')
       expect(message).toContain('"tags": []')
     })
 
@@ -119,7 +119,7 @@ describe('prompts', () => {
       const message = buildSimilarBugsUserMessage([
         { id: 1, title: 'Bug 1', description: 'Desc 1' }
       ])
-      expect(message).toContain('(non categorizzato)')
+      expect(message).toContain('(uncategorized)')
     })
   })
 })

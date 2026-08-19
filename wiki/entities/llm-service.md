@@ -3,7 +3,7 @@ title: 'LLM Service'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-05-03
+updated: 2026-08-18
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
@@ -63,10 +63,10 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 - Calls the provider through `chatWithRetry(..., { responseSchema: 'categorization', signal })`.
 - Validates and parses the raw response.
 - On cancellation, aborts the run without persisting or emitting fallback chunk labels.
-- On non-blocking chunk failure, marks that chunk as `Non categorizzato` and continues.
+- On non-blocking chunk failure, marks that chunk with the `UNCATEGORIZED` / `PROCESSING_ERROR` sentinels from [[wiki/entities/categorization-sentinels]] and continues.
 - Invokes `onProgress` with the categorized chunk.
 
-5. Returns the merged `CategorizedBug[]` with a fresh `categorizedAt` timestamp.
+5. Returns the merged `CategorizedBug[]`. `applyCategorization()` stamps a fresh `categorizedAt` timestamp only on bugs whose `macroCategory` is **not** the `UNCATEGORIZED` sentinel; `isFailedCategorization(macroCategory)` is what makes that call, and a failed bug's `categorizedAt` is left `''` instead. This is what keeps a chunk failure retry-eligible on the next categorization run rather than persisting the fallback as if it were a real result.
 
 ## Error Handling
 
@@ -106,12 +106,15 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 - [[wiki/entities/chunking-utility]] - `splitIntoChunks`
 - [[wiki/entities/llm-error-policy]] - shared blocking error classification
 - [[wiki/entities/response-validator]] - `validateLLMResponse`
+- [[wiki/entities/categorization-sentinels]] - `UNCATEGORIZED`, `PROCESSING_ERROR`, `NOT_AVAILABLE`, `NO_LLM_RESPONSE`, `isFailedCategorization`
 
 ## See also
 
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/similarity-service]]
 - [[wiki/entities/llm-error-policy]]
+- [[wiki/entities/categorization-sentinels]]
+- [[wiki/concepts/sentinel-value-label-separation]]
 - [[wiki/concepts/chunk-retry-pattern]]
 - [[wiki/concepts/provider-native-structured-output]]
 - [[wiki/topics/llm-categorization-pipeline]]

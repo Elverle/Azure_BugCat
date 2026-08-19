@@ -86,7 +86,7 @@ describe('KpiCards', () => {
 
   it('renders the status summary card with the requested states', () => {
     render(<KpiCards kpis={mockKpis} />)
-    expect(screen.getByText('Stati')).toBeInTheDocument()
+    expect(screen.getByText('States')).toBeInTheDocument()
     expect(screen.getByText('Todo')).toBeInTheDocument()
     expect(screen.getByText('In progress')).toBeInTheDocument()
     expect(screen.getByText('Suspended')).toBeInTheDocument()
@@ -111,10 +111,10 @@ describe('KpiCards', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
   })
 
-  it('shows "Nessun assegnatario" when topAssignees is empty', () => {
+  it('shows "No assignees" when topAssignees is empty', () => {
     const emptyKpis: KpiData = { ...mockKpis, topAssignees: [] }
     render(<KpiCards kpis={emptyKpis} />)
-    expect(screen.getByText('Nessun assegnatario')).toBeInTheDocument()
+    expect(screen.getByText('No assignees')).toBeInTheDocument()
   })
 })
 
@@ -126,19 +126,19 @@ describe('BugTable', () => {
   it('renders all column headers', () => {
     render(<BugTable bugs={mockBugs} sortState={defaultSortState} onSort={vi.fn()} />)
     expect(screen.getByText('ID')).toBeInTheDocument()
-    expect(screen.getByText('Titolo')).toBeInTheDocument()
-    expect(screen.getByText('Priorità')).toBeInTheDocument()
-    expect(screen.getByText('Stato')).toBeInTheDocument()
-    expect(screen.getByText('Assegnatario')).toBeInTheDocument()
+    expect(screen.getByText('Title')).toBeInTheDocument()
+    expect(screen.getByText('Priority')).toBeInTheDocument()
+    expect(screen.getByText('State')).toBeInTheDocument()
+    expect(screen.getByText('Assignee')).toBeInTheDocument()
     expect(screen.getByText('Area Path')).toBeInTheDocument()
-    expect(screen.getByText('Macro-cat')).toBeInTheDocument()
-    expect(screen.getByText('Sotto-cat')).toBeInTheDocument()
+    expect(screen.getByText('Category')).toBeInTheDocument()
+    expect(screen.getByText('Layer')).toBeInTheDocument()
   })
 
   it('calls onSort when clicking a column header', () => {
     const onSort = vi.fn()
     render(<BugTable bugs={mockBugs} sortState={defaultSortState} onSort={onSort} />)
-    fireEvent.click(screen.getByText('Titolo'))
+    fireEvent.click(screen.getByText('Title'))
     expect(onSort).toHaveBeenCalledWith('title')
   })
 
@@ -240,6 +240,24 @@ describe('MultiSelect', () => {
     expect(screen.queryByText('Closed')).not.toBeInTheDocument()
   })
 
+  it('shows the label but keeps selecting by the underlying value', () => {
+    const onChange = vi.fn()
+    render(
+      <MultiSelect
+        options={['__uncategorized__', 'Payments']}
+        selected={[]}
+        onChange={onChange}
+        placeholder="Macro-Categoria"
+        getLabel={(v) => (v === '__uncategorized__' ? 'Uncategorized' : v)}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button'))
+    fireEvent.click(screen.getByText('Uncategorized'))
+
+    expect(onChange).toHaveBeenCalledWith(['__uncategorized__'])
+  })
+
   it('closes on Escape key', () => {
     render(<MultiSelect options={options} selected={[]} onChange={vi.fn()} placeholder="Stato" />)
     fireEvent.click(screen.getByText('Stato'))
@@ -284,17 +302,17 @@ describe('FilterBar', () => {
 
   it('renders all multi-selects', () => {
     renderFilterBar()
-    expect(screen.getByText('Stato')).toBeInTheDocument()
-    expect(screen.getByText('Assegnatario')).toBeInTheDocument()
-    expect(screen.getByText('Macro-Categoria')).toBeInTheDocument()
-    expect(screen.getByText('Sotto-Categoria')).toBeInTheDocument()
+    expect(screen.getByText('State')).toBeInTheDocument()
+    expect(screen.getByText('Assignee')).toBeInTheDocument()
+    expect(screen.getByText('Category')).toBeInTheDocument()
+    expect(screen.getByText('Technical layer')).toBeInTheDocument()
   })
 
   it('renders groupBy select', () => {
     renderFilterBar()
     expect(screen.getByRole('combobox')).toBeInTheDocument()
-    expect(screen.getByText('Nessuno')).toBeInTheDocument()
-    expect(screen.getByText('Per Macro-Categoria')).toBeInTheDocument()
+    expect(screen.getByText('None')).toBeInTheDocument()
+    expect(screen.getByText('By category')).toBeInTheDocument()
   })
 
   it('Reset button calls onReset', () => {
@@ -307,7 +325,7 @@ describe('FilterBar', () => {
   it('Collapse all button calls onCollapseAll', () => {
     const onCollapseAll = vi.fn()
     renderFilterBar({ onCollapseAll })
-    fireEvent.click(screen.getByText('Chiudi tutti'))
+    fireEvent.click(screen.getByText('Collapse all'))
     expect(onCollapseAll).toHaveBeenCalledOnce()
   })
 

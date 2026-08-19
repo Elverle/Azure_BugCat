@@ -111,19 +111,19 @@ describe('DashboardPage', () => {
     })
   })
 
-  it('renders the Similarita tab in Dashboard and shows the Motivation panel', async () => {
+  it('renders the similarity tab in Dashboard and shows the Motivation panel', async () => {
     render(<DashboardPage />)
 
-    expect(await screen.findByText('Nuovi rispetto allo storico: 2')).toBeInTheDocument()
+    expect(await screen.findByText('New compared to history: 2')).toBeInTheDocument()
 
-    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    const similarityTab = await screen.findByRole('button', { name: /Similarity/i })
     fireEvent.click(similarityTab)
 
     await waitFor(() => {
-      expect(screen.getByText('Motivazione')).toBeInTheDocument()
+      expect(screen.getByText('Reason')).toBeInTheDocument()
     })
 
-    expect(screen.getByRole('heading', { name: 'Similarità' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Similarity' })).toBeInTheDocument()
     expect(
       screen.getByText('Entrambi i bug descrivono la mancata apertura della modale costo.')
     ).toBeInTheDocument()
@@ -131,7 +131,7 @@ describe('DashboardPage', () => {
     expect(screen.getByText('#102')).toBeInTheDocument()
   })
 
-  it('resyncs the Similarita section from the shared session store after a categorization', async () => {
+  it('resyncs the similarity section from the shared session store after a categorization', async () => {
     const recategorizedSession: SessionData = {
       bugs: mockSession.bugs,
       fetchedAt: mockSession.fetchedAt,
@@ -145,15 +145,15 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    const similarityTab = await screen.findByRole('button', { name: /Similarity/i })
     fireEvent.click(similarityTab)
-    expect(await screen.findByText('Motivazione')).toBeInTheDocument()
+    expect(await screen.findByText('Reason')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /categorize/i }))
 
     // No remount key on the section: it re-reads the refreshed session by itself.
-    expect(await screen.findByText('Nessuna analisi eseguita')).toBeInTheDocument()
-    expect(screen.queryByText('Motivazione')).not.toBeInTheDocument()
+    expect(await screen.findByText('No analysis run yet')).toBeInTheDocument()
+    expect(screen.queryByText('Reason')).not.toBeInTheDocument()
   })
 
   it('shows a popup when categorization fails with a blocking error', async () => {
@@ -168,9 +168,9 @@ describe('DashboardPage', () => {
     const categorizeButton = await screen.findByRole('button', { name: /categorize/i })
     fireEvent.click(categorizeButton)
 
-    expect(
-      await screen.findByRole('dialog', { name: 'Errore categorizzazione' })
-    ).toBeInTheDocument()
+    // A bare Error carries no code, so it reaches the dialog as UNKNOWN_ERROR;
+    // the provider's own wording stays underneath as the diagnostic detail.
+    expect(await screen.findByRole('dialog', { name: 'Unexpected error' })).toBeInTheDocument()
     expect(
       screen.getByText(
         'OpenRouter routed the request to a provider or model that does not properly support structured outputs with json_schema. Select a compatible model, or change the routing/provider.'
@@ -189,15 +189,15 @@ describe('DashboardPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Fetch Bugs/i }))
 
     expect(
-      await screen.findByRole('dialog', { name: 'Errore durante il fetch' })
+      await screen.findByRole('dialog', { name: 'Azure DevOps authentication failed' })
     ).toBeInTheDocument()
     expect(screen.getByText('Authentication failed: 401 Unauthorized')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Chiudi' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
 
     await waitFor(() =>
       expect(
-        screen.queryByRole('dialog', { name: 'Errore durante il fetch' })
+        screen.queryByRole('dialog', { name: 'Azure DevOps authentication failed' })
       ).not.toBeInTheDocument()
     )
   })
@@ -211,11 +211,11 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    expect(await screen.findByText('Nessun bug caricato')).toBeInTheDocument()
+    expect(await screen.findByText('No bugs loaded')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Fetch Bugs/i }))
 
     expect(
-      await screen.findByRole('dialog', { name: 'Errore durante il fetch' })
+      await screen.findByRole('dialog', { name: 'Azure DevOps authentication failed' })
     ).toBeInTheDocument()
     expect(screen.getByText('Authentication failed: 401 Unauthorized')).toBeInTheDocument()
   })
@@ -229,12 +229,10 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    expect(await screen.findByText('Nessun bug caricato')).toBeInTheDocument()
+    expect(await screen.findByText('No bugs loaded')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /Categorize/i }))
 
-    expect(
-      await screen.findByRole('dialog', { name: 'Errore categorizzazione' })
-    ).toBeInTheDocument()
+    expect(await screen.findByRole('dialog', { name: 'Configuration problem' })).toBeInTheDocument()
     expect(screen.getByText('No bugs in the current session')).toBeInTheDocument()
   })
 
@@ -288,9 +286,11 @@ describe('DashboardPage', () => {
 
     await waitFor(() => {
       expect(mockElectronAPI.cancelCategorization).toHaveBeenCalledTimes(1)
-      expect(
-        screen.queryByRole('dialog', { name: 'Errore categorizzazione' })
-      ).not.toBeInTheDocument()
+      // Queried without a name on purpose: now that the title is derived from
+      // the code, pinning one title would make this vacuous — a cancellation
+      // that wrongly surfaced would open a dialog reading 'Operation
+      // cancelled' and slip past. No error dialog at all is the real assertion.
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     })
 
     await screen.findByRole('button', { name: /categorize/i })
@@ -313,22 +313,22 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    const similarityTab = await screen.findByRole('button', { name: /Similarity/i })
     fireEvent.click(similarityTab)
 
-    const analyzeButton = await screen.findByRole('button', { name: /Analizza Similarità/i })
+    const analyzeButton = await screen.findByRole('button', { name: /Analyze similarity/i })
     fireEvent.click(analyzeButton)
 
     expect(
-      await screen.findByRole('dialog', { name: 'Errore analisi similarità' })
+      await screen.findByRole('dialog', { name: 'The LLM request timed out' })
     ).toBeInTheDocument()
     expect(screen.getByText('Request to OpenAI timed out')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Chiudi' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
 
     await waitFor(() =>
       expect(
-        screen.queryByRole('dialog', { name: 'Errore analisi similarità' })
+        screen.queryByRole('dialog', { name: 'The LLM request timed out' })
       ).not.toBeInTheDocument()
     )
   })
@@ -345,16 +345,16 @@ describe('DashboardPage', () => {
 
     render(<DashboardPage />)
 
-    const similarityTab = await screen.findByRole('button', { name: /Similarità/i })
+    const similarityTab = await screen.findByRole('button', { name: /Similarity/i })
     fireEvent.click(similarityTab)
 
-    const analyzeButton = await screen.findByRole('button', { name: /Analizza Similarità/i })
+    const analyzeButton = await screen.findByRole('button', { name: /Analyze similarity/i })
     fireEvent.click(analyzeButton)
 
-    const cancelButton = await screen.findByRole('button', { name: /Annulla analisi/i })
+    const cancelButton = await screen.findByRole('button', { name: /Cancel analysis/i })
     fireEvent.click(cancelButton)
 
-    expect(await screen.findByRole('button', { name: /Annullamento/i })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: /Cancelling/i })).toBeDisabled()
 
     await act(async () => {
       resolveCancel?.({ cancelled: false })
@@ -363,6 +363,6 @@ describe('DashboardPage', () => {
 
     // The run is still active (main process reported cancelled: false), so the
     // button reverts to the enabled "cancel" state rather than staying stuck.
-    expect(await screen.findByRole('button', { name: /^Annulla analisi$/i })).not.toBeDisabled()
+    expect(await screen.findByRole('button', { name: /^Cancel analysis$/i })).not.toBeDisabled()
   })
 })
