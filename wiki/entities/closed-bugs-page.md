@@ -3,7 +3,7 @@ title: 'Closed Bugs Page'
 type: entity
 subtype: component
 created: 2026-05-13
-updated: 2026-05-13
+updated: 2026-08-19
 sources: ['[[wiki/sources/ft-13-closed-bugs-history]]']
 tags: [react, page, catalog, kpi, history]
 lang: en
@@ -28,12 +28,12 @@ Top-level renderer page for FT-13 historical analytics. It renders a compact KPI
 
 ## Rendered Metrics
 
-- `Bug Chiusi Totali` — count of closed catalog bugs.
-- `Bug Chiusi Totali` also shows `lastClearedAt` so operators can read the baseline of the current historical view.
-- `Chiusi Ultimo Aggiornamento` — bugs whose `closedAt` matches the latest `fetchedAt`.
-- `In Gruppo Similarità` — count and percentage of bugs with `everInSimilarityGroup = true`.
-- `Ultimo Aggiornamento` — formatted `fetchedAt`, or `N/D` when no session exists.
-- `Distribuzione per Macro-Categoria` — relative bar chart scaled to the max category count.
+- `Total closed bugs` — count of closed catalog bugs.
+- `Total closed bugs` also shows `lastClearedAt` so operators can read the baseline of the current historical view.
+- `Closed in last update` — bugs whose `closedAt` matches the latest `fetchedAt`.
+- `In similarity group` — count and percentage of bugs with `everInSimilarityGroup = true`.
+- `Last update` — formatted `fetchedAt`, or `N/A` when no session exists. That fallback is display text for a missing date, not the `NOT_AVAILABLE` sentinel.
+- `Distribution by category` — relative bar chart scaled to the max category count.
 - Each category now expands into bug-level rows with `id`, `title`, close timestamp, and coarse similarity-history status.
 - A local detail filter narrows bug rows by `id` or `title` without changing the KPI cards above.
 - Each macro-category can be collapsed independently to keep long historical lists manageable.

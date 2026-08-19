@@ -12,6 +12,8 @@ lang: en
 
 FT-13 is the first renderer-facing historical catalog feature built on top of FT-12. It adds a dedicated `Storico Chiusi` page that reads only catalog entries marked with `closedAt !== null`, derives KPI summaries in a pure renderer helper, persists the last explicit history cleanup timestamp as the current baseline, and presents loading, error, empty, and data states without changing the existing dashboard workflow. The latest refinement adds a local detail filter and collapsible macro-category sections so the historical rows stay manageable even when the catalog grows.
 
+> The Italian labels quoted throughout this page are what shipped on 2026-05-13. The page itself is a delivery record and keeps them; the UI was translated to English later, so `Storico Chiusi` now reads `Closed history` and its KPI cards read `Total closed bugs`, `Closed in last update`, `In similarity group` and `Last update`. See [[wiki/entities/closed-bugs-page]] for the current copy.
+
 ## Files Created
 
 | File                                         | Purpose                                                                  |

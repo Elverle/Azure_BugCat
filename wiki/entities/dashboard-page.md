@@ -3,7 +3,7 @@ title: 'Dashboard Page'
 type: entity
 subtype: component
 created: 2026-04-30
-updated: 2026-05-03
+updated: 2026-08-19
 sources:
 	[
 		'[[wiki/sources/ft-05-dashboard]]',
@@ -44,7 +44,7 @@ Top-level home page for browsing fetched and categorized bugs. Composes the dash
 - Recovers an active categorization after Dashboard remount because [[wiki/entities/use-dashboard-hook]] rehydrates long-running state from the main-process status IPC instead of relying on page-local state only.
 - Uses [[wiki/entities/use-bug-drawer-hook]] with either `sortedBugs` or the full bug session list, depending on the active tab, so drill-down navigation matches the visible slice.
 - Builds `filterOptions` from the full bug dataset so users can still see available values even when the current result set is narrower.
-- Reconciles stale sub-category selections when macro-category choices change.
+- Reconciles stale technical-layer selections when macro-category choices change.
 - Maintains a tri-state sort cycle (`asc` → `desc` → `none`) while keeping sorting logic in [[wiki/entities/dashboard-utils]].
 - Couples view mode to grouping defaults: switching to card mode enables `macroCategory` grouping; the table and similarity tabs clear grouping.
 - Expands all known groups whenever `groupBy` changes.

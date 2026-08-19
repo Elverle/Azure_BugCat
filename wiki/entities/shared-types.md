@@ -3,7 +3,7 @@ title: 'Shared Domain Types'
 type: entity
 subtype: model
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-08-19
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -41,7 +41,7 @@ Shared TypeScript type definitions used across main, preload, and renderer proce
 | Type                    | Purpose                                                                                               |
 | ----------------------- | ----------------------------------------------------------------------------------------------------- |
 | `BugItem`               | Raw bug from Azure DevOps (id, title, state, assignee, areaPath, description, priority, dates, tags)  |
-| `CategorizedBug`        | Extends `BugItem` with `macroCategory`, `subCategory`, `categoryReason`, `categorizedAt`              |
+| `CategorizedBug`        | Extends `BugItem` with `macroCategory`, `technicalLayer`, `categoryReason`, `categorizedAt`              |
 | `CatalogBug`            | Extends `CategorizedBug` with lifecycle timestamps, `inputSignature`, and similarity-history metadata |
 | `BugCatalog`            | `Record<number, CatalogBug>` used as the main-process historical bug catalog                          |
 | `CatalogMetadata`       | Top-level catalog metadata, currently used for `lastClearedAt`                                        |

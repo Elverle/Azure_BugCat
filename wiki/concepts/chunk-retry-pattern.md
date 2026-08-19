@@ -2,7 +2,7 @@
 title: 'Chunk & Retry Pattern'
 type: concept
 created: 2026-04-30
-updated: 2026-04-30
+updated: 2026-08-19
 sources: ['[[wiki/sources/ft-04-llm-provider]]']
 tags: [llm, resilience, chunking, retry, exponential-backoff]
 lang: en
@@ -40,7 +40,7 @@ chatWithRetry(provider, systemPrompt, userMessage): Promise<string>
 
 ```
 Per-request: retry on rate-limit
-Per-chunk: catch errors → fallback results ("Non categorizzato")
+Per-chunk: catch errors → fallback results (UNCATEGORIZED sentinel)
 Per-session: LLM_AUTH_ERROR or LLM_TIMEOUT → abort entire categorization
 ```
 

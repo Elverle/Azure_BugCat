@@ -3,7 +3,7 @@ title: 'Dashboard Utilities'
 type: entity
 subtype: library
 created: 2026-04-30
-updated: 2026-04-30
+updated: 2026-08-19
 sources: ['[[wiki/sources/ft-05-dashboard]]']
 tags: [typescript, library, dashboard, pure-functions]
 lang: en
@@ -24,7 +24,7 @@ export interface FilterState {
   statuses: string[]
   assignees: string[]
   macroCategories: string[]
-  subCategories: string[]
+  technicalLayers: string[]
   searchText: string
 }
 
@@ -33,7 +33,7 @@ export interface SortState {
   direction: 'asc' | 'desc'
 }
 
-export type GroupBy = 'none' | 'macroCategory' | 'subCategory' | 'assignee'
+export type GroupBy = 'none' | 'macroCategory' | 'technicalLayer' | 'assignee'
 
 export function filterBugs(bugs: CategorizedBug[], filters: FilterState): CategorizedBug[]
 export function sortBugs(
@@ -44,7 +44,7 @@ export function sortBugs(
 export function groupBugs(bugs: CategorizedBug[], groupBy: GroupBy): Map<string, CategorizedBug[]>
 export function computeKpis(bugs: CategorizedBug[]): KpiData
 export function getUniqueValues(bugs: CategorizedBug[], field: keyof CategorizedBug): string[]
-export function getSubCategoriesForMacros(
+export function getTechnicalLayersForMacros(
   bugs: CategorizedBug[],
   selectedMacros: string[]
 ): string[]
@@ -53,8 +53,8 @@ export function getSubCategoriesForMacros(
 ## Key Rules
 
 - Filter composition uses AND across filter families and OR within each selected list.
-- Null assignees are normalized to `Unassigned` for filtering and `Non assegnato` for grouping.
-- Empty macro/sub-category values are grouped under `Non categorizzato`.
+- Null assignees are normalized to the `UNASSIGNED` sentinel for both filtering and grouping. The two used to disagree — grouping had its own Italian key — which meant a group the user saw could not be reproduced by the filter built for the same set of bugs.
+- Empty macro-category and technical-layer values are grouped under the `UNCATEGORIZED` sentinel. Both come from [[wiki/entities/categorization-sentinels]]; this module compares and groups machine values and never resolves them to text.
 - `sortBugs()` sorts null values last regardless of direction.
 - Known date fields (`createdDate`, `updatedDate`, `categorizedAt`) are compared as timestamps instead of plain strings.
 - KPI aggregation counts only non-empty macro-categories and non-null assignees.

@@ -2,7 +2,7 @@
 title: 'Dashboard Derivation Pipeline'
 type: concept
 created: 2026-04-30
-updated: 2026-04-30
+updated: 2026-08-19
 sources: ['[[wiki/sources/ft-05-dashboard]]']
 tags: [dashboard, react, pattern, pure-functions]
 lang: en
@@ -25,7 +25,7 @@ SessionData.bugs
 - `useDashboard()` supplies the raw `bugs` array and action state.
 - `DashboardPage` wraps each derivation stage in `useMemo()` so recalculation is scoped to the relevant dependencies.
 - Filter options are derived from the full `bugs` array, not the filtered subset, which preserves discoverability of available values.
-- When macro-category filters change, a `useEffect()` reconciles stale sub-category selections against the newly valid option set.
+- When macro-category filters change, a `useEffect()` reconciles stale technical-layer selections against the newly valid option set.
 - Changing `groupBy` resets accordion expansion to all known groups.
 
 ## Trade-offs

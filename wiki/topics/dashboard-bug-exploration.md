@@ -2,7 +2,7 @@
 title: 'Dashboard Bug Exploration'
 type: topic
 created: 2026-04-30
-updated: 2026-05-03
+updated: 2026-08-19
 sources:
   [
     '[[wiki/sources/ft-05-dashboard]]',
@@ -45,7 +45,7 @@ DashboardHeader actions
 
 - Defaults to `macroCategory` grouping and expands groups automatically.
 - Uses [[wiki/entities/group-accordion]] plus [[wiki/entities/bug-card]] to emphasize cluster structure and category similarity.
-- Can also switch grouping to sub-category or assignee.
+- Can also switch grouping to technical layer or assignee.
 
 ### Similarità
 

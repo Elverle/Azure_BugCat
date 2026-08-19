@@ -2,7 +2,7 @@
 title: 'Closed Bug History Analytics'
 type: topic
 created: 2026-05-13
-updated: 2026-05-13
+updated: 2026-08-19
 sources:
   ['[[wiki/sources/ft-12-incremental-session-cache]]', '[[wiki/sources/ft-13-closed-bugs-history]]']
 tags: [catalog, history, renderer, kpi, routing, ipc]
@@ -34,7 +34,7 @@ Topbar
 - `totalClosed` is interpreted against `lastClearedAt`, which acts as the explicit baseline of the current persisted historical view.
 - `recentlyClosedCount` is not time-window based; it is the count of closed bugs whose `closedAt` exactly equals the latest `fetchedAt` timestamp.
 - `similarityGroupPercentage` is derived from `everInSimilarityGroup`, so it answers whether a bug ever participated in any historical similarity group, not whether it belongs to one now.
-- `categoryDistribution` groups by `macroCategory`, falls back to `Non categorizzato` for uncategorized historical entries, and now carries grouped bug-level rows with `id` and `title`.
+- `categoryDistribution` groups by `macroCategory`, falls back to the `UNCATEGORIZED` sentinel for uncategorized historical entries, and now carries grouped bug-level rows with `id` and `title`.
 - `lastUpdateAt` is the latest session fetch timestamp, surfaced as `N/D` when no session exists.
 
 ## UX States
