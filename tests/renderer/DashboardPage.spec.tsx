@@ -95,7 +95,7 @@ describe('DashboardPage', () => {
     mockElectronAPI.getSession.mockResolvedValue(mockSession)
     mockElectronAPI.getCategorizationStatus.mockResolvedValue({ active: false })
     mockElectronAPI.getSettings.mockResolvedValue({
-      orgUrl: 'https://dev.azure.com/alpitour',
+      orgUrl: 'https://dev.azure.com/contoso',
       projectName: 'BugCat'
     })
     mockElectronAPI.fetchBugs.mockResolvedValue(undefined)

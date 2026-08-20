@@ -11,7 +11,7 @@ const SRC = resolve(__dirname, '../../src')
  * When a false positive shows up, narrow the pattern — do not delete the test.
  */
 const ITALIAN_MARKERS =
-  /\b(perch[éè]|cos[ìi]|gi[àa]|della|delle|degli|nella|nelle|sulla|questo|questa|quindi|nessun[ao]?|errore|errori|elaborazione|categorizzat[oaie]|impostazioni|annulla|salva|chiudi|aggiorna|seleziona|determinabile|assegnat[oi]|descrizione|titolo|storico|gruppo|gruppi|simili|dettagli|conferma|pulizia|sessione)\b/i
+  /\b(perch[éè]|cos[ìi]|gi[àa]|della|delle|degli|nella|nelle|sulla|questo|questa|quindi|nessun[ao]?|errore|errori|elaborazione|categorizzat[oaie]|impostazioni|annulla|salva|chiudi|aggiorna|seleziona|determinabile|assegnat[oi]|descrizione|titolo|storico|gruppo|gruppi|simili|dettagli|conferma|pulizia|sessione|raggrupp[a-z]*)\b/i
 
 /**
  * Italian that is there on purpose. The few-shot examples in the categorization
