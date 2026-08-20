@@ -31,4 +31,16 @@ describe('package.json identity', () => {
   it('declares the node floor the workflows install with', () => {
     expect(pkg.engines?.node).toBe('>=22')
   })
+
+  it('names the product without moving the store', () => {
+    expect(pkg.build.productName).toBe('Azure BugCat')
+
+    // userData resolves to %APPDATA%/<app.getName()>, and app.getName() reads a
+    // top-level productName before falling back to name. Keeping productName
+    // under the build key alone anchors the store directory to `name`, so
+    // renaming the product cannot orphan bug-categorizer-config.json and the
+    // .bugcat-key sitting beside it. A top-level productName would move both.
+    expect(pkg.productName).toBeUndefined()
+    expect(pkg.name).toBe('bug-categorizer')
+  })
 })
