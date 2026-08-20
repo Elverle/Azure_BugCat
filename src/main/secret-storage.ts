@@ -46,3 +46,41 @@ export function decryptSecret(value: string): string {
     return ''
   }
 }
+
+/** The settings fields this module protects. Nothing else is a secret. */
+export const SECRET_FIELDS = ['pat', 'apiKey'] as const
+
+interface SecretStoreLike {
+  get(key: string): unknown
+  set(key: string, value: unknown): void
+}
+
+/**
+ * Encrypts secrets a previous version of the app persisted in plaintext.
+ *
+ * Runs on every launch rather than as a schema migration on purpose: a
+ * versioned migration fires once, and `isEncryptionAvailable()` can be false on
+ * that one launch (a Linux session with no unlocked keyring) and true on the
+ * next. A store that missed its only chance would stay in plaintext forever
+ * with a schema version claiming otherwise. This sweep simply catches up.
+ *
+ * Writes only when something actually changed, so the steady state is a read.
+ */
+export function encryptStoredSecrets(store: SecretStoreLike): void {
+  if (!isSecretEncryptionAvailable()) return
+
+  const settings = store.get('settings')
+  if (settings === null || typeof settings !== 'object') return
+
+  const current = settings as Record<string, unknown>
+  let changed = false
+
+  for (const field of SECRET_FIELDS) {
+    const value = current[field]
+    if (typeof value !== 'string' || value === '' || isEncryptedSecret(value)) continue
+    current[field] = encryptSecret(value)
+    changed = true
+  }
+
+  if (changed) store.set('settings', current)
+}

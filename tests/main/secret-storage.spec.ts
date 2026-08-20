@@ -14,7 +14,8 @@ import {
   encryptSecret,
   decryptSecret,
   isEncryptedSecret,
-  isSecretEncryptionAvailable
+  isSecretEncryptionAvailable,
+  encryptStoredSecrets
 } from '../../src/main/secret-storage'
 
 describe('secret-storage', () => {
@@ -69,5 +70,55 @@ describe('secret-storage', () => {
       throw new Error('decryption failed')
     })
     expect(decryptSecret(encryptSecret('pat-abc123'))).toBe('')
+  })
+})
+
+describe('encryptStoredSecrets', () => {
+  function fakeStore(settings: unknown) {
+    const data: Record<string, unknown> = { settings }
+    return {
+      get: (key: string) => data[key],
+      set: (key: string, value: unknown) => {
+        data[key] = value
+      },
+      read: () => data.settings as Record<string, unknown>
+    }
+  }
+
+  beforeEach(() => {
+    safeStorage.isEncryptionAvailable.mockReturnValue(true)
+    safeStorage.encryptString.mockClear()
+  })
+
+  it('encrypts the plaintext secrets a previous version left behind', () => {
+    const store = fakeStore({ orgUrl: 'https://dev.azure.com/contoso', pat: 'pat-abc', apiKey: 'sk-abc' })
+    encryptStoredSecrets(store)
+    const saved = store.read()
+    expect(isEncryptedSecret(saved.pat as string)).toBe(true)
+    expect(isEncryptedSecret(saved.apiKey as string)).toBe(true)
+    expect(saved.orgUrl).toBe('https://dev.azure.com/contoso')
+  })
+
+  it('does not rewrite the store when everything is already encrypted', () => {
+    // This runs on every launch: a write per launch would churn the config file
+    // and, on a crash mid-write, is the one moment the store can be lost.
+    const store = fakeStore({ pat: encryptSecret('pat-abc'), apiKey: '' })
+    const spy = vi.spyOn(store, 'set')
+    encryptStoredSecrets(store)
+    expect(spy).not.toHaveBeenCalled()
+  })
+
+  it('leaves the store alone when the OS has no keyring', () => {
+    safeStorage.isEncryptionAvailable.mockReturnValue(false)
+    const store = fakeStore({ pat: 'pat-abc', apiKey: '' })
+    const spy = vi.spyOn(store, 'set')
+    encryptStoredSecrets(store)
+    expect(spy).not.toHaveBeenCalled()
+    expect(store.read().pat).toBe('pat-abc')
+  })
+
+  it('survives a store with no settings at all', () => {
+    const store = fakeStore(null)
+    expect(() => encryptStoredSecrets(store)).not.toThrow()
   })
 })

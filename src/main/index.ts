@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'path'
 import { is } from '@electron-toolkit/utils'
 import { registerIPCHandlers } from './ipc-handlers'
+import { encryptStoredSecrets } from './secret-storage'
 import { store } from './store'
 import { migrateStore } from './store-migration'
 import { attachNavigationGuard } from './window-security'
@@ -48,6 +49,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   migrateStore(store)
+  encryptStoredSecrets(store)
   registerIPCHandlers()
   createWindow()
 
