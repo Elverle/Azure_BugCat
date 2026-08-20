@@ -114,9 +114,9 @@ export function SettingsPage() {
       {/* Security note — always visible */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center gap-2">
         <Shield className="w-4 h-4 shrink-0" />
-        The PAT and API key are encrypted using the operating system keychain. The rest of the
-        settings are stored locally with at-rest encryption that is obfuscation, not real
-        protection.
+        Your PAT and API key are encrypted with your operating system&apos;s keychain, and go
+        nowhere except Azure DevOps and the LLM provider you choose. Other settings are saved in
+        a local file — keep it as private as your user account.
       </div>
 
       {/* Save result feedback banner */}
