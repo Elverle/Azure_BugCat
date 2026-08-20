@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppSettings, CategorizedBug, SessionData } from '../../src/shared/types'
 import { IPC_CHANNELS } from '../../src/shared/ipc-channels'
 import { UNCATEGORIZED } from '../../src/shared/categorization'
+import { SECRET_PLACEHOLDER } from '../../src/shared/secrets'
+import { encryptSecret, decryptSecret } from '../../src/main/secret-storage'
 
 const {
   handlers,
@@ -13,7 +15,8 @@ const {
   fetchAdoAttachmentDataUrl,
   categorizeBugs,
   testLLMConnection,
-  findSimilarBugs
+  findSimilarBugs,
+  safeStorage
 } = vi.hoisted(() => ({
   handlers: new Map<string, (...args: unknown[]) => unknown>(),
   ipcMainHandle: vi.fn((channel: string, handler: (...args: unknown[]) => unknown) => {
@@ -26,13 +29,19 @@ const {
   fetchAdoAttachmentDataUrl: vi.fn(),
   categorizeBugs: vi.fn(),
   testLLMConnection: vi.fn(),
-  findSimilarBugs: vi.fn()
+  findSimilarBugs: vi.fn(),
+  safeStorage: {
+    isEncryptionAvailable: vi.fn(() => true),
+    encryptString: vi.fn((plain: string) => Buffer.from(`cipher:${plain}`)),
+    decryptString: vi.fn((buf: Buffer) => buf.toString().replace(/^cipher:/, ''))
+  }
 }))
 
 vi.mock('electron', () => ({
   ipcMain: {
     handle: ipcMainHandle
-  }
+  },
+  safeStorage
 }))
 
 vi.mock('@main/store', () => ({
@@ -146,9 +155,13 @@ describe('registerIPCHandlers', () => {
       expect(storeSet).not.toHaveBeenCalled()
     })
 
-    it('persists valid settings', async () => {
+    it('persists valid settings, encrypting the secrets before they touch disk', async () => {
       await handlers.get(IPC_CHANNELS.SETTINGS_SET)?.({}, baseSettings)
-      expect(storeSet).toHaveBeenCalledWith('settings', baseSettings)
+      const saved = storeSet.mock.calls.find(([key]) => key === 'settings')![1] as AppSettings
+      expect(saved.pat).not.toBe(baseSettings.pat)
+      expect(decryptSecret(saved.pat)).toBe(baseSettings.pat)
+      expect(decryptSecret(saved.apiKey)).toBe(baseSettings.apiKey)
+      expect(saved).toEqual({ ...baseSettings, pat: saved.pat, apiKey: saved.apiKey })
     })
   })
 
@@ -173,7 +186,9 @@ describe('registerIPCHandlers', () => {
 
     const result = await handlers.get(IPC_CHANNELS.ADO_TEST_CONNECTION)?.({}, baseSettings)
 
-    expect(storeGet).not.toHaveBeenCalled()
+    // baseSettings.pat is a real value, not the placeholder, so resolveSecrets
+    // passes it through unchanged — the placeholder-resolution tests below cover
+    // the case where the stored secret is what actually reaches testAdoConnection.
     expect(testAdoConnection).toHaveBeenCalledWith(baseSettings)
     expect(result).toEqual({ success: true, message: 'ok' })
   })
@@ -1266,6 +1281,99 @@ describe('registerIPCHandlers', () => {
       expect(result.closedBugs).toHaveLength(1)
       expect(result.fetchedAt).toBeNull()
       expect(result.lastClearedAt).toBeNull()
+    })
+  })
+
+  describe('settings secrets at the IPC boundary', () => {
+    // registerIPCHandlers wraps every handler in handle(), which is always an
+    // async function (see encodeIpcError above) — even a synchronous handler
+    // body like SETTINGS_GET's returns a Promise here, so every call must be
+    // awaited or its return value is the Promise object, not the settings.
+    const invoke = (channel: string, ...args: unknown[]): Promise<unknown> =>
+      Promise.resolve(handlers.get(channel)!(fetchEvent(), ...args))
+
+    const savedSettings = (): AppSettings =>
+      storeSet.mock.calls.find(([key]) => key === 'settings')![1] as AppSettings
+
+    it('never sends a stored secret to the renderer', async () => {
+      storeGet.mockReturnValue({
+        ...baseSettings,
+        pat: encryptSecret('pat-abc'),
+        apiKey: encryptSecret('sk-abc')
+      })
+      const received = (await invoke(IPC_CHANNELS.SETTINGS_GET)) as AppSettings
+      expect(received.pat).toBe(SECRET_PLACEHOLDER)
+      expect(received.apiKey).toBe(SECRET_PLACEHOLDER)
+      expect(JSON.stringify(received)).not.toContain('pat-abc')
+      expect(JSON.stringify(received)).not.toContain('sk-abc')
+    })
+
+    it('reports an unconfigured secret as empty, not as stored', async () => {
+      storeGet.mockReturnValue({ ...baseSettings, pat: '', apiKey: '' })
+      const received = (await invoke(IPC_CHANNELS.SETTINGS_GET)) as AppSettings
+      expect(received.pat).toBe('')
+      expect(received.apiKey).toBe('')
+    })
+
+    it('keeps the stored secret when the renderer sends the placeholder back', async () => {
+      storeGet.mockReturnValue({ ...baseSettings, pat: encryptSecret('pat-abc') })
+      await invoke(IPC_CHANNELS.SETTINGS_SET, { ...baseSettings, pat: SECRET_PLACEHOLDER, topN: 42 })
+      expect(decryptSecret(savedSettings().pat)).toBe('pat-abc')
+      expect(savedSettings().topN).toBe(42)
+    })
+
+    it('encrypts a secret the user actually typed', async () => {
+      storeGet.mockReturnValue({ ...baseSettings, pat: '' })
+      await invoke(IPC_CHANNELS.SETTINGS_SET, { ...baseSettings, pat: 'pat-new' })
+      expect(savedSettings().pat).not.toBe('pat-new')
+      expect(decryptSecret(savedSettings().pat)).toBe('pat-new')
+    })
+
+    // Clearing a secret is a renderer-side act (Task 6): a stored secret shows
+    // as the placeholder, which the user cannot meaningfully edit, so
+    // "replace" empties the *input* to let them type a new value — it does not
+    // send an empty string to SETTINGS_SET. An empty PAT is never a value this
+    // handler is meant to persist, placeholder or not: an Azure DevOps
+    // connection without one cannot work. This pins that contract so it isn't
+    // mistaken for an arbitrary restriction and "fixed" later.
+    it('refuses to persist an empty PAT', async () => {
+      storeGet.mockReturnValue({ ...baseSettings, pat: encryptSecret('pat-abc') })
+      await expect(
+        invoke(IPC_CHANNELS.SETTINGS_SET, { ...baseSettings, pat: '' })
+      ).rejects.toThrow(/^STORE_ERROR::.*Personal Access Token/)
+      expect(storeSet).not.toHaveBeenCalled()
+    })
+
+    it('resolves the placeholder before testing the ADO connection', async () => {
+      // The override is the unsaved form: it carries the placeholder, not the
+      // PAT. Testing with the literal '__stored__' would report a 401 the user
+      // cannot act on.
+      storeGet.mockReturnValue({ ...baseSettings, pat: encryptSecret('pat-abc') })
+      testAdoConnection.mockResolvedValue({ success: true, message: 'ok' })
+      await invoke(IPC_CHANNELS.ADO_TEST_CONNECTION, {
+        ...baseSettings,
+        pat: SECRET_PLACEHOLDER
+      })
+      expect(testAdoConnection).toHaveBeenCalledWith(expect.objectContaining({ pat: 'pat-abc' }))
+    })
+
+    it('resolves the placeholder before testing the LLM connection', async () => {
+      storeGet.mockReturnValue({ ...baseSettings, apiKey: encryptSecret('sk-abc') })
+      testLLMConnection.mockResolvedValue(undefined)
+      await invoke(IPC_CHANNELS.LLM_TEST_CONNECTION, {
+        ...baseSettings,
+        apiKey: SECRET_PLACEHOLDER
+      })
+      expect(testLLMConnection).toHaveBeenCalledWith(expect.objectContaining({ apiKey: 'sk-abc' }))
+    })
+
+    it('hands the decrypted PAT to the fetch, not the ciphertext', async () => {
+      storeGet.mockImplementation((key: string) =>
+        key === 'settings' ? { ...baseSettings, pat: encryptSecret('pat-abc') } : null
+      )
+      fetchBugsFromQuery.mockResolvedValue({ bugs: [], allQueryIds: [] })
+      await invoke(IPC_CHANNELS.ADO_FETCH_BUGS)
+      expect(fetchBugsFromQuery).toHaveBeenCalledWith(expect.objectContaining({ pat: 'pat-abc' }))
     })
   })
 })
