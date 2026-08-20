@@ -17,7 +17,7 @@
   <a href="https://github.com/Elverle/Azure_BugCat/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Elverle/Azure_BugCat"></a>
 </p>
 
-![The Azure BugCat dashboard: fetched bugs grouped by macro-category, with filters and a per-bug detail drawer](docs/images/dashboard.png)
+![The Azure BugCat dashboard: the fetched backlog with the LLM macro-category on every row, the filter bar above it, and the detail drawer open on one bug](docs/images/dashboard.png)
 
 ## About
 
