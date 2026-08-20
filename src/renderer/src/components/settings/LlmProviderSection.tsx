@@ -84,9 +84,23 @@ export function LlmProviderSection({
           */}
           {isSecretPlaceholder(settings.apiKey) ? (
             <div className="flex items-center gap-2">
-              <Input id="apiKey" type="password" value="" disabled className="flex-1" />
-              <span className="text-sm text-gray-600 whitespace-nowrap">API key stored</span>
-              <Button variant="outline" size="sm" onClick={() => onClearSecret('apiKey')}>
+              <Input
+                id="apiKey"
+                type="password"
+                value=""
+                disabled
+                aria-describedby="apiKey-stored-status"
+                className="flex-1"
+              />
+              <span id="apiKey-stored-status" className="text-sm text-gray-600 whitespace-nowrap">
+                API key stored
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                aria-label="Replace API key"
+                onClick={() => onClearSecret('apiKey')}
+              >
                 Replace
               </Button>
             </div>

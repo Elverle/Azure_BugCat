@@ -81,15 +81,26 @@ describe('AdoConnectionSection', () => {
   it('shows the PAT as stored instead of rendering the machine value', () => {
     renderSection({ ...baseSettings, pat: SECRET_PLACEHOLDER })
 
-    expect(screen.getByLabelText('PAT')).toHaveValue('')
+    const patInput = screen.getByLabelText('PAT')
+    expect(patInput).toHaveValue('')
     expect(screen.getByText(/token stored/i)).toBeInTheDocument()
     expect(screen.queryByDisplayValue(SECRET_PLACEHOLDER)).not.toBeInTheDocument()
+
+    // The disabled input is described by the "Token stored" status text, so a
+    // screen reader reaching it by Tab (which skips the non-focusable span)
+    // still announces why it's disabled and empty.
+    const describedById = patInput.getAttribute('aria-describedby')
+    expect(describedById).toBeTruthy()
+    expect(document.getElementById(describedById!)).toHaveTextContent(/token stored/i)
   })
 
   it('lets the user replace a stored token', () => {
+    // Queried by its accessible name, not a loose "replace" regex: this section
+    // and LlmProviderSection each render a "Replace" button, and without a
+    // distinguishing aria-label a screen reader announces both identically.
     const { onClearSecret } = renderSection({ ...baseSettings, pat: SECRET_PLACEHOLDER })
 
-    fireEvent.click(screen.getByRole('button', { name: /replace/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Replace PAT' }))
 
     expect(onClearSecret).toHaveBeenCalledWith('pat')
   })

@@ -113,9 +113,23 @@ export function AdoConnectionSection({
             */}
             {isSecretPlaceholder(settings.pat) ? (
               <div className="flex items-center gap-2">
-                <Input id="pat" type="password" value="" disabled className="flex-1" />
-                <span className="text-sm text-gray-600 whitespace-nowrap">Token stored</span>
-                <Button variant="outline" size="sm" onClick={() => onClearSecret('pat')}>
+                <Input
+                  id="pat"
+                  type="password"
+                  value=""
+                  disabled
+                  aria-describedby="pat-stored-status"
+                  className="flex-1"
+                />
+                <span id="pat-stored-status" className="text-sm text-gray-600 whitespace-nowrap">
+                  Token stored
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label="Replace PAT"
+                  onClick={() => onClearSecret('pat')}
+                >
                   Replace
                 </Button>
               </div>

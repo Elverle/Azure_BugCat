@@ -114,7 +114,9 @@ export function SettingsPage() {
       {/* Security note — always visible */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center gap-2">
         <Shield className="w-4 h-4 shrink-0" />
-        Credentials are stored locally in encrypted form using machine-specific keys.
+        The PAT and API key are encrypted using the operating system keychain. The rest of the
+        settings are stored locally with at-rest encryption that is obfuscation, not real
+        protection.
       </div>
 
       {/* Save result feedback banner */}

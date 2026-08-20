@@ -189,12 +189,23 @@ describe('LlmProviderSection', () => {
       />
     )
 
-    expect(screen.getByLabelText('OpenAI API Key')).toHaveValue('')
+    const apiKeyInput = screen.getByLabelText('OpenAI API Key')
+    expect(apiKeyInput).toHaveValue('')
     expect(screen.getByText(/api key stored/i)).toBeInTheDocument()
     expect(screen.queryByDisplayValue(SECRET_PLACEHOLDER)).not.toBeInTheDocument()
+
+    // The disabled input is described by the "API key stored" status text, so a
+    // screen reader reaching it by Tab (which skips the non-focusable span)
+    // still announces why it's disabled and empty.
+    const describedById = apiKeyInput.getAttribute('aria-describedby')
+    expect(describedById).toBeTruthy()
+    expect(document.getElementById(describedById!)).toHaveTextContent(/api key stored/i)
   })
 
   it('lets the user replace a stored API key', () => {
+    // Queried by its accessible name, not a loose "replace" regex: this section
+    // and AdoConnectionSection each render a "Replace" button, and without a
+    // distinguishing aria-label a screen reader announces both identically.
     const onClearSecret = vi.fn()
     render(
       <LlmProviderSection
@@ -209,7 +220,7 @@ describe('LlmProviderSection', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: /replace/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Replace API key' }))
 
     expect(onClearSecret).toHaveBeenCalledWith('apiKey')
   })

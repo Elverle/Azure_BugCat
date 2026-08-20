@@ -22,10 +22,13 @@ const MIN_PERSISTED_KEY_LENGTH = 16
  * and ciphertext travel together in any backup or roamed profile — unlike the
  * previous machine-id derivation, a copy of this file is enough to decrypt the
  * store elsewhere. That makes this at-rest encryption obfuscation rather than
- * real protection; `safeStorage.encryptString` (backed by the OS keychain/DPAPI)
- * would be the real answer and is deferred to a later phase. `{ mode: 0o600 }`
- * below is a no-op on Windows (no POSIX permission bits) — it only restricts
- * access on macOS/Linux.
+ * real protection for whatever it still covers. The PAT and API key no longer
+ * go through this key at all: `secret-storage.ts` encrypts them separately with
+ * `safeStorage.encryptString` (backed by the OS keychain/DPAPI), which is the
+ * real protection those two fields get. This module still guards the rest of
+ * the settings store with the key that travels with the data, as above.
+ * `{ mode: 0o600 }` below is a no-op on Windows (no POSIX permission bits) — it
+ * only restricts access on macOS/Linux.
  */
 export function getEncryptionKey(userDataPath: string): string {
   const keyPath = join(userDataPath, '.bugcat-key')
