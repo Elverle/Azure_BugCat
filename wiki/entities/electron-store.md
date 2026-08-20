@@ -3,7 +3,7 @@ title: 'Electron Store (encrypted)'
 type: entity
 subtype: service
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-08-20
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -11,7 +11,7 @@ sources:
     '[[wiki/sources/ft-08-generic-provider]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]'
   ]
-tags: [electron-store, encryption, persistence, migration, catalog]
+tags: [electron-store, encryption, persistence, migration, catalog, secrets]
 lang: en
 ---
 
@@ -28,7 +28,11 @@ Persistent configuration store backed by `electron-store` v11 with encryption. S
 1. **Primary**: `node-machine-id` generates a hardware-bound key via `machineIdSync(true)`.
 2. **Fallback**: If machine ID is unavailable, generates a 32-byte random key and persists it to `{userData}/.bugcat-key` with `mode: 0o600` (owner-only read/write).
 
-The encryption key is resolved once at module load time.
+The encryption key is resolved once at module load time. Because `.bugcat-key` sits next to the store file itself, this at-rest encryption is obfuscation rather than real protection — a copy of both files is enough to decrypt the store elsewhere. FT-14 does not change this layer, but it does narrow what it actually protects: the two credential fields, `settings.pat` and `settings.apiKey`, are encrypted separately with a real, OS-managed key before this layer ever sees them — see below.
+
+## Secret Fields (FT-14)
+
+`settings.pat` and `settings.apiKey` carry a second, independent layer of encryption on top of the whole-store encryption above: [[wiki/entities/secret-storage]] encrypts them individually with Electron's `safeStorage` (OS keychain/DPAPI/libsecret) before they are written through `store.set('settings', ...)`. A ciphertext value is prefixed `enc:v1:`. `app.whenReady()` also runs an idempotent startup sweep, `encryptStoredSecrets(store)`, that upgrades any plaintext secret a previous app version left behind — see [[wiki/entities/secret-storage]] for why this is a sweep and not a versioned migration. `settings:get` never returns the decrypted value to the renderer; see [[wiki/concepts/settings-persistence-flow]].
 
 ## Store Schema (defaults)
 
@@ -80,8 +84,10 @@ Name: `bug-categorizer-config.json` (encrypted on disk), located in Electron's `
 ## See also
 
 - [[wiki/entities/store-migration]]
+- [[wiki/entities/secret-storage]] — the real protection for `pat`/`apiKey`, on top of this layer
 - [[wiki/entities/ipc-handlers]] — reads/writes via IPC
 - [[wiki/concepts/ipc-security-model]]
+- [[wiki/concepts/settings-persistence-flow]]
 - [[wiki/concepts/schema-versioned-store-migration]]
 - [[wiki/topics/electron-architecture]]
 - [[wiki/topics/session-persistence-lifecycle]]

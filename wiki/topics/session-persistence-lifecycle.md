@@ -19,7 +19,7 @@ lang: en
 
 ## Overview
 
-Session persistence in Bug Categorizer is now a two-layer concern. `session` is the renderer-facing snapshot of currently open bugs and their derived analysis state, while `bugCatalog` is the historical main-process catalog used for lifecycle tracking and categorization reuse. Together they are populated by fetch, categorize, and similarity-analysis flows, upgraded at startup through schema migration, and selectively cleared from Settings.
+Session persistence in Azure BugCat is now a two-layer concern. `session` is the renderer-facing snapshot of currently open bugs and their derived analysis state, while `bugCatalog` is the historical main-process catalog used for lifecycle tracking and categorization reuse. Together they are populated by fetch, categorize, and similarity-analysis flows, upgraded at startup through schema migration, and selectively cleared from Settings.
 
 ## End-to-End Flow
 

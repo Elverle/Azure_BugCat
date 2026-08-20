@@ -3,7 +3,7 @@ title: 'IPC Channel Constants'
 type: entity
 subtype: config
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-08-20
 sources:
 	[
 		'[[wiki/sources/ft-01-scaffold]]',
@@ -55,10 +55,16 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 export type IPCChannel = (typeof IPC_CHANNELS)[keyof typeof IPC_CHANNELS]
 ```
 
+## FT-14 Notes
+
+- No channel was added or renamed for OS keychain secret protection, but the payload contract of `SETTINGS_GET` / `SETTINGS_SET` changed: `pat`/`apiKey` now cross the bridge as either an empty string or the [[wiki/entities/secret-storage|`SECRET_PLACEHOLDER`]] sentinel, never as the decrypted secret. See [[wiki/entities/secret-storage]] for the sentinel exchange and why the plaintext never leaves the main process.
+- `ADO_TEST_CONNECTION` and `LLM_TEST_CONNECTION` now accept an optional `settingsOverride` argument (the renderer's live, unsaved form) so a connection test can use a freshly-typed secret before it is saved; a placeholder inside that override is resolved back to the stored plaintext in the main process.
+
 ## See also
 
 - [[wiki/entities/ipc-handlers]]
 - [[wiki/entities/preload-bridge]]
 - [[wiki/entities/open-external-ipc]]
+- [[wiki/entities/secret-storage]]
 - [[wiki/topics/ai-cluster-similar-bug-detection]]
 - [[wiki/topics/historical-bug-catalog-lifecycle]]

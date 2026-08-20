@@ -15,7 +15,7 @@ lang: en
 
 ## Overview
 
-The Bug Categorizer is an Electron desktop app with a strict three-process architecture: Main, Preload, and Renderer. The design prioritizes security (sandbox, context isolation), type safety (shared IPC channel constants, typed bridge), and explicit persistence bootstrapping through store migration before app services come online.
+Azure BugCat is an Electron desktop app with a strict three-process architecture: Main, Preload, and Renderer. The design prioritizes security (sandbox, context isolation), type safety (shared IPC channel constants, typed bridge), and explicit persistence bootstrapping through store migration before app services come online.
 
 ## Architecture Diagram
 

@@ -3,14 +3,14 @@ title: 'Settings Page'
 type: entity
 subtype: component
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-08-20
 sources:
   [
     '[[wiki/sources/ft-02-settings]]',
     '[[wiki/sources/ft-07-session-persistence]]',
     '[[wiki/sources/ft-12-incremental-session-cache]]'
   ]
-tags: [react, page, settings, ui, session, catalog]
+tags: [react, page, settings, ui, session, catalog, secrets]
 lang: en
 ---
 
@@ -58,7 +58,7 @@ Top-level page component for application configuration. Composes three section c
 ## Behavior
 
 - Shows a full-page spinner while settings are loading from IPC.
-- Keeps the security note always visible: credentials are stored locally in encrypted form.
+- Keeps the security note always visible: the PAT and API key are encrypted with the operating system's keychain, while the rest of the settings store gets at-rest encryption that is obfuscation rather than real protection (FT-14).
 - Shows a save result banner: success auto-dismisses after 10 seconds, error stays dismissible.
 - Disables the save button when the form is not dirty, contains validation errors, or is currently saving.
 - Renders a session danger zone card that explains the destructive impact of clearing the current snapshot while preserving historical catalog data.
@@ -73,7 +73,7 @@ No props — uses `useSettings()` hook directly for settings state and local `us
 
 ## Dependencies
 
-- [[wiki/entities/use-settings-hook]] — settings state management
+- [[wiki/entities/use-settings-hook]] — settings state management, including `clearSecret()` for the "Replace" actions
 - [[wiki/entities/ado-connection-section]]
 - [[wiki/entities/llm-provider-section]]
 - [[wiki/entities/categories-section]]
@@ -88,3 +88,4 @@ No props — uses `useSettings()` hook directly for settings state and local `us
 - [[wiki/topics/historical-bug-catalog-lifecycle]]
 - [[wiki/concepts/settings-persistence-flow]]
 - [[wiki/concepts/accessible-confirmation-dialog]]
+- [[wiki/entities/secret-storage]]

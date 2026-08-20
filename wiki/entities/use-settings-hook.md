@@ -3,9 +3,9 @@ title: 'useSettings Hook'
 type: entity
 subtype: hook
 created: 2026-04-29
-updated: 2026-05-01
+updated: 2026-08-20
 sources: ['[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-08-generic-provider]]']
-tags: [react, hook, state-management, settings, ipc]
+tags: [react, hook, state-management, settings, ipc, secrets]
 lang: en
 ---
 
@@ -30,6 +30,7 @@ export interface UseSettingsReturn {
   isDirty: boolean
   canSave: boolean
   updateField: (field: keyof AppSettings, value: unknown) => void
+  clearSecret: (field: 'pat' | 'apiKey') => void
   save: () => Promise<void>
   clearSaveResult: () => void
   testAdoConnection: () => Promise<void>
@@ -64,7 +65,8 @@ export interface UseSettingsReturn {
 - **Dirty tracking:** `isDirty = JSON.stringify(settings) !== JSON.stringify(originalSettings)`
 - **`canSave`:** `isDirty && isSettingsValid(errors) && !saving`
 - **Save flow:** Mark all fields touched → validate → if valid, call `setSettings()` IPC → update `originalSettings`
-- **Test connections:** Race IPC call against 5 s timeout → structured result
+- **Test connections:** Race IPC call against 5 s timeout → structured result. Sends the current in-memory `settings` (which may still hold the [[wiki/entities/secret-storage|secret sentinel]] for an untouched `pat`/`apiKey`) as `settingsOverride`; the main process resolves it back to the stored plaintext.
+- **`clearSecret(field)` (FT-14):** A stored `pat`/`apiKey` arrives from `getSettings()` as the sentinel and is not directly editable — typing into it would append characters to `'__stored__'`. `clearSecret()` calls `updateField(field, '')`, which flips the field back to its normal editable, empty state so the user can type a real replacement. Wired to the "Replace" buttons in [[wiki/entities/ado-connection-section]] and [[wiki/entities/llm-provider-section]].
 - **Auto-dismiss:** Test results clear after 5 s via `useEffect` timers
 - **Categories helpers:** `categoriesToText` (join with `\n`), `textToCategories` (split, trim, deduplicate)
 
@@ -96,9 +98,11 @@ const DEFAULT_SETTINGS: AppSettings = {
 - [[wiki/entities/validation-utils]] — `validateSettings()`, `isSettingsValid()`
 - [[wiki/entities/preload-bridge]] — `window.electronAPI` (getSettings, setSettings, testAdoConnection, testLlmConnection)
 - [[wiki/entities/shared-types]] — `AppSettings`
+- [[wiki/entities/secret-storage]] — the sentinel `clearSecret()` reacts to
 
 ## See also
 
 - [[wiki/entities/settings-page]] — consumer
 - [[wiki/concepts/form-validation-pattern]]
 - [[wiki/concepts/settings-persistence-flow]]
+- [[wiki/entities/secret-storage]]

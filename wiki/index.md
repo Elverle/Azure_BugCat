@@ -1,6 +1,6 @@
-# Bug Categorizer — Wiki Index
+# Azure BugCat — Wiki Index
 
-L'applicazione **Bug Categorizer** è un'applicazione desktop costruita con **Electron + React + TypeScript** per la categorizzazione automatica dei bug Azure DevOps tramite LLM e il rilevamento di bug simili o duplicati all'interno delle categorie individuate.
+L'applicazione **Azure BugCat** è un'applicazione desktop costruita con **Electron + React + TypeScript** per la categorizzazione automatica dei bug Azure DevOps tramite LLM e il rilevamento di bug simili o duplicati all'interno delle categorie individuate.
 
 ### Struttura Wiki
 
@@ -33,6 +33,7 @@ I documenti di prodotto originali (PRD, mockup di design, definizione dei prompt
 | 11  | FT-11 | OpenRouter Provider (delivered on the official SDK, later rewritten on a shared fetch core) | Done   |
 | 12  | FT-12 | Incremental Session Cache e Re-Categorizzazione Selettiva | Done   |
 | 13  | FT-13 | Storico Chiusi - KPI storici per bug closed/done          | Done   |
+| 14  | FT-14 | OS keychain protection for the Azure DevOps PAT and the LLM API key | Done   |
 
 Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
 
@@ -60,6 +61,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/electron-store]] — Encrypted electron-store with machine-id key
 - [[wiki/entities/store-migration]] — Versioned startup migration pipeline for persisted settings/session data (FT-07)
 - [[wiki/entities/ipc-handlers]] — IPC handler registration (settings, session, ADO/LLM placeholders)
+- [[wiki/entities/secret-storage]] — OS keychain (`safeStorage`) encryption for the PAT and LLM API key, plus the renderer-facing secret sentinel (FT-14)
 - [[wiki/entities/preload-bridge]] — contextBridge with typed whitelisted API
 - [[wiki/entities/ipc-channels]] — Typed IPC channel constants (shared)
 - [[wiki/entities/shared-types]] — Domain model types (BugItem, AppSettings, SessionData, TestConnectionResult, etc.)
@@ -159,5 +161,5 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/analyses/dashboard-categorization-state-recovery]] — Dashboard categorization state now survives route remounts, reports immediate cancel feedback, and surfaces readable IPC errors (2026-05-03)
 - [[wiki/analyses/structured-output-routing-mismatch]] — OpenRouter routed a `json_schema` request to a backend that downgraded structured output support; categorization now stops and surfaces a modal error (2026-05-03)
 - [[wiki/analyses/llm-provider-cleanup]] — Shared provider helpers, shared blocking-error policy, unified tolerant JSON parsing, and direct adapter test coverage for every current LLM provider (2026-05-03)
-- [[wiki/analyses/cancel-categorization-flow]] — Categorization now supports user-triggered cancellation through abort-aware IPC and provider propagation, without persisting partial results (2026-05-03)
-- [[wiki/analyses/readme-onboarding-guide]] — Root README now documents Windows/macOS packaging, Settings quickstart, and a more functional explanation of categorization and similarity workflows (2026-05-05)
+- [[wiki/analyses/cancel-categorization-flow]] — Categorization now supports user-triggered cancellation through abort-aware IPC and provider propagation (2026-05-03); persistence was all-or-nothing at the time, but **FT-12 (2026-05-13) changed this to chunk-by-chunk persistence** — see the page's superseded note
+- [[wiki/analyses/readme-onboarding-guide]] — Root README now documents Windows/macOS packaging, Settings quickstart, and a more functional explanation of categorization and similarity workflows (2026-05-05); **superseded 2026-08-20** — the README it describes was fully rewritten in English as a public project page (min-10), see the page's superseded notice for what changed
