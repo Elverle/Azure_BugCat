@@ -31,3 +31,6 @@ Track every deliverable here using explicit prefixes:
 | 21  | min-07  | Detail filter and per-category collapse in the closed history (FT-13)                  | Complete |
 | 22  | min-08  | OpenRouter provider rewritten on the shared OpenAI-compatible core, SDK removed (FT-11) | Complete |
 | 23  | min-09  | English UI: machine-value sentinels, code-based error titles, system-locale dates       | Complete |
+| 24  | FT-14   | OS keychain protection for the Azure DevOps PAT and the LLM API key                     | Complete |
+| 25  | min-10  | Public project page: license, identity metadata, english README, contributing guide and changelog | Complete |
+| 26  | min-11  | CI and release workflows with packaged installers for Windows and macOS                 | Complete |

@@ -53,12 +53,12 @@ export function GroupAccordion({
                 {groupLabel}
               </h3>
               <span className="px-2 py-0.5 bg-white border border-gray-200 text-gray-600 rounded-full text-[10px] font-bold">
-                {bugCount} Bug
+                {bugCount} {bugCount === 1 ? 'bug' : 'bugs'}
               </span>
             </div>
             <p className="text-xs text-gray-500 mt-0.5">
               <Sparkles className="w-3 h-3 text-indigo-400 inline mr-1" />
-              Raggruppamento AI
+              Grouped by AI
             </p>
           </div>
         </div>

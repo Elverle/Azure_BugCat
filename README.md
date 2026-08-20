@@ -1,167 +1,194 @@
-# Bug Categorizer
+<h1 align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="docs/images/logo-light.png">
+    <img alt="Azure BugCat" src="docs/images/logo-light.png" width="320">
+  </picture>
+</h1>
 
-Applicazione desktop per trasformare una Saved Query di Azure DevOps in una vista di lavoro piu leggibile: i bug vengono raccolti, organizzati in categorie, e poi analizzati per individuare casi simili o potenziali duplicati.
+<p align="center">
+  Turn a messy Azure DevOps bug backlog into categorized, deduplicated,<br>
+  triage-ready groups — locally, with the LLM provider you choose.
+</p>
 
-> [!IMPORTANT]
-> Credenziali Azure DevOps, API key dei provider e dati di sessione vengono salvati in locale tramite `electron-store` cifrato e legato alla macchina corrente.
+<p align="center">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
+  <a href="https://github.com/Elverle/Azure_BugCat/actions/workflows/ci.yml"><img alt="CI status" src="https://img.shields.io/github/actions/workflow/status/Elverle/Azure_BugCat/ci.yml?branch=main&label=CI"></a>
+  <a href="https://github.com/Elverle/Azure_BugCat/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/Elverle/Azure_BugCat"></a>
+</p>
 
-## Cosa Fa
+![The Azure BugCat dashboard: the fetched backlog with the LLM macro-category on every row, the filter bar above it, and the detail drawer open on one bug](docs/images/dashboard.png)
 
-- Recupera i bug da Azure DevOps a partire da una Saved Query gia esistente.
-- Li organizza in gruppi funzionali, cosi il team non deve leggere ogni item uno per uno per capire dove si concentra il lavoro.
-- Permette di filtrare, raggruppare e aprire il dettaglio di ogni bug in una dashboard unica.
-- Evidenzia bug simili all'interno della stessa categoria, utile per riconoscere cluster, sovrapposizioni e possibili duplicati.
-- Mantiene in locale settings e ultima sessione, cosi il lavoro puo riprendere rapidamente.
+## About
 
-## Funzionalita Principali
+**Azure BugCat** is a desktop app for people who own a bug backlog they did not write. It reads the bugs from a saved Azure DevOps query, asks an LLM to sort them into categories, then makes a second pass to find the ones that describe the same problem twice.
 
-- Import dei bug via Azure DevOps REST API e Saved Query UUID.
-- Supporto a piu provider LLM: OpenAI, Anthropic, Gemini, OpenRouter e Generic.
-- Categorizzazione progressiva con avanzamento visibile e cancellazione manuale.
-- Dashboard con vista completa, gruppi per categoria e analisi di similarita.
-- Apertura sicura dei work item Azure DevOps dal dettaglio bug.
+Everything runs on your machine. There is no server, no account, and no backend of ours between you and the two services you already use — Azure DevOps and the LLM provider you configure.
 
-## In Breve: Categorizzazione E Similarita
+## Features
 
-### Categorizzazione
+- **Fetch from a saved query.** Point the app at an existing Azure DevOps work item query; an incremental cache re-reads only what changed since the last fetch.
+- **Categorize with your own provider.** OpenAI, Anthropic, Google Gemini, OpenRouter, or any OpenAI-compatible endpoint. Each bug comes back with a macro-category, a technical layer, and a one-line reason.
+- **Find the duplicates.** A second pass compares bugs inside each macro-category and groups the ones that look like the same issue.
+- **Track what gets closed.** Closed bugs accumulate in a local catalog that feeds a KPI page, so the history survives even after the query stops returning them.
+- **Steer the taxonomy, or don't.** Supply your own list of categories, or leave the field empty and let the model propose them.
+- **Keys in the system keychain.** Wherever the operating system provides one, the Azure DevOps token and the API key are encrypted with it rather than left in a config file.
 
-La categorizzazione serve a dare ordine al backlog.
+## Download & install
 
-- Ogni bug viene assegnato a una macro-categoria e a una sotto-categoria.
-- Il sistema restituisce anche una motivazione sintetica, utile per capire perchè il bug è stato messo in quel gruppo.
-- Il risultato pratico è una lista meno caotica, più adatta a triage, pianificazione e confronto tra aree di problema.
+Grab the installer for your platform from the [latest release](https://github.com/Elverle/Azure_BugCat/releases/latest). You do not need Node.js, npm, or a checkout of this repository to run the app.
 
-### Analisi Similarita
+| Platform | File | Notes |
+| --- | --- | --- |
+| Windows | `Azure BugCat Setup <version>.exe` | NSIS installer |
+| macOS (Apple silicon) | `Azure BugCat-<version>-arm64.dmg` | Open the dmg, drag the app to Applications |
+| macOS (Intel) | `Azure BugCat-<version>.dmg` | Same, for x64 machines |
 
-L'analisi di similarita interviene dopo la categorizzazione.
+### The installers are not signed
 
-- Lavora dentro le macro-categorie gia individuate.
-- Cerca gruppi di bug che sembrano riferirsi allo stesso problema o a problemi molto vicini.
-- Aiuta a individuare duplicati, pattern ricorrenti e aree dove conviene consolidare il lavoro.
+There is no Apple Developer certificate and no Windows code-signing certificate for version 1.0, so both operating systems will warn you the first time:
 
-## Distribuzione Per Utenti Windows E Mac
+- **Windows** shows a SmartScreen blue box. Click *More info*, then *Run anyway*.
+- **macOS** refuses to open the app on a double-click. Right-click the app, choose *Open*, then confirm.
 
-Se vuoi preparare un pacchetto da distribuire agli utenti finali, usa il comando di packaging invece di `npm run dev`.
+That warning means the binary is unattributed, not that it is unsafe — but you only have our word for it, which is exactly why the workflow that builds these installers [is in the repository](.github/workflows/release.yml) and builds them from the tagged source.
 
-```bash
-npm install
-npm run package
-```
+### What you need to bring
 
-I pacchetti vengono generati nella cartella `dist-electron/`.
+- An Azure DevOps organization and project.
+- A saved work item query returning the bugs you care about.
+- A personal access token scoped to **Work Items · Read**. Nothing in the app writes back to Azure DevOps.
+- An API key for one of the supported LLM providers. Categorizing bugs costs whatever that provider charges for the tokens.
 
-### Windows
+See the [changelog](CHANGELOG.md) for what shipped in this version.
 
-- Il target configurato e `nsis`, quindi il risultato atteso e un installer `.exe`.
-- Esegui il packaging da una macchina Windows per ottenere il pacchetto piu lineare da distribuire agli utenti Windows.
-- Una volta generato l'installer, puoi condividerlo direttamente: l'utente lo apre e completa l'installazione guidata.
+## Quickstart
 
-### macOS
+1. Install the app and open it. The dashboard starts empty.
+2. Go to **Settings** and fill in the **Azure DevOps Connection** section: organization URL, project name, saved query ID, and your PAT.
+3. Fill in the **LLM Provider** section: pick a provider, paste the API key, and name the model you want to use.
+4. Optionally list your own categories in the **Categories** box, one per line.
+5. Press **Test Connection** in both sections, then **Save Settings**. A saved token stops being editable and the field reads *Token stored*; press **Replace** to swap it later.
+6. Back on the dashboard, press **Fetch Bugs**, then **Categorize**. Progress is visible chunk by chunk and can be cancelled.
+7. Open the **Similarity** tab and press **Analyze similarity** for the duplicate groups. The **Closed history** page holds the KPIs.
 
-- Il target configurato e `dmg`, quindi per gli utenti Mac il pacchetto da distribuire e un file `.dmg`.
-- Per generare il pacchetto macOS in modo affidabile conviene eseguire `npm run package` da un Mac.
-- L'utente Mac apre il `.dmg`, trascina l'app in `Applications` e la avvia da li.
-- Se l'app non e firmata, al primo avvio puo essere necessario usare `tasto destro > Apri` per superare il blocco iniziale di Gatekeeper.
+![The Settings page with the Azure DevOps and LLM provider sections filled in, showing a stored token](docs/images/settings.png)
 
-> [!NOTE]
-> Gli utenti finali che ricevono l'installer Windows o il pacchetto macOS non hanno bisogno di Node.js o npm.
+## Settings reference
 
-## Quickstart Operativo
+| Field | Required | Example | What it does |
+| --- | --- | --- | --- |
+| Organization URL | Yes | `https://dev.azure.com/your-org` | The Azure DevOps organization to query |
+| Project Name | Yes | `PaymentsPlatform` | The project the saved query belongs to |
+| Saved Query ID | Yes | `12345678-1234-1234-1234-123456789abc` | The UUID of the query, from its URL in Azure DevOps |
+| Top N Bugs | Yes | `20` | How many bugs to pull in one fetch |
+| PAT | Yes | — | Personal access token, scope **Work Items · Read** |
+| Provider | Yes | `openai` | One of `openai`, `anthropic`, `gemini`, `openrouter`, `generic` |
+| API Key | Yes | — | Credential for the selected provider |
+| Base URL | Only for `generic` | `https://api.example.com/v1` | The OpenAI-compatible endpoint to call |
+| Model | Recommended | `gpt-4.1-mini` | The model used for both passes |
+| Chunk Size | Yes | `15` | How many bugs go into a single request |
+| Categories | Optional | one per line | Your taxonomy; empty means the model proposes its own |
 
-Alla prima apertura dell'app vai subito nella pagina `Settings` e compila questi dati minimi.
+## How it works
 
-### 1. Azure DevOps Connection
+### Categorization
 
-| Campo            | Obbligatorio | Esempio                                | A cosa serve                                             |
-| ---------------- | ------------ | -------------------------------------- | -------------------------------------------------------- |
-| Organization URL | Si           | `https://dev.azure.com/your-org`       | Identifica l'organizzazione Azure DevOps da interrogare. |
-| Project Name     | Si           | `PaymentsPlatform`                     | Limita il lavoro al project corretto.                    |
-| Saved Query ID   | Si           | `12345678-1234-1234-1234-123456789abc` | Dice all'app quale query usare per recuperare i bug.     |
-| Top N Bugs       | Si           | `20`                                   | Decide quanti bug importare nella sessione.              |
-| PAT              | Si           | `ado_pat_...`                          | Permette all'app di autenticarsi verso Azure DevOps.     |
+The app pulls up to *Top N* bugs from the saved query and sends them to the provider in chunks of *Chunk Size*. Each bug comes back with three things: a **macro-category** (the functional area), a **technical layer**, and a short **reason** explaining the assignment — so a category you disagree with is arguable rather than opaque.
 
-### 2. LLM Provider
+Chunking is what keeps a long backlog inside the model's context window and lets the run report progress instead of blocking. It also makes cancelling cheap: every chunk is saved as it completes, so stopping a run keeps the bugs already categorized and leaves the rest untouched.
 
-| Campo      | Obbligatorio | Esempio                      | A cosa serve                                                     |
-| ---------- | ------------ | ---------------------------- | ---------------------------------------------------------------- |
-| Provider   | Si           | `OpenAI`                     | Sceglie il motore AI da usare per categorizzazione e similarita. |
-| API Key    | Si           | `sk-...`                     | Autentica il provider scelto.                                    |
-| Base URL   | Solo Generic | `https://api.example.com/v1` | Serve solo per endpoint OpenAI-compatible personalizzati.        |
-| Model      | Consigliato  | `gpt-4.1-mini`               | Definisce il modello effettivamente usato.                       |
-| Chunk Size | Si           | `15`                         | Decide quanti bug inviare per volta al provider.                 |
+### Similarity
 
-### 3. Categories
+Similarity is a second pass, and it only compares bugs that already share a macro-category. Two bugs from different areas of the product are not candidates for being the same bug, so excluding them makes each comparison cheaper and the groups it does find more credible.
 
-- Se vuoi guidare la categorizzazione, inserisci una categoria per riga.
-- Se lasci il campo vuoto, il sistema genera le categorie automaticamente.
+![The similarity view: bugs grouped into clusters that appear to describe the same problem](docs/images/similarity.png)
 
-### 4. Salva E Verifica
+### Closed-bug history
 
-1. Premi `Test Connection` nella sezione Azure DevOps.
-2. Premi `Test Connection` nella sezione LLM Provider.
-3. Premi `Save Settings`.
+A bug that gets closed eventually falls out of the saved query, and with it any record that it existed. The app keeps its own catalog: bugs it has seen stay there with their category, and closed ones feed a KPI page that shows what the team actually cleared over time. The catalog also means a second fetch only re-categorizes bugs that are new or have changed.
 
-## Flusso Di Utilizzo
+![The Closed history page: KPI cards and a table of the bugs closed over time](docs/images/closed-history.png)
 
-1. Apri l'app e completa le `Settings`.
-2. Vai in dashboard e premi `Fetch Bugs`.
-3. Quando i bug sono caricati, premi `Categorize`.
-4. Leggi i risultati in vista tabellare oppure raggruppata.
-5. Apri la tab `Similarita` per vedere gruppi di bug che sembrano collegati tra loro.
-6. Usa il drawer di dettaglio per verificare metadati, motivazione della categoria e link al work item Azure DevOps.
+## Privacy & data
 
-## Requisiti Per Creare I Pacchetti
+**What leaves your machine.** Two destinations, both of them yours:
 
-- Node.js 20 o superiore
-- npm
-- Una macchina Windows per creare l'installer `.exe`
-- Una macchina macOS per creare il pacchetto `.dmg`
+- **Azure DevOps** receives the query the app runs, authenticated with your PAT.
+- **Your configured LLM provider** receives the id, title, description and tags of the bugs being categorized. Nothing else, and nowhere else — there is no analytics, no telemetry, and no update ping.
 
-## Stack Tecnologico
+**What stays local.** The bug catalog, the current session, and your settings live in the app's `userData` directory on your machine.
 
-- Electron + electron-vite
-- React 18 + TypeScript
-- Tailwind CSS
-- Vitest per test unitari e di integrazione
-- `electron-store` per la persistenza locale cifrata
+**How the credentials are protected.** The PAT and the API key are encrypted with the operating system's own keychain via Electron's `safeStorage` — DPAPI on Windows, Keychain on macOS, libsecret on Linux — and stored as ciphertext. If you installed an earlier version that saved them in the clear, the app re-encrypts them the next time it starts.
 
-## Comandi Utili Per Manutenzione
+**What that protection is not.** The rest of the settings store is encrypted with a key file that sits next to the data itself: anyone who can copy both can read it, so treat that layer as obfuscation rather than security. And no at-rest encryption of any kind — including the keychain one — protects you from malicious code running as your own operating system user. If something is already running as you, it can ask the keychain the same way the app does.
 
-```bash
-npm run package
-npm run build
-npm run test
-npm run test:coverage
-```
-
-> [!NOTE]
-> Lo script `npm run lint` usa ancora la configurazione ESLint legacy e al momento non e allineato a ESLint 9.
-
-## Struttura Del Progetto
-
-```text
-src/
-  main/       Main process Electron, handler IPC, servizi Azure DevOps e LLM
-  preload/    Bridge sicuro esposto al renderer
-  renderer/   Applicazione React, pagine, hook e componenti UI
-  shared/     Contratti cross-process e tipi di dominio
-tests/
-  main/       Test del main process
-  renderer/   Test renderer e UI
-wiki/         Base di conoscenza tecnica interna del progetto
-```
+**On Linux without a keyring.** Where no unlocked libsecret keyring is available the keychain cannot be used, and the two secrets stay exactly as previous versions stored them: inside the store file, under that same travelling key. The app checks again on every launch and encrypts them properly as soon as a keyring appears.
 
 ## Troubleshooting
 
-> [!TIP]
-> I problemi piu comuni derivano da Settings incompleti, credenziali scadute o mismatch tra provider e model.
+Every error dialog shows one of these titles, with the underlying message below it as detail.
 
-- Se `Saved Query ID` non viene accettato, verifica di aver copiato un vero UUID.
-- Se il fetch Azure DevOps fallisce, ricontrolla Organization URL, Project Name, Query ID e PAT.
-- Se il test LLM fallisce, verifica API key, provider selezionato, model e Base URL del provider Generic.
-- Se una categorizzazione viene annullata, l'app ripristina il dataset persistito precedente e non mantiene risultati parziali.
+| What you see | What it usually means |
+| --- | --- |
+| **Azure DevOps authentication failed** | The PAT is wrong, expired, or lacks the *Work Items · Read* scope |
+| **Azure DevOps resource not found** | The organization URL, project name, or saved query ID does not resolve — a query ID must be a UUID, not a query name |
+| **The query returned no bugs** | The query works but matches nothing; check its filters in Azure DevOps |
+| **Azure DevOps request timed out** | Network or a VPN in the way; retry before changing settings |
+| **LLM provider authentication failed** | Wrong or revoked API key, or a key belonging to a different provider than the one selected |
+| **LLM provider rate limit reached** | The provider is throttling. Lower *Chunk Size*, or wait and retry |
+| **The LLM request timed out** | Usually a chunk too large for the model. Lower *Chunk Size* |
+| **The LLM response could not be read** | The model answered with something that is not the expected structure — common with very small or non-instruct models. Try a stronger model |
+| **Operation cancelled** | You stopped the run. Chunks that finished before you pressed cancel are kept |
+| **Configuration problem** | Settings could not be read or written on disk |
+| **Unexpected error** | Anything the app could not classify. The detail line is the useful part when reporting it |
 
-## Riferimenti Aggiuntivi
+Nothing helped? [Open an issue](https://github.com/Elverle/Azure_BugCat/issues) with the error title and the detail line.
 
-- La documentazione tecnica interna e mantenuta nella cartella `wiki/`.
-- Lo storico delle delivery e mantenuto in `feature-index.md`.
+## How it's built
+
+Azure BugCat is an Electron app — React and TypeScript in the renderer, the Azure DevOps and LLM clients in the main process, and a preload bridge that is the only way across. It was built with Claude Code, spec first, and the paper trail is part of the repository rather than something that was cleaned up before publishing:
+
+| Where | What's in it |
+| --- | --- |
+| [`feature/`](feature/) | The written spec each of the thirteen features was built from, before any code |
+| [`feature-index.md`](feature-index.md) | The delivery register: one row per shipped item |
+| [`wiki/`](wiki/) | The architectural knowledge base — components, concepts, and the reasoning behind the decisions |
+| [`.claude/`](.claude/) and [`.github/agents/`](.github/agents/) | The agent definitions used during development |
+
+Some of the older material under `feature/` and `wiki/` is written in Italian. The application, its tests, and everything written since are in English.
+
+## Development
+
+```bash
+git clone https://github.com/Elverle/Azure_BugCat.git
+cd Azure_BugCat
+npm ci
+npm run dev
+```
+
+Node.js 22 or later. Before opening a pull request, the full gate has to pass:
+
+```bash
+npm run lint && npm run typecheck && npm test && npm run build
+```
+
+To build installers locally, run `npm run package`; they land in `dist-electron/`. Each platform's installer has to be built on that platform.
+
+## Contributing
+
+Contributions are welcome. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers the setup, the gate, the commit convention, and how the project is laid out.
+
+## Roadmap
+
+Deliberately left out of 1.0, in rough order of how much they would help:
+
+- [ ] Signed and notarized installers, so the first launch stops looking alarming
+- [ ] Auto-update
+- [ ] An animated walkthrough of the fetch → categorize → deduplicate flow
+- [ ] A SQLite catalog, replacing the JSON store as the history grows
+- [ ] A translatable UI, and an English translation of the older wiki pages
+
+## License
+
+Azure BugCat is licensed under the MIT license. See [`LICENSE`](LICENSE) for the full text.

@@ -13,6 +13,8 @@ import {
 } from '../shared/types'
 import { encodeIpcError, throwAppError } from '@shared/app-error'
 import { assertValidSettings } from '@shared/validation'
+import { SECRET_PLACEHOLDER, isSecretPlaceholder } from '@shared/secrets'
+import { encryptSecret, decryptSecret } from './secret-storage'
 import { fetchBugsFromQuery, testAdoConnection } from './ado/ado-service'
 import { fetchAdoAttachmentDataUrl } from './ado/ado-client'
 import { categorizeBugs, testLLMConnection, findSimilarBugs } from './llm'
@@ -41,6 +43,36 @@ function handle<Args extends unknown[]>(
   })
 }
 
+/**
+ * Every read of the settings that feeds real work goes through here: Azure
+ * DevOps and the LLM providers need the plaintext secret, and this is the only
+ * place that produces it. `store.get('settings')` must not be called directly
+ * anywhere else in this file.
+ */
+function readSettings(): AppSettings | null {
+  const stored = store.get('settings') as AppSettings | null
+  if (!stored) return null
+  return {
+    ...stored,
+    pat: decryptSecret(stored.pat ?? ''),
+    apiKey: decryptSecret(stored.apiKey ?? '')
+  }
+}
+
+/**
+ * Replaces the placeholders in a payload the renderer sent with the secrets it
+ * never received. Used by the connection tests, whose override is the unsaved
+ * form: without this they would authenticate with the literal '__stored__'.
+ */
+function resolveSecrets(candidate: AppSettings): AppSettings {
+  const stored = readSettings()
+  return {
+    ...candidate,
+    pat: isSecretPlaceholder(candidate.pat) ? (stored?.pat ?? '') : candidate.pat,
+    apiKey: isSecretPlaceholder(candidate.apiKey) ? (stored?.apiKey ?? '') : candidate.apiKey
+  }
+}
+
 export function registerIPCHandlers(): void {
   const categorizeControllers = new Map<number, AbortController>()
   const similarityControllers = new Map<number, AbortController>()
@@ -53,13 +85,29 @@ export function registerIPCHandlers(): void {
 
   // Settings
   handle(IPC_CHANNELS.SETTINGS_GET, () => {
-    return store.get('settings')
+    const stored = store.get('settings') as AppSettings | null
+    if (!stored) return stored
+    // The renderer gets a marker, never the secret. It sends the marker back on
+    // save, and SETTINGS_SET reads that as "keep what you have".
+    return {
+      ...stored,
+      pat: stored.pat ? SECRET_PLACEHOLDER : '',
+      apiKey: stored.apiKey ? SECRET_PLACEHOLDER : ''
+    }
   })
   handle(IPC_CHANNELS.SETTINGS_SET, (_event, settings: unknown) => {
     // The renderer already validates before calling this, but the main process is
     // the actual trust boundary — a malformed or out-of-range payload persisted
     // here would corrupt the store for every later read (review 2.4).
-    store.set('settings', assertValidSettings(settings))
+    const incoming = assertValidSettings(settings)
+    const stored = store.get('settings') as AppSettings | null
+    store.set('settings', {
+      ...incoming,
+      pat: isSecretPlaceholder(incoming.pat) ? (stored?.pat ?? '') : encryptSecret(incoming.pat),
+      apiKey: isSecretPlaceholder(incoming.apiKey)
+        ? (stored?.apiKey ?? '')
+        : encryptSecret(incoming.apiKey ?? '')
+    })
   })
 
   // Session
@@ -107,7 +155,7 @@ export function registerIPCHandlers(): void {
       throwAppError('UNKNOWN_ERROR', 'Fetch already in progress')
     }
 
-    const settings = store.get('settings') as AppSettings | null
+    const settings = readSettings()
     if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
     const token = Symbol('ado-fetch')
@@ -151,7 +199,7 @@ export function registerIPCHandlers(): void {
     }
   })
   handle(IPC_CHANNELS.ADO_TEST_CONNECTION, async (_event, settingsOverride?: AppSettings) => {
-    const settings = settingsOverride ?? (store.get('settings') as AppSettings | null) ?? null
+    const settings = settingsOverride ? resolveSecrets(settingsOverride) : readSettings()
     if (!settings) return { success: false, message: 'Settings not configured' }
     return testAdoConnection(settings)
   })
@@ -160,7 +208,7 @@ export function registerIPCHandlers(): void {
       throwAppError('ADO_NOT_FOUND', 'Missing attachment URL')
     }
 
-    const settings = store.get('settings') as AppSettings | null
+    const settings = readSettings()
     if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
     return fetchAdoAttachmentDataUrl(settings, url)
@@ -172,7 +220,7 @@ export function registerIPCHandlers(): void {
     let abortController: AbortController | null = null
 
     try {
-      const settings = store.get('settings') as AppSettings | null
+      const settings = readSettings()
       if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
       const session = store.get('session') as SessionData | null
@@ -280,7 +328,7 @@ export function registerIPCHandlers(): void {
     return { active: categorizeControllers.has(event.sender.id) }
   })
   handle(IPC_CHANNELS.LLM_TEST_CONNECTION, async (_event, settingsOverride?: AppSettings) => {
-    const settings = settingsOverride ?? (store.get('settings') as AppSettings | null) ?? null
+    const settings = settingsOverride ? resolveSecrets(settingsOverride) : readSettings()
     if (!settings)
       return { success: false, message: 'Settings not configured' } as TestConnectionResult
 
@@ -306,7 +354,7 @@ export function registerIPCHandlers(): void {
       throwAppError('UNKNOWN_ERROR', 'Similarity analysis already in progress')
     }
 
-    const settings = store.get('settings') as AppSettings | null
+    const settings = readSettings()
     if (!settings) throwAppError('STORE_ERROR', 'Settings not configured')
 
     const session = store.get('session') as SessionData | null

@@ -18,6 +18,7 @@ export function SettingsPage() {
     saveResult,
     canSave,
     updateField,
+    clearSecret,
     save,
     clearSaveResult,
     testAdoConnection,
@@ -113,7 +114,9 @@ export function SettingsPage() {
       {/* Security note — always visible */}
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800 flex items-center gap-2">
         <Shield className="w-4 h-4 shrink-0" />
-        Credentials are stored locally in encrypted form using machine-specific keys.
+        Your PAT and API key are encrypted with your operating system&apos;s keychain, and go
+        nowhere except Azure DevOps and the LLM provider you choose. Other settings are saved in
+        a local file — keep it as private as your user account.
       </div>
 
       {/* Save result feedback banner */}
@@ -150,6 +153,7 @@ export function SettingsPage() {
         errors={errors}
         touched={touched}
         onFieldChange={updateField}
+        onClearSecret={clearSecret}
         onTestConnection={testAdoConnection}
         testResult={testAdoResult}
         testLoading={testAdoLoading}
@@ -160,6 +164,7 @@ export function SettingsPage() {
         errors={errors}
         touched={touched}
         onFieldChange={updateField}
+        onClearSecret={clearSecret}
         onTestConnection={testLlmConnection}
         testResult={testLlmResult}
         testLoading={testLlmLoading}

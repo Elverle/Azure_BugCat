@@ -326,7 +326,7 @@ export function DashboardPage(): JSX.Element {
               )}
             >
               <Layers className="w-4 h-4 mr-2 inline" />
-              AI Clusters (Raggruppati)
+              AI Clusters
             </button>
             <button
               onClick={() => setTab('similarity')}

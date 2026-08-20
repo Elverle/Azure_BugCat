@@ -4,9 +4,10 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { LlmProviderSection } from '@renderer/components/settings/LlmProviderSection'
 import type { AppSettings } from '@shared/types'
+import { SECRET_PLACEHOLDER } from '@shared/secrets'
 
 const baseSettings: AppSettings = {
-  orgUrl: 'https://dev.azure.com/gversino',
+  orgUrl: 'https://dev.azure.com/contoso',
   projectName: 'BugCat',
   queryId: '123e4567-e89b-12d3-a456-426614174000',
   topN: 20,
@@ -26,6 +27,7 @@ describe('LlmProviderSection', () => {
         errors={{}}
         touched={{}}
         onFieldChange={onFieldChange}
+        onClearSecret={vi.fn()}
         onTestConnection={vi.fn().mockResolvedValue(undefined)}
         testResult={null}
         testLoading={false}
@@ -51,6 +53,7 @@ describe('LlmProviderSection', () => {
         errors={{}}
         touched={{}}
         onFieldChange={onFieldChange}
+        onClearSecret={vi.fn()}
         onTestConnection={vi.fn().mockResolvedValue(undefined)}
         testResult={null}
         testLoading={false}
@@ -70,6 +73,7 @@ describe('LlmProviderSection', () => {
         errors={{}}
         touched={{}}
         onFieldChange={onFieldChange}
+        onClearSecret={vi.fn()}
         onTestConnection={vi.fn().mockResolvedValue(undefined)}
         testResult={null}
         testLoading={false}
@@ -84,6 +88,7 @@ describe('LlmProviderSection', () => {
         errors={{}}
         touched={{}}
         onFieldChange={onFieldChange}
+        onClearSecret={vi.fn()}
         onTestConnection={vi.fn().mockResolvedValue(undefined)}
         testResult={null}
         testLoading={false}
@@ -101,6 +106,7 @@ describe('LlmProviderSection', () => {
         errors={{}}
         touched={{}}
         onFieldChange={onFieldChange}
+        onClearSecret={vi.fn()}
         onTestConnection={vi.fn().mockResolvedValue(undefined)}
         testResult={null}
         testLoading={false}
@@ -119,6 +125,7 @@ describe('LlmProviderSection', () => {
         errors={{}}
         touched={{}}
         onFieldChange={vi.fn()}
+        onClearSecret={vi.fn()}
         onTestConnection={vi.fn().mockResolvedValue(undefined)}
         testResult={null}
         testLoading={false}
@@ -136,6 +143,7 @@ describe('LlmProviderSection', () => {
         errors={{}}
         touched={{}}
         onFieldChange={onFieldChange}
+        onClearSecret={vi.fn()}
         onTestConnection={vi.fn().mockResolvedValue(undefined)}
         testResult={null}
         testLoading={false}
@@ -155,6 +163,7 @@ describe('LlmProviderSection', () => {
         errors={{}}
         touched={{}}
         onFieldChange={onFieldChange}
+        onClearSecret={vi.fn()}
         onTestConnection={vi.fn().mockResolvedValue(undefined)}
         testResult={null}
         testLoading={false}
@@ -164,5 +173,55 @@ describe('LlmProviderSection', () => {
     fireEvent.change(screen.getByLabelText('Chunk Size'), { target: { value: '1e5' } })
 
     expect(onFieldChange).toHaveBeenCalledWith('chunkSize', 100000)
+  })
+
+  it('shows the API key as stored instead of rendering the machine value', () => {
+    render(
+      <LlmProviderSection
+        settings={{ ...baseSettings, apiKey: SECRET_PLACEHOLDER }}
+        errors={{}}
+        touched={{}}
+        onFieldChange={vi.fn()}
+        onClearSecret={vi.fn()}
+        onTestConnection={vi.fn().mockResolvedValue(undefined)}
+        testResult={null}
+        testLoading={false}
+      />
+    )
+
+    const apiKeyInput = screen.getByLabelText('OpenAI API Key')
+    expect(apiKeyInput).toHaveValue('')
+    expect(screen.getByText(/api key stored/i)).toBeInTheDocument()
+    expect(screen.queryByDisplayValue(SECRET_PLACEHOLDER)).not.toBeInTheDocument()
+
+    // The disabled input is described by the "API key stored" status text, so a
+    // screen reader reaching it by Tab (which skips the non-focusable span)
+    // still announces why it's disabled and empty.
+    const describedById = apiKeyInput.getAttribute('aria-describedby')
+    expect(describedById).toBeTruthy()
+    expect(document.getElementById(describedById!)).toHaveTextContent(/api key stored/i)
+  })
+
+  it('lets the user replace a stored API key', () => {
+    // Queried by its accessible name, not a loose "replace" regex: this section
+    // and AdoConnectionSection each render a "Replace" button, and without a
+    // distinguishing aria-label a screen reader announces both identically.
+    const onClearSecret = vi.fn()
+    render(
+      <LlmProviderSection
+        settings={{ ...baseSettings, apiKey: SECRET_PLACEHOLDER }}
+        errors={{}}
+        touched={{}}
+        onFieldChange={vi.fn()}
+        onClearSecret={onClearSecret}
+        onTestConnection={vi.fn().mockResolvedValue(undefined)}
+        testResult={null}
+        testLoading={false}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Replace API key' }))
+
+    expect(onClearSecret).toHaveBeenCalledWith('apiKey')
   })
 })

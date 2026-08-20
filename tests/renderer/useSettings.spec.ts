@@ -3,10 +3,11 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppSettings } from '@shared/types'
+import { SECRET_PLACEHOLDER } from '@shared/secrets'
 import { useSettings } from '@renderer/hooks/useSettings'
 
 const validSettings: AppSettings = {
-  orgUrl: 'https://dev.azure.com/gversino',
+  orgUrl: 'https://dev.azure.com/contoso',
   projectName: 'BugCat',
   queryId: '123e4567-e89b-12d3-a456-426614174000',
   topN: 20,
@@ -339,5 +340,73 @@ describe('useSettings', () => {
     })
 
     expect(result.current.settings.categories).toEqual([])
+  })
+
+  describe('stored secrets', () => {
+    it('is not dirty just because the secrets came back as placeholders', async () => {
+      installElectronApiMock({
+        getSettings: vi.fn().mockResolvedValue({ ...validSettings, pat: SECRET_PLACEHOLDER })
+      })
+      const { result } = renderHook(() => useSettings())
+
+      await waitFor(() => expect(result.current.loading).toBe(false))
+
+      expect(result.current.isDirty).toBe(false)
+    })
+
+    it('sends the placeholder back untouched when the user changes something else', async () => {
+      const electronAPI = installElectronApiMock({
+        getSettings: vi.fn().mockResolvedValue({ ...validSettings, pat: SECRET_PLACEHOLDER })
+      })
+      const { result } = renderHook(() => useSettings())
+
+      await waitFor(() => expect(result.current.loading).toBe(false))
+
+      act(() => {
+        result.current.updateField('topN', 30)
+      })
+
+      await act(async () => {
+        await result.current.save()
+      })
+
+      expect(electronAPI.setSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ pat: SECRET_PLACEHOLDER })
+      )
+    })
+
+    it('clearSecret empties the field so a new value can be typed', async () => {
+      installElectronApiMock({
+        getSettings: vi.fn().mockResolvedValue({ ...validSettings, pat: SECRET_PLACEHOLDER })
+      })
+      const { result } = renderHook(() => useSettings())
+
+      await waitFor(() => expect(result.current.loading).toBe(false))
+
+      act(() => {
+        result.current.clearSecret('pat')
+      })
+
+      expect(result.current.settings.pat).toBe('')
+      expect(result.current.isDirty).toBe(true)
+    })
+
+    it('keeps the form saveable while the secret is only stored', async () => {
+      // The placeholder is a non-empty string, so validateRequired passes. This
+      // test exists so a future change to validation cannot silently lock the
+      // user out of saving anything at all.
+      installElectronApiMock({
+        getSettings: vi.fn().mockResolvedValue({ ...validSettings, pat: SECRET_PLACEHOLDER })
+      })
+      const { result } = renderHook(() => useSettings())
+
+      await waitFor(() => expect(result.current.loading).toBe(false))
+
+      act(() => {
+        result.current.updateField('topN', 30)
+      })
+
+      expect(result.current.canSave).toBe(true)
+    })
   })
 })

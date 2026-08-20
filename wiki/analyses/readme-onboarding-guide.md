@@ -2,7 +2,7 @@
 title: 'Analysis: Root README onboarding guide'
 type: analysis
 created: 2026-05-05
-updated: 2026-05-05
+updated: 2026-08-20
 sources:
   [
     '[[wiki/sources/ft-02-settings]]',
@@ -12,6 +12,8 @@ sources:
 tags: [analysis, documentation, onboarding, readme]
 lang: en
 ---
+
+> **Superseded (2026-08-20):** commit `d4f5589` ("rewrite the readme as a public project page", min-10) replaced the Italian, developer-oriented README this analysis describes with a full rewrite in English, aimed at the project's public GitHub audience rather than at an internal operator. Everything below this notice is kept as the historical record of the FT-02/FT-03-era onboarding README (created 2026-05-05, last touched 2026-05-05) — it no longer describes `README.md` as it exists today. See [`README.md`](../../README.md) for the current content; the sections that carry the most conceptual continuity from this analysis are **Quickstart** (Settings walkthrough), **Settings reference** (the same field table this analysis called for), **How it works** (categorization/similarity/closed-history explained functionally), a new **Privacy & data** section documenting exactly what leaves the machine and how the PAT/API key are now keychain-encrypted (see [[wiki/entities/secret-storage]]), and a **Troubleshooting** table keyed by the error dialog titles from [[wiki/entities/labels-utility]]. The rewrite also adds sections this analysis never covered: **Download & install** (unsigned Windows/macOS installers), **How it's built** (pointing at `feature/`, `feature-index.md`, and this wiki as the project's paper trail), and **Roadmap**.
 
 ## Problem
 

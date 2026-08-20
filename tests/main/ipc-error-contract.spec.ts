@@ -59,7 +59,7 @@ const STORE_FAILURE: AppError = { code: 'STORE_ERROR', message: 'Store non dispo
 // like `{}` would be rejected by assertValidSettings before store.set is ever reached,
 // which would test the wrong failure mode.
 const VALID_SETTINGS: AppSettings = {
-  orgUrl: 'https://dev.azure.com/gversino',
+  orgUrl: 'https://dev.azure.com/contoso',
   projectName: 'BugCat',
   queryId: '123e4567-e89b-12d3-a456-426614174000',
   topN: 20,
@@ -71,7 +71,7 @@ const VALID_SETTINGS: AppSettings = {
 }
 
 const ATTACHMENT_URL =
-  'https://dev.azure.com/gversino/BugCat/_apis/wit/attachments/id?fileName=image.png'
+  'https://dev.azure.com/contoso/BugCat/_apis/wit/attachments/id?fileName=image.png'
 
 const invokeEvent = (): unknown => ({ sender: { id: 1, send: vi.fn() } })
 

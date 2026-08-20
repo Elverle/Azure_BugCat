@@ -19,7 +19,7 @@ const DEFAULT_MODEL = 'openai/gpt-4o'
  */
 const ATTRIBUTION_HEADERS = {
   'HTTP-Referer': 'https://github.com/Elverle/Azure_BugCat',
-  'X-Title': 'BugCat'
+  'X-Title': 'Azure BugCat'
 }
 
 /**

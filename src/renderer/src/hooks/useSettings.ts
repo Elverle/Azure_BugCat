@@ -29,6 +29,7 @@ export interface UseSettingsReturn {
   isDirty: boolean
   canSave: boolean
   updateField: (field: keyof AppSettings, value: unknown) => void
+  clearSecret: (field: 'pat' | 'apiKey') => void
   save: () => Promise<void>
   clearSaveResult: () => void
   testAdoConnection: () => Promise<void>
@@ -109,6 +110,18 @@ export function useSettings(): UseSettingsReturn {
     })
     setTouched((prev) => ({ ...prev, [field]: true }))
   }, [])
+
+  /**
+   * A stored secret arrives as a placeholder the user cannot meaningfully edit:
+   * typing into it would produce '__stored__abc'. Replacing one is therefore an
+   * explicit act — clear the field, then type the new value.
+   */
+  const clearSecret = useCallback(
+    (field: 'pat' | 'apiKey') => {
+      updateField(field, '')
+    },
+    [updateField]
+  )
 
   const save = useCallback(async () => {
     // Mark all fields as touched
@@ -245,6 +258,7 @@ export function useSettings(): UseSettingsReturn {
     isDirty,
     canSave,
     updateField,
+    clearSecret,
     save,
     clearSaveResult,
     testAdoConnection,

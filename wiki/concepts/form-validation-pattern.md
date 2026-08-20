@@ -12,7 +12,7 @@ lang: en
 
 The app uses a two-layer validation pattern that separates pure validation logic from React state management:
 
-1. **Pure validation functions** (`src/renderer/src/lib/validation.ts`) — no React, no side effects, easily unit-testable
+1. **Pure validation functions** (`src/shared/validation.ts`) — no React, no side effects, easily unit-testable, and shared with the main process, which runs the same rules as its trust boundary on `settings:set`
 2. **React hook** (`useSettings`) — calls validators reactively, manages `errors`, `touched`, and `canSave` state
 
 ## How It Works in This Project

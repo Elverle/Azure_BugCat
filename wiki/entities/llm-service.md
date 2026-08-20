@@ -3,7 +3,7 @@ title: 'LLM Service'
 type: entity
 subtype: service
 created: 2026-04-30
-updated: 2026-08-18
+updated: 2026-08-20
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
@@ -11,6 +11,7 @@ sources:
     '[[wiki/sources/ft-09-structured-output]]',
     '[[wiki/sources/ft-10-ai-cluster-similarity]]',
     '[[wiki/sources/ft-11-openrouter-provider]]',
+    '[[wiki/sources/ft-12-incremental-session-cache]]',
     '[[wiki/analyses/llm-provider-cleanup]]',
     '[[wiki/analyses/cancel-categorization-flow]]'
   ]
@@ -81,7 +82,7 @@ Top-level orchestration service for LLM-based bug categorization. Coordinates pr
 ## Cancellation Notes
 
 - Cancellation is cooperative: the same `AbortSignal` is checked in retry waits, before each new chunk, and inside each provider request.
-- The service still applies categorizations only after full completion; the main process keeps persistence all-or-nothing by saving `SessionData` only after `categorizeBugs()` resolves successfully.
+- `categorizeBugs()` itself has no persistence opinion — it returns categorized bugs to its caller via the `onProgress` callback and its resolved value. FT-12 changed what the caller (`llm:categorize` in [[wiki/entities/ipc-handlers]]) does with that callback: it now persists each completed chunk into `session` and `bugCatalog` immediately (`persistChunk()`), instead of waiting for `categorizeBugs()` to resolve and saving `SessionData` only then. A cancellation therefore keeps every chunk that finished before the abort signal was honored; only the chunk in flight (and anything not yet started) is lost. See [[wiki/analyses/cancel-categorization-flow]] for the superseded all-or-nothing behavior this replaced.
 
 ## FT-11 Notes
 

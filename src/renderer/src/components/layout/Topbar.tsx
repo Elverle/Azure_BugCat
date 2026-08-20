@@ -8,7 +8,7 @@ export function Topbar() {
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2 text-blue-700 font-bold text-xl">
           <Bug className="w-5 h-5" />
-          BugCat
+          Azure BugCat
         </div>
         <nav className="flex gap-4">
           <NavLink

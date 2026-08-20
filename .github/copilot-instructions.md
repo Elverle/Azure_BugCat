@@ -1,4 +1,4 @@
-# Bug Categorizer
+# Azure BugCat
 
 ## Build, test, and lint
 - `npm run dev` starts the Electron app with `electron-vite`.
