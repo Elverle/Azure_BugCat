@@ -15,7 +15,7 @@ vi.mock('@main/ado/ado-client', () => ({
 import { fetchBugsFromQuery, testAdoConnection } from '@main/ado/ado-service'
 
 const baseSettings: AppSettings = {
-  orgUrl: 'https://dev.azure.com/gversino',
+  orgUrl: 'https://dev.azure.com/contoso',
   projectName: 'BugCat',
   queryId: '123e4567-e89b-12d3-a456-426614174000',
   topN: 205,

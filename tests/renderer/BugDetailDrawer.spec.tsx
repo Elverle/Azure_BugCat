@@ -217,7 +217,7 @@ describe('BugDetailDrawer', () => {
         bug={makeBug({
           description: 'Passaggi riprodotti con screenshot allegato.',
           descriptionHtml:
-            '<p>Passaggi riprodotti con screenshot allegato.</p><img src="https://dev.azure.com/example/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Screenshot errore" />'
+            '<p>Passaggi riprodotti con screenshot allegato.</p><img src="https://dev.azure.com/example/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Screenshot errore" />'
         })}
       />
     )
@@ -227,7 +227,7 @@ describe('BugDetailDrawer', () => {
       expect(image.getAttribute('src')).toMatch(/^data:image\/png;base64,/) 
     })
     expect(window.electronAPI.fetchAdoAttachmentDataUrl).toHaveBeenCalledWith(
-      'https://dev.azure.com/example/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/screenshot-id?fileName=image.png'
+      'https://dev.azure.com/example/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/screenshot-id?fileName=image.png'
     )
   })
 
@@ -255,7 +255,7 @@ describe('BugDetailDrawer', () => {
         bug={makeBug({
           description: '',
           descriptionHtml:
-            '<p><img src="https://dev.azure.com/example/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Only screenshot" /></p>'
+            '<p><img src="https://dev.azure.com/example/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Only screenshot" /></p>'
         })}
       />
     )
@@ -277,7 +277,7 @@ describe('BugDetailDrawer', () => {
         bug={makeBug({
           description: 'Descrizione con attachment.',
           descriptionHtml:
-            '<p>Descrizione con attachment.</p><img src="https://dev.azure.com/example/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Image" />'
+            '<p>Descrizione con attachment.</p><img src="https://dev.azure.com/example/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/screenshot-id?fileName=image.png" alt="Image" />'
         })}
       />
     )

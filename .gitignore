@@ -6,7 +6,8 @@ coverage/
 .DS_Store
 *.docx
 start.bat
-.vscode/
 .idea/
 content/
 *.tsbuildinfo
+.claude/settings.local.json
+.vscode/changelists.json

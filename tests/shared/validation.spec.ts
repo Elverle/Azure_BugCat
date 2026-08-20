@@ -3,7 +3,7 @@ import type { AppSettings } from '@shared/types'
 import { assertValidSettings } from '@shared/validation'
 
 const validSettings: AppSettings = {
-  orgUrl: 'https://dev.azure.com/gversino',
+  orgUrl: 'https://dev.azure.com/contoso',
   projectName: 'BugCat',
   queryId: '123e4567-e89b-12d3-a456-426614174000',
   topN: 20,

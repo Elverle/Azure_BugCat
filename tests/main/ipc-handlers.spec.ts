@@ -60,7 +60,7 @@ vi.mock('@main/llm', () => ({
 import { registerIPCHandlers } from '../../src/main/ipc-handlers'
 
 const baseSettings: AppSettings = {
-  orgUrl: 'https://dev.azure.com/gversino',
+  orgUrl: 'https://dev.azure.com/contoso',
   projectName: 'BugCat',
   queryId: '123e4567-e89b-12d3-a456-426614174000',
   topN: 20,
@@ -158,12 +158,12 @@ describe('registerIPCHandlers', () => {
 
     const result = await handlers.get(IPC_CHANNELS.ADO_FETCH_ATTACHMENT_DATA_URL)?.(
       {},
-      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+      'https://dev.azure.com/contoso/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/image-id?fileName=image.png'
     )
 
     expect(fetchAdoAttachmentDataUrl).toHaveBeenCalledWith(
       baseSettings,
-      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+      'https://dev.azure.com/contoso/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/image-id?fileName=image.png'
     )
     expect(result).toBe('data:image/png;base64,AAA=')
   })

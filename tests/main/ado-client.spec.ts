@@ -3,7 +3,7 @@ import { fetchAdoAttachmentDataUrl, fetchWiqlQuery, fetchWorkItemsBatch } from '
 import type { AdoConnectionConfig } from '@main/ado/types'
 
 const config: AdoConnectionConfig = {
-  orgUrl: 'https://dev.azure.com/gversino',
+  orgUrl: 'https://dev.azure.com/contoso',
   projectName: 'BugCat',
   queryId: 'query-id',
   pat: 'secret-pat',
@@ -26,7 +26,7 @@ describe('ado-client', () => {
 
     expect(result.workItems).toEqual([{ id: 1, url: 'u1' }])
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://dev.azure.com/gversino/BugCat/_apis/wit/wiql/query-id?api-version=7.0',
+      'https://dev.azure.com/contoso/BugCat/_apis/wit/wiql/query-id?api-version=7.0',
       expect.objectContaining({
         method: 'GET',
         headers: expect.objectContaining({
@@ -89,7 +89,7 @@ describe('ado-client', () => {
     })
 
     await expect(
-      fetchWiqlQuery({ ...config, orgUrl: 'http://dev.azure.com/gversino' })
+      fetchWiqlQuery({ ...config, orgUrl: 'http://dev.azure.com/contoso' })
     ).rejects.toMatchObject({
       code: 'ADO_AUTH_ERROR',
       message: 'Invalid organization URL: it must start with https://'
@@ -108,12 +108,12 @@ describe('ado-client', () => {
 
     const result = await fetchAdoAttachmentDataUrl(
       config,
-      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+      'https://dev.azure.com/contoso/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/image-id?fileName=image.png'
     )
 
     expect(result).toBe(`data:image/png;base64,${Buffer.from([137, 80, 78, 71]).toString('base64')}`)
     expect(fetchMock).toHaveBeenCalledWith(
-      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png',
+      'https://dev.azure.com/contoso/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/image-id?fileName=image.png',
       expect.objectContaining({
         method: 'GET',
         headers: expect.objectContaining({
@@ -136,7 +136,7 @@ describe('ado-client', () => {
 
     const result = await fetchAdoAttachmentDataUrl(
       config,
-      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+      'https://dev.azure.com/contoso/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/image-id?fileName=image.png'
     )
 
     expect(result).toBe(`data:image/png;base64,${Buffer.from([1, 2, 3]).toString('base64')}`)
@@ -154,7 +154,7 @@ describe('ado-client', () => {
 
     const result = await fetchAdoAttachmentDataUrl(
       config,
-      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.jpg'
+      'https://dev.azure.com/contoso/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/image-id?fileName=image.jpg'
     )
 
     expect(result).toBe(`data:image/jpeg;base64,${Buffer.from([4, 5, 6]).toString('base64')}`)
@@ -179,7 +179,7 @@ describe('ado-client', () => {
 
     const result = await fetchAdoAttachmentDataUrl(
       config,
-      'https://dev.azure.com/gversino/834b6bb6-7aa6-4920-95f9-940c95460830/_apis/wit/attachments/image-id?fileName=image.png'
+      'https://dev.azure.com/contoso/00000000-0000-0000-0000-000000000000/_apis/wit/attachments/image-id?fileName=image.png'
     )
 
     expect(result).toBe(`data:image/png;base64,${Buffer.from([9, 9, 9]).toString('base64')}`)
