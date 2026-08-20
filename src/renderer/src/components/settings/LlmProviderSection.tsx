@@ -5,12 +5,14 @@ import { Label } from '@renderer/components/ui/label'
 import { Select } from '@renderer/components/ui/select'
 import { Button } from '@renderer/components/ui/button'
 import type { AppSettings } from '@shared/types'
+import { isSecretPlaceholder } from '@shared/secrets'
 
 interface LlmProviderSectionProps {
   settings: AppSettings
   errors: Record<string, string | null>
   touched: Record<string, boolean>
   onFieldChange: (field: keyof AppSettings, value: unknown) => void
+  onClearSecret: (field: 'pat' | 'apiKey') => void
   onTestConnection: () => Promise<void>
   testResult: { type: 'success' | 'error'; message: string } | null
   testLoading: boolean
@@ -37,6 +39,7 @@ export function LlmProviderSection({
   errors,
   touched,
   onFieldChange,
+  onClearSecret,
   onTestConnection,
   testResult,
   testLoading
@@ -73,23 +76,39 @@ export function LlmProviderSection({
         {/* API Key */}
         <div>
           <Label htmlFor="apiKey">{API_KEY_LABELS[settings.llmProvider] ?? 'API Key'}</Label>
-          <div className="relative">
-            <Input
-              id="apiKey"
-              type={showApiKey ? 'text' : 'password'}
-              value={settings.apiKey ?? ''}
-              onChange={(e) => onFieldChange('apiKey', e.target.value)}
-              className="pr-10"
-            />
-            <button
-              type="button"
-              onClick={() => setShowApiKey((prev) => !prev)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-              tabIndex={-1}
-            >
-              {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
-          </div>
+          {/*
+            A stored secret is not editable: typing into the placeholder would
+            produce '__stored__abc'. The input stays in the tree — disabled and
+            empty, so the label keeps pointing at a real field — and replacing
+            the key is an explicit act.
+          */}
+          {isSecretPlaceholder(settings.apiKey) ? (
+            <div className="flex items-center gap-2">
+              <Input id="apiKey" type="password" value="" disabled className="flex-1" />
+              <span className="text-sm text-gray-600 whitespace-nowrap">API key stored</span>
+              <Button variant="outline" size="sm" onClick={() => onClearSecret('apiKey')}>
+                Replace
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <Input
+                id="apiKey"
+                type={showApiKey ? 'text' : 'password'}
+                value={settings.apiKey ?? ''}
+                onChange={(e) => onFieldChange('apiKey', e.target.value)}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey((prev) => !prev)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                tabIndex={-1}
+              >
+                {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          )}
           {touched.apiKey && errors.apiKey && (
             <p className="text-xs text-red-500 mt-1">{errors.apiKey}</p>
           )}

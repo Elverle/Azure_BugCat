@@ -4,12 +4,14 @@ import { Input } from '@renderer/components/ui/input'
 import { Label } from '@renderer/components/ui/label'
 import { Button } from '@renderer/components/ui/button'
 import type { AppSettings } from '@shared/types'
+import { isSecretPlaceholder } from '@shared/secrets'
 
 interface AdoConnectionSectionProps {
   settings: AppSettings
   errors: Record<string, string | null>
   touched: Record<string, boolean>
   onFieldChange: (field: keyof AppSettings, value: unknown) => void
+  onClearSecret: (field: 'pat' | 'apiKey') => void
   onTestConnection: () => Promise<void>
   testResult: { type: 'success' | 'error'; message: string } | null
   testLoading: boolean
@@ -20,6 +22,7 @@ export function AdoConnectionSection({
   errors,
   touched,
   onFieldChange,
+  onClearSecret,
   onTestConnection,
   testResult,
   testLoading
@@ -102,23 +105,39 @@ export function AdoConnectionSection({
           </div>
           <div>
             <Label htmlFor="pat">PAT</Label>
-            <div className="relative">
-              <Input
-                id="pat"
-                type={showPat ? 'text' : 'password'}
-                value={settings.pat}
-                onChange={(e) => onFieldChange('pat', e.target.value)}
-                className="pr-10"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPat((prev) => !prev)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                tabIndex={-1}
-              >
-                {showPat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
+            {/*
+              A stored secret is not editable: typing into the placeholder would
+              produce '__stored__abc'. The input stays in the tree — disabled and
+              empty, so the label keeps pointing at a real field — and replacing
+              the token is an explicit act.
+            */}
+            {isSecretPlaceholder(settings.pat) ? (
+              <div className="flex items-center gap-2">
+                <Input id="pat" type="password" value="" disabled className="flex-1" />
+                <span className="text-sm text-gray-600 whitespace-nowrap">Token stored</span>
+                <Button variant="outline" size="sm" onClick={() => onClearSecret('pat')}>
+                  Replace
+                </Button>
+              </div>
+            ) : (
+              <div className="relative">
+                <Input
+                  id="pat"
+                  type={showPat ? 'text' : 'password'}
+                  value={settings.pat}
+                  onChange={(e) => onFieldChange('pat', e.target.value)}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPat((prev) => !prev)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  tabIndex={-1}
+                >
+                  {showPat ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            )}
             {touched.pat && errors.pat && <p className="text-xs text-red-500 mt-1">{errors.pat}</p>}
           </div>
         </div>

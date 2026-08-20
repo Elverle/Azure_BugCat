@@ -18,6 +18,7 @@ export function SettingsPage() {
     saveResult,
     canSave,
     updateField,
+    clearSecret,
     save,
     clearSaveResult,
     testAdoConnection,
@@ -150,6 +151,7 @@ export function SettingsPage() {
         errors={errors}
         touched={touched}
         onFieldChange={updateField}
+        onClearSecret={clearSecret}
         onTestConnection={testAdoConnection}
         testResult={testAdoResult}
         testLoading={testAdoLoading}
@@ -160,6 +162,7 @@ export function SettingsPage() {
         errors={errors}
         touched={touched}
         onFieldChange={updateField}
+        onClearSecret={clearSecret}
         onTestConnection={testLlmConnection}
         testResult={testLlmResult}
         testLoading={testLlmLoading}

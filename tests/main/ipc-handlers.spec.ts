@@ -160,7 +160,7 @@ describe('registerIPCHandlers', () => {
       const saved = storeSet.mock.calls.find(([key]) => key === 'settings')![1] as AppSettings
       expect(saved.pat).not.toBe(baseSettings.pat)
       expect(decryptSecret(saved.pat)).toBe(baseSettings.pat)
-      expect(decryptSecret(saved.apiKey)).toBe(baseSettings.apiKey)
+      expect(decryptSecret(saved.apiKey ?? '')).toBe(baseSettings.apiKey)
       expect(saved).toEqual({ ...baseSettings, pat: saved.pat, apiKey: saved.apiKey })
     })
   })
