@@ -1,7 +1,20 @@
 {
   "name": "bug-categorizer",
   "version": "1.0.0",
-  "description": "Bug Categorizer - Bug classification tool",
+  "description": "BugCat turns a messy Azure DevOps bug backlog into categorized, deduplicated, triage-ready groups — locally, with the LLM provider you choose",
+  "author": "Gabriele Versino",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Elverle/Azure_BugCat.git"
+  },
+  "homepage": "https://github.com/Elverle/Azure_BugCat",
+  "bugs": {
+    "url": "https://github.com/Elverle/Azure_BugCat/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "electron-vite dev",
