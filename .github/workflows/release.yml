@@ -21,6 +21,10 @@ jobs:
 
       - run: npm ci
 
+      # `npm run package` passes --publish never. Left implicit, electron-builder
+      # sees the git tag under CI, switches itself into publish mode, and then
+      # fails for want of GH_TOKEN — after the installer is already built.
+      # Publishing is the release job's business, through `gh release create`.
       - name: Package
         run: npm run package
         env:
