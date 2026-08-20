@@ -3,7 +3,7 @@ title: 'Validation Utilities'
 type: entity
 subtype: library
 created: 2026-04-29
-updated: 2026-05-01
+updated: 2026-08-20
 sources: ['[[wiki/sources/ft-02-settings]]', '[[wiki/sources/ft-08-generic-provider]]']
 tags: [typescript, validation, pure-functions]
 lang: en
@@ -13,9 +13,11 @@ lang: en
 
 Pure validation functions for all settings fields. No React dependencies — can be unit tested independently. Each validator returns `string | null` (error message or null for valid).
 
+The module lives in `shared/` rather than in the renderer because both sides use it: the renderer for form feedback as the user types, the main process as the trust boundary that decides what may be persisted.
+
 ## Location
 
-`src/renderer/src/lib/validation.ts`
+`src/shared/validation.ts`
 
 ## Validators
 
@@ -25,15 +27,16 @@ Pure validation functions for all settings fields. No React dependencies — can
 | `validateRequired(value, fieldName)`           | `projectName`, `pat`               | Non-empty after trim                                                                       |
 | `validateUUID(value)`                          | `queryId`                          | Required; must be valid UUID format                                                        |
 | `validateIntRange(value, min, max, fieldName)` | `topN` (1–200), `chunkSize` (5–30) | Must be integer within range                                                               |
-| `validateApiKey(value, provider)`              | `apiKey`                           | Required for all current providers                                                         |
+| `validateApiKey(value)`                        | `apiKey`                           | Required for all current providers                                                         |
 | `validateBaseUrl(value, provider)`             | `baseUrl`                          | Required only for `generic`; must be a valid URL and use HTTPS, except localhost/127.0.0.1 |
 
 ## Aggregate Functions
 
 | Function                     | Purpose                                                       |
 | ---------------------------- | ------------------------------------------------------------- |
-| `validateSettings(settings)` | Runs all validators, returns `Record<string, string \| null>` |
-| `isSettingsValid(errors)`    | Returns `true` if all error values are `null`                 |
+| `validateSettings(settings)`      | Runs all validators, returns `Record<string, string \| null>`                                          |
+| `isSettingsValid(errors)`         | Returns `true` if all error values are `null`                                                          |
+| `assertValidSettings(input)`      | Narrows an `unknown` payload to `AppSettings` or throws. The main-process gate on `settings:set`       |
 
 ## Regex Patterns
 

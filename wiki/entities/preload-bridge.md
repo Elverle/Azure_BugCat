@@ -3,7 +3,7 @@ title: 'Preload Bridge (contextBridge)'
 type: entity
 subtype: middleware
 created: 2026-04-29
-updated: 2026-05-13
+updated: 2026-08-20
 sources:
   [
     '[[wiki/sources/ft-01-scaffold]]',
@@ -36,15 +36,19 @@ The preload script uses `contextBridge.exposeInMainWorld` to safely expose a typ
 | `getSettings()`                  | `settings:get`                  | invoke                   |
 | `setSettings(settings)`          | `settings:set`                  | invoke                   |
 | `fetchBugs()`                    | `ado:fetch-bugs`                | invoke                   |
-| `testAdoConnection()`            | `ado:test-connection`           | invoke                   |
+| `testAdoConnection(settings)`    | `ado:test-connection`           | invoke                   |
 | `fetchAdoAttachmentDataUrl(url)` | `ado:fetch-attachment-data-url` | invoke                   |
 | `categorizeBugs()`               | `llm:categorize`                | invoke                   |
 | `cancelCategorization()`         | `llm:categorize-cancel`         | invoke                   |
 | `getCategorizationStatus()`      | `llm:categorize-status`         | invoke                   |
-| `testLlmConnection()`            | `llm:test-connection`           | invoke                   |
+| `testLlmConnection(settings)`    | `llm:test-connection`           | invoke                   |
 | `onCategorizeProgress(cb)`       | `llm:categorize-progress`       | on (returns unsubscribe) |
+| `onCategorizeDone(cb)`           | `llm:categorize-done`           | on (returns unsubscribe) |
 | `findSimilarBugs()`              | `llm:find-similar`              | invoke                   |
+| `cancelFindSimilar()`            | `llm:find-similar-cancel`       | invoke                   |
+| `getFindSimilarStatus()`         | `llm:find-similar-status`       | invoke                   |
 | `onFindSimilarProgress(cb)`      | `llm:find-similar-progress`     | on (returns unsubscribe) |
+| `onFindSimilarDone(cb)`          | `llm:find-similar-done`         | on (returns unsubscribe) |
 | `getSession()`                   | `session:get`                   | invoke                   |
 | `clearSession()`                 | `session:clear`                 | invoke                   |
 | `clearCatalog()`                 | `catalog:clear`                 | invoke                   |
@@ -75,6 +79,10 @@ declare global {
 - Catalog access remains narrow and explicit: the renderer can trigger `clearSession()` and `clearCatalog()`, and FT-13 adds only `getCatalogClosed()` instead of a generic catalog-read bridge.
 - Cancellation remains explicit and whitelisted: the renderer can only abort the current categorization run through the dedicated method, not by touching arbitrary process state.
 - The status method is read-only and window-scoped: the renderer can query whether its own categorization is still active without receiving access to the controller itself.
+
+## FT-14 Notes
+
+`testAdoConnection(settings)` and `testLlmConnection(settings)` take the renderer's live, unsaved form as their argument. That payload can carry the `SECRET_PLACEHOLDER` sentinel rather than a real credential, because [[wiki/entities/ipc-handlers|`SETTINGS_GET`]] never gave the renderer the secret to begin with; the main process swaps the sentinel back for the stored plaintext before testing. The bridge itself stays unaware of the distinction — it forwards what it is given, and no decrypted secret ever travels back through it. See [[wiki/entities/secret-storage]].
 
 ## See also
 

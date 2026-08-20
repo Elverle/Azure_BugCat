@@ -50,12 +50,14 @@ Registers all `ipcMain.handle()` listeners. Each handler maps a typed IPC channe
 | `llm:categorize-status`         | ✅ Implemented | Returns `{ active }` for the current renderer window so a remounted Dashboard can recover an in-flight categorization                                                                                           |
 | `llm:test-connection`           | ✅ Implemented | Same `settingsOverride` + `resolveSecrets()` resolution as `ado:test-connection`; validates `apiKey`, calls `testLLMConnection()`, returns `TestConnectionResult`; generic-provider `baseUrl` rules are enforced downstream |
 | `llm:find-similar`              | ✅ Implemented | Validates settings plus categorized session state, calls `findSimilarBugs()`, sends `SimilarityProgress`, persists `similarityResults`, and updates catalog similarity metadata                                 |
+| `llm:find-similar-cancel`       | ✅ Implemented | Aborts the active similarity controller for the current renderer window and returns `{ cancelled }`                                                                                                             |
+| `llm:find-similar-status`       | ✅ Implemented | Returns `{ active }` for the current renderer window so a remounted Similarity tab can recover an in-flight analysis                                                                                            |
 | `shell:open-external`           | ✅ Implemented | Validates that the payload is a well-formed `https://` URL, then delegates to `shell.openExternal()`                                                                                                            |
 
 ## Security Notes
 
 - Only whitelisted channels are exposed — no generic `store:get`/`store:set`.
-- `settings:set` accepts `unknown` — **no runtime validation** (technical debt).
+- `settings:set` accepts `unknown` and validates it with `assertValidSettings()` before persisting: the main process is the trust boundary, not the renderer's form validation.
 - The shell handler uses `new URL(url)` plus protocol enforcement so the renderer cannot open arbitrary schemes.
 - FT-08 removed the old Copilot-specific authentication branch from `llm:test-connection`; all providers now enter the same `testLLMConnection()` path once minimal required fields are present.
 - FT-10 keeps similarity analysis behind the same main-process boundary: the renderer cannot pass raw bug payloads or store writes directly, it can only request analysis against the current persisted session.

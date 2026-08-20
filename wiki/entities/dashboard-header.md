@@ -46,9 +46,9 @@ interface DashboardHeaderProps {
 ## Behavior
 
 - Formats session timestamps through [[wiki/entities/date-format-utility]] instead of inlining locale logic inside the component.
-- Shows `Dati aggiornati il ...` plus an optional `Categorizzati il ...` suffix when session metadata exists.
-- Shows `Nuovi rispetto allo storico: N` under the `Fetch Bugs` button after a fetch completes, using the scalar summary persisted in `SessionData.lastFetchNewCount`.
-- Shows `Nessun dato caricato` when no session exists yet.
+- Shows `Data updated on ...` plus an optional `• Categorized on ...` suffix when session metadata exists.
+- Shows `New compared to history: N` under the `Fetch Bugs` button after a fetch completes, using the scalar summary persisted in `SessionData.lastFetchNewCount`.
+- Shows `No data loaded` when no session exists yet.
 - `Fetch Bugs` shows a spinner while hydration or fetch is loading, and is also disabled while categorization is active.
 - While `isCategorizing` is `true`, the primary action swaps from `Categorize` to a red `Cancel` button.
 - While `isCancelling` is `true`, the cancel button is disabled and changes label to `Cancelling...` with a spinner, so the user gets feedback before the next chunk update arrives.

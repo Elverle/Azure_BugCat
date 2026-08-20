@@ -2,7 +2,7 @@
 title: 'Analysis: Cancellable categorization flow'
 type: analysis
 created: 2026-05-03
-updated: 2026-08-20
+updated: 2026-08-21
 sources:
   [
     '[[wiki/sources/ft-04-llm-provider]]',
@@ -54,7 +54,7 @@ The follow-up change makes categorization abort-aware end to end. At the time of
 The change was validated with focused tests and a production build:
 
 - `tests/main/llm-service.spec.ts` verifies that cancellation stops the workflow before the next chunk.
-- `tests/main/ipc-handlers.spec.ts` verifies that cancel aborts an active run and does not persist partial results.
+- `tests/main/ipc-handlers.spec.ts` verifies that cancel aborts an active run. Its test name still reads "without persisting partial results": the mocked run never emits a progress event, so no chunk ever completes and there is nothing for `persistChunk()` to write — the assertion does not contradict the FT-12 behavior described above.
 - `tests/renderer/DashboardPage.spec.tsx` verifies that the cancel button appears only while categorization is running and that cancellation is silent in the UI.
 - `npm run build` completed successfully after the wiki-triggering code changes.
 

@@ -35,8 +35,8 @@ Fixed right-side detail panel used by the dashboard across both exploration view
 - Renders as a fixed `w-[400px]` panel pinned below the top bar (`top-[57px]`) and animates with a `translate-x` transition.
 - Installs a document-level `keydown` listener so `Escape` closes the drawer from anywhere in the page.
 - Installs a document-level `mousedown` listener for click-outside closing, but skips both clicks inside the drawer and clicks tagged with `data-bug-click`; this behavior is documented in [[wiki/concepts/click-outside-exclusion-pattern]].
-- Shows a highlighted LLM card when categorization data exists, or an explicit `Non ancora categorizzato` placeholder when `macroCategory` is empty.
-- Formats created/updated timestamps with `it-IT`, joins tags inline, and renders `Nessuna descrizione disponibile` when description text is empty.
+- Shows a highlighted LLM card when categorization data exists; an unresolved `macroCategory` renders through `sentinelLabel()` as `Uncategorized` rather than as raw sentinel text — see [[wiki/entities/labels-utility]].
+- Formats created/updated timestamps through [[wiki/entities/date-format-utility|`formatDateOnly()`]] on the system locale, joins tags inline, and renders `No description available` when description text is empty.
 - Delegates previous/next navigation and external-link behavior to parent callbacks so navigation logic and shell access stay outside the presentation component.
 
 ## Dependencies

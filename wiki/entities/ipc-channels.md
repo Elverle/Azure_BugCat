@@ -40,9 +40,13 @@ Centralized typed IPC channel definitions shared between main, preload, and rend
 | `LLM_CATEGORIZE_CANCEL`         | `llm:categorize-cancel`         | LLM          |
 | `LLM_CATEGORIZE_STATUS`         | `llm:categorize-status`         | LLM          |
 | `LLM_CATEGORIZE_PROGRESS`       | `llm:categorize-progress`       | LLM          |
+| `LLM_CATEGORIZE_DONE`           | `llm:categorize-done`           | LLM          |
 | `LLM_TEST_CONNECTION`           | `llm:test-connection`           | LLM          |
 | `LLM_FIND_SIMILAR`              | `llm:find-similar`              | LLM          |
+| `LLM_FIND_SIMILAR_CANCEL`       | `llm:find-similar-cancel`       | LLM          |
+| `LLM_FIND_SIMILAR_STATUS`       | `llm:find-similar-status`       | LLM          |
 | `LLM_FIND_SIMILAR_PROGRESS`     | `llm:find-similar-progress`     | LLM          |
+| `LLM_FIND_SIMILAR_DONE`         | `llm:find-similar-done`         | LLM          |
 | `SESSION_GET`                   | `session:get`                   | Session      |
 | `SESSION_CLEAR`                 | `session:clear`                 | Session      |
 | `CATALOG_CLEAR`                 | `catalog:clear`                 | Catalog      |

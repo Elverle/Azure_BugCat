@@ -3,7 +3,7 @@ title: 'Electron Main Process'
 type: entity
 subtype: service
 created: 2026-04-29
-updated: 2026-04-29
+updated: 2026-08-20
 sources: ['[[wiki/sources/ft-01-scaffold]]']
 tags: [electron, main-process]
 lang: en
@@ -37,7 +37,8 @@ The Electron main process entry point. Creates the `BrowserWindow`, configures s
 
 ### App lifecycle
 
-- `app.whenReady()` → `registerIPCHandlers()` → `createWindow()`
+- `app.whenReady()` → `migrateStore(store)` → `encryptStoredSecrets(store)` → `registerIPCHandlers()` → `createWindow()`
+- The order is load-bearing: persisted data is migrated to the current schema, then any secret left in plaintext by an earlier version is encrypted with the OS keychain ([[wiki/entities/secret-storage]]), and only then do the IPC handlers start serving reads of that data
 - macOS: re-creates window on `activate` if none exist
 - Non-macOS: `window-all-closed` → `app.quit()`
 

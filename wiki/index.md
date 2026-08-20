@@ -60,7 +60,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/electron-main-process]] — Electron main process entry point and window management
 - [[wiki/entities/electron-store]] — Encrypted electron-store with machine-id key
 - [[wiki/entities/store-migration]] — Versioned startup migration pipeline for persisted settings/session data (FT-07)
-- [[wiki/entities/ipc-handlers]] — IPC handler registration (settings, session, ADO/LLM placeholders)
+- [[wiki/entities/ipc-handlers]] — IPC handler registration (settings, session, ADO fetch, LLM categorization and similarity)
 - [[wiki/entities/secret-storage]] — OS keychain (`safeStorage`) encryption for the PAT and LLM API key, plus the renderer-facing secret sentinel (FT-14)
 - [[wiki/entities/preload-bridge]] — contextBridge with typed whitelisted API
 - [[wiki/entities/ipc-channels]] — Typed IPC channel constants (shared)
@@ -89,7 +89,7 @@ Per il tracciamento operativo completo delle consegne, incluse minor e fix succe
 - [[wiki/entities/llm-error-policy]] — Shared classification of blocking vs recoverable LLM workflow failures (2026-05-03)
 - [[wiki/entities/llm-json-utilities]] — Shared tolerant JSON extraction/parsing helpers for LLM outputs (2026-05-03)
 - [[wiki/entities/openai-provider]] — OpenAI SDK provider (gpt-4o) (FT-04)
-- [[wiki/entities/anthropic-provider]] — Anthropic SDK provider (claude-sonnet-4-20250514) (FT-04)
+- [[wiki/entities/anthropic-provider]] — Anthropic SDK provider (claude-sonnet-4.6) (FT-04)
 - [[wiki/entities/generic-provider]] — Generic OpenAI-compatible fetch provider with configurable base URL and model (FT-08)
 - [[wiki/entities/gemini-provider]] — Google GenAI provider (gemini-2.5-flash) (FT-04)
 - [[wiki/entities/openrouter-provider]] — OpenRouter provider: thin configuration over the shared OpenAI-compatible core, with the `require_parameters` routing guard and structured-output routing-mismatch detection read directly from the response body (FT-11, rewritten 2026-08-11 to drop the `@openrouter/sdk` dependency)
