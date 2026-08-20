@@ -1,5 +1,5 @@
 // ============================================
-// Shared Types — Bug Categorizer
+// Shared Types — Azure BugCat
 // ============================================
 
 export type LLMProviderType = 'openai' | 'anthropic' | 'generic' | 'gemini' | 'openrouter'
