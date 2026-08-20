@@ -78,8 +78,18 @@ export function encryptStoredSecrets(store: SecretStoreLike): void {
   for (const field of SECRET_FIELDS) {
     const value = current[field]
     if (typeof value !== 'string' || value === '' || isEncryptedSecret(value)) continue
-    current[field] = encryptSecret(value)
-    changed = true
+    try {
+      current[field] = encryptSecret(value)
+      changed = true
+    } catch (error) {
+      // isSecretEncryptionAvailable() above is check-then-use: the keyring can
+      // still throw here (a session that locks mid-operation, a dismissed
+      // Keychain prompt, a transient DPAPI failure). One field failing must not
+      // stop the app from opening or take the other field's encryption down
+      // with it — the field is left as its existing plaintext, unchanged, and
+      // the sweep tries again on the next launch.
+      console.error(`[SecretStorage] Could not encrypt stored "${field}", leaving it as-is:`, error)
+    }
   }
 
   if (changed) store.set('settings', current)

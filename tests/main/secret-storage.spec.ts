@@ -121,4 +121,19 @@ describe('encryptStoredSecrets', () => {
     const store = fakeStore(null)
     expect(() => encryptStoredSecrets(store)).not.toThrow()
   })
+
+  it('keeps a field plaintext and moves on when the keychain throws mid-sweep', () => {
+    // isSecretEncryptionAvailable() at the top is check-then-use: the keyring
+    // can still fail on the actual encrypt call (a session that locks, a
+    // dismissed permission prompt). One field's failure must not take the
+    // sweep down, and must not stop the other field from being encrypted.
+    safeStorage.encryptString.mockImplementationOnce(() => {
+      throw new Error('keychain locked')
+    })
+    const store = fakeStore({ pat: 'pat-abc', apiKey: 'sk-abc' })
+    expect(() => encryptStoredSecrets(store)).not.toThrow()
+    const saved = store.read()
+    expect(saved.pat).toBe('pat-abc')
+    expect(isEncryptedSecret(saved.apiKey as string)).toBe(true)
+  })
 })
