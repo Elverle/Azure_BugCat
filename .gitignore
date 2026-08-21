@@ -10,4 +10,6 @@ start.bat
 content/
 *.tsbuildinfo
 .claude/settings.local.json
-.vscode/changelists.json
+
+# Editor settings are personal, not project configuration
+.vscode/

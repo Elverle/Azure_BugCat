@@ -40,9 +40,9 @@ Grab the installer for your platform from the [latest release](https://github.co
 
 | Platform | File | Notes |
 | --- | --- | --- |
-| Windows | `Azure BugCat Setup <version>.exe` | NSIS installer |
-| macOS (Apple silicon) | `Azure BugCat-<version>-arm64.dmg` | Open the dmg, drag the app to Applications |
-| macOS (Intel) | `Azure BugCat-<version>.dmg` | Same, for x64 machines |
+| Windows | `Azure.BugCat.Setup.<version>.exe` | NSIS installer |
+| macOS (Apple silicon) | `Azure.BugCat-<version>-arm64.dmg` | Open the dmg, drag the app to Applications |
+| macOS (Intel) | `Azure.BugCat-<version>.dmg` | Same, for x64 machines |
 
 ### The installers are not signed
 
@@ -151,12 +151,10 @@ Azure BugCat is an Electron app — React and TypeScript in the renderer, the Az
 
 | Where | What's in it |
 | --- | --- |
-| [`feature/`](feature/) | The written spec each of the thirteen features was built from, before any code |
-| [`feature-index.md`](feature-index.md) | The delivery register: one row per shipped item |
-| [`wiki/`](wiki/) | The architectural knowledge base — components, concepts, and the reasoning behind the decisions |
+| [`wiki/`](wiki/) | The architectural knowledge base — components, concepts, the features as they were actually delivered, and the reasoning behind the decisions |
 | [`.claude/`](.claude/) and [`.github/agents/`](.github/agents/) | The agent definitions used during development |
 
-Some of the older material under `feature/` and `wiki/` is written in Italian. The application, its tests, and everything written since are in English.
+Some of the older pages under `wiki/` are written in Italian. The application, its tests, and everything written since are in English.
 
 ## Development
 
@@ -183,11 +181,13 @@ Contributions are welcome. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers the setup
 
 Deliberately left out of 1.0, in rough order of how much they would help:
 
+- [ ] A proper application icon — the window and the installer still carry Electron's default
 - [ ] Signed and notarized installers, so the first launch stops looking alarming
 - [ ] Auto-update
+- [ ] An English translation of the wiki pages still written in Italian
 - [ ] An animated walkthrough of the fetch → categorize → deduplicate flow
 - [ ] A SQLite catalog, replacing the JSON store as the history grows
-- [ ] A translatable UI, and an English translation of the older wiki pages
+- [ ] A translatable UI, so the app can speak more than English
 
 ## License
 

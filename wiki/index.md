@@ -14,7 +14,7 @@ L'applicazione **Azure BugCat** è un'applicazione desktop costruita con **Elect
 
 ### Documenti Sorgente
 
-I documenti di prodotto originali (PRD, mockup di design, definizione dei prompt) **non fanno parte del repository**: sono stati rimossi e non sono stati sostituiti da file tracciati. I punti di ingresso odierni sono il [`README.md`](../README.md) alla radice e [`feature-index.md`](../feature-index.md) per il tracciamento delle consegne, mentre le pagine `sources/` qui sotto documentano ogni feature come è stata effettivamente consegnata.
+I documenti di prodotto originali (PRD, mockup di design, definizione dei prompt) **non fanno parte del repository**: sono stati rimossi e non sono stati sostituiti da file tracciati. Il punto di ingresso odierno è il [`README.md`](../README.md) alla radice, mentre le pagine `sources/` qui sotto documentano ogni feature come è stata effettivamente consegnata.
 
 ### Features
 
@@ -35,7 +35,7 @@ I documenti di prodotto originali (PRD, mockup di design, definizione dei prompt
 | 13  | FT-13 | Storico Chiusi - KPI storici per bug closed/done          | Done   |
 | 14  | FT-14 | OS keychain protection for the Azure DevOps PAT and the LLM API key | Done   |
 
-Per il tracciamento operativo completo delle consegne, incluse minor e fix successive alle feature, consultare anche [`feature-index.md`](../feature-index.md), che usa i prefissi `FT-##`, `min-##` e `fix-##`.
+Le consegne minori e le fix successive alle feature non hanno più un registro dedicato: sono tracciate dalla storia git e dalle voci datate di [`log.md`](log.md).
 
 > **Nota su FT-11** — la feature è viva, la sua implementazione no. L'SDK ufficiale OpenRouter è stato rimosso durante l'hardening production-ready: `OpenRouterProvider` è oggi una configurazione sottile sopra il core condiviso `openAiCompatibleChat()` di `provider-shared.ts`, e il rilevamento del routing-mismatch legge direttamente il body della risposta invece di appoggiarsi agli errori di validazione dell'SDK. Le pagine `sources/ft-11-openrouter-provider` ed `entities/openrouter-provider` sono state riscansionate il 2026-08-18 e ora descrivono l'implementazione attuale, mantenendo la delivery SDK originale come nota storica.
 
