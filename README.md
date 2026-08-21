@@ -181,12 +181,11 @@ Contributions are welcome. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers the setup
 
 Deliberately left out of 1.0, in rough order of how much they would help:
 
-- [ ] A proper application icon — the window and the installer still carry Electron's default
 - [ ] Signed and notarized installers, so the first launch stops looking alarming
 - [ ] Auto-update
 - [ ] An English translation of the wiki pages still written in Italian
 - [ ] An animated walkthrough of the fetch → categorize → deduplicate flow
-- [ ] A SQLite catalog, replacing the JSON store as the history grows
+- [ ] Store retention. Every bug is kept twice — once in the current snapshot, once in the history — with its full description HTML, closed bugs never expire, and the whole encrypted JSON file is rewritten on every save. None of that hurts at a few hundred bugs, but the cost grows with the history. Slimming and an expiry policy first; a real database only if the history becomes a feature in its own right
 - [ ] A translatable UI, so the app can speak more than English
 
 ## License
