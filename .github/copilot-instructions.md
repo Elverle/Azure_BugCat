@@ -24,4 +24,5 @@
 - The `wiki/` folder is a primary context source for this repository: consult it early to recover project context quickly, because it links the main concepts and the relevant parts of the codebase.
 - After every completed code change, always review the affected pages under `wiki/` and update them before considering the task finished.
 - Always use the `codebase-expert` agent after implementation to reread the updated codebase context and refresh the relevant `wiki/` documentation.
-- Always keep `feature-index.md` updated before closing a task. Track every new entry with an explicit prefix: `FT-##` for features, `min-##` for minor improvements tied to an existing feature, and `fix-##` for fixes tied to an existing feature.
+- Record every delivery in `wiki/`: the feature table in `wiki/index.md` for a new `FT-##`, and a dated entry in `wiki/log.md` for anything else. There is no separate delivery register.
+- Write everything in English — code, comments, commit messages, UI strings, tests and documentation. `tests/repo/no-italian-strings.spec.ts` fails the build on a stray Italian string in `src/`.

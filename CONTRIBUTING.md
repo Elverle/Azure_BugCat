@@ -35,9 +35,10 @@ Conventional commits, written in English. One logical change per commit.
 | `src/main` | Electron main process: IPC handlers, store, Azure DevOps and LLM clients |
 | `src/renderer` | React UI |
 | `src/shared` | Types, validation and constants used by both sides |
-| `feature/` | The written spec each feature was built from |
 | `wiki/` | Architectural knowledge base: components, concepts, decisions |
-| `feature-index.md` | Delivery register, one row per shipped item |
 
-Some of the internal material under `feature/` and `wiki/` is written in
-Italian. The application, its tests and all new documentation are in English.
+## Language
+
+Everything you contribute goes in English — code, comments, commit messages,
+UI strings, tests and documentation alike. `tests/repo/no-italian-strings.spec.ts`
+enforces this for `src/` and will fail the build on a stray Italian string.
