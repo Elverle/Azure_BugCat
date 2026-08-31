@@ -1,6 +1,6 @@
 {
   "name": "bug-categorizer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Azure BugCat turns a messy Azure DevOps bug backlog into categorized, deduplicated, triage-ready groups — locally, with the LLM provider you choose",
   "author": "Gabriele Versino",
   "license": "MIT",
